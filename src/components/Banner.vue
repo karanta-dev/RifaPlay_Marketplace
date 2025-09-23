@@ -1,5 +1,5 @@
 <template>
-  <div class="relative bg-gradient-to-b from-green-100 to-green-200 px-20 py-5 shadow mb-8 flex items-center justify-center overflow-hidden">
+  <div class="relative bg-gradient-to-b from-green-100 to-green-200 px-4 sm:px-20 py-5 shadow mb-8 flex flex-col sm:flex-row items-center justify-center overflow-hidden">
     <!-- Partículas -->
     <div class="absolute inset-0 pointer-events-none">
       <i
@@ -23,10 +23,10 @@
     </div>
 
     <!-- Contenido principal -->
-    <img src="/slot.png" alt="Slot" class="h-48 w-auto mr-8 relative z-10" />
+  <img src="/slot.png" alt="Slot" class="h-32 sm:h-48 w-auto sm:mr-8 mb-4 sm:mb-0 relative z-10" />
     <div class="flex flex-col items-center flex-1 relative z-10">
-      <h1 class="text-4xl font-extrabold text-green-900 mb-4 tracking-tight">¡JUEGA, GANA Y CELEBRA!</h1>
-      <p class="text-gray-700 mb-6 max-w-xl mx-auto text-lg">
+  <h1 class="text-2xl sm:text-4xl font-extrabold text-green-900 mb-4 tracking-tight text-center">¡JUEGA, GANA Y CELEBRA!</h1>
+  <p class="text-gray-700 mb-6 max-w-xl mx-auto text-sm sm:text-lg text-center">
         Recarga <span class="font-bold text-blue-700">(1 USD)</span> y obtén <span class="font-bold text-orange-500">(1000)</span> créditos para ganar tickets para tus juegos de Rifa.
       </p>
       <div class="flex justify-center items-center gap-4 mb-2">

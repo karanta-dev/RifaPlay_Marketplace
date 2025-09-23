@@ -1,21 +1,36 @@
-
-
 <template>
-  <div class="w-full max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 p-4">
-    <ProductCard
-      v-for="(item, i) in products"
-      :key="i"
-      :image="item.image"
-      :title="item.title"
-      :description="item.description"
-      :progress="item.progress"
-    />
+  <div>
+    <div class="w-full max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-2">
+      <ProductCard
+        v-for="(item, i) in products"
+        :key="i"
+        :image="item.image"
+        :title="item.title"
+        :description="item.description"
+        :progress="item.progress"
+        @participar="showForm = true"
+      />
+    </div>
+
+    <!-- Modales -->
+    <ParticiparModal :open="showForm" @close="showForm = false" @confirmed="handleConfirmed" />
+    <ConfirmacionModal :open="showConfirm" @close="showConfirm = false" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import ProductCard from './ProductCard.vue'
+import ParticiparModal from './ParticipateModal.vue'
+import ConfirmacionModal from './ConfirmationModal.vue'
 
+const showForm = ref(false)
+const showConfirm = ref(false)
+
+const handleConfirmed = () => {
+  showForm.value = false
+  showConfirm.value = true
+}
 const products = [
   { title: 'Toyota Corolla 2025', description: 'Nuevo', image: 'https://images.unsplash.com/photo-1511918984145-48de785d4c4e?auto=format&fit=crop&w=400&q=80', progress: 72 },
   { title: 'iPhone Desbloqueado', description: 'Último modelo', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=400&q=80', progress: 80 },

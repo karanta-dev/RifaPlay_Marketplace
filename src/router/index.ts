@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import HomePage from '@/pages/HomePage.vue';
+import Catalog from '@/pages/Catalog.vue';
 
 const routes = [
-  { path: '/', name: 'home', component: HomePage },
+  { path: '/', redirect: '/catalog' },
+  { path: '/catalog', name: 'home', component: Catalog },
 ];
 
 export const router = createRouter({
