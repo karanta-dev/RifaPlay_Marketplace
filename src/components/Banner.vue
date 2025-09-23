@@ -1,5 +1,5 @@
 <template>
-  <div class="relative bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 px-4 sm:px-20 py-6 shadow-lg mb-8 flex flex-col sm:flex-row items-center justify-center overflow-hidden">
+  <div class="relative bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 px-4 sm:px-40 py-6 shadow-lg mb-8 flex flex-col sm:flex-row items-center justify-center overflow-hidden">
     <!-- Partículas -->
     <div class="absolute inset-0 pointer-events-none">
       <i

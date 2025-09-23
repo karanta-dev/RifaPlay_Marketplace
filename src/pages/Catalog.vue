@@ -1,7 +1,7 @@
-
 <template>
   <div class="bg-primary-to-b from-green-50 via-blue-50 to-white min-h-screen py-8 px-2 flex flex-col items-center">
     <Banner />
+    <TopProductsCarousel /> <!-- nuevo -->
     <ProductGrid />
   </div>
 </template>
@@ -9,4 +9,5 @@
 <script setup lang="ts">
 import Banner from '../components/Banner.vue'
 import ProductGrid from '../components/ProductGrid.vue'
+import TopProductsCarousel from '../components/TopProductsCarousel.vue'
 </script>

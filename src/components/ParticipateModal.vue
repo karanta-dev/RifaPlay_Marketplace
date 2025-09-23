@@ -47,7 +47,7 @@
 </div>
 
           <input v-model="form.telefono" type="tel" placeholder="Teléfono" class="input" required />
-          <input v-model="form.correo" type="email" placeholder="Correo (opcional)" class="input" />
+          <input v-model="form.correo" type="email" placeholder="Correo" class="input" required />
           <input v-model.number="form.tickets" type="number" min="1" placeholder="Cantidad de tickets" class="input" required />
 
           <!-- Select de pago -->
