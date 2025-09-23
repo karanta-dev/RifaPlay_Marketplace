@@ -88,4 +88,32 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+
+  /* === Scroll personalizado global === */
+::-webkit-scrollbar {
+  width: 10px; /* ancho de la barra */
+  height: 10px; /* alto cuando es horizontal */
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(0, 6, 110); /* fondo gris claro (similar a bg-light) */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #66b2ff; /* azul claro */
+  border-radius: 10px;
+  border: 2px solid #f1f5f9; /* genera efecto de espacio */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3399ff; /* azul un poco más fuerte al pasar el mouse */
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin; /* delgado */
+  scrollbar-color: #66b2ff #003a73; /* thumb y track */
+}
+
 }

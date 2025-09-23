@@ -1,61 +1,56 @@
 <template>
-  <div class="relative bg-gradient-to-b from-green-100 to-green-200 px-4 sm:px-20 py-5 shadow mb-8 flex flex-col sm:flex-row items-center justify-center overflow-hidden">
+  <div class="relative bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 px-4 sm:px-20 py-6 shadow-lg mb-8 flex flex-col sm:flex-row items-center justify-center overflow-hidden">
     <!-- Partículas -->
     <div class="absolute inset-0 pointer-events-none">
       <i
-        v-for="n in 15"
+        v-for="n in 10"
         :key="n"
-        class="fas fa-dice text-yellow-500 opacity-30 animate-float"
+        class="fas fa-star text-yellow-400 opacity-40 animate-float"
         :style="randomStyle(n)"
       ></i>
       <i
-        v-for="n in 15"
-        :key="'slot'+n"
-        class="fas fa-clover text-green-500 opacity-30 animate-float"
+        v-for="n in 10"
+        :key="'coins'+n"
+        class="fas fa-coins text-orange-400 opacity-30 animate-float"
         :style="randomStyle(n)"
       ></i>
       <i
-        v-for="n in 15"
-        :key="'cards'+n"
-        class="fas fa-chess-knight text-red-500 opacity-30 animate-float"
+        v-for="n in 10"
+        :key="'dice'+n"
+        class="fas fa-dice text-green-400 opacity-30 animate-float"
         :style="randomStyle(n)"
       ></i>
     </div>
 
     <!-- Contenido principal -->
-  <img src="/slot.png" alt="Slot" class="h-32 sm:h-48 w-auto sm:mr-8 mb-4 sm:mb-0 relative z-10" />
-    <div class="flex flex-col items-center flex-1 relative z-10">
-  <h1 class="text-2xl sm:text-4xl font-extrabold text-green-900 mb-4 tracking-tight text-center">¡JUEGA, GANA Y CELEBRA!</h1>
-  <p class="text-gray-700 mb-6 max-w-xl mx-auto text-sm sm:text-lg text-center">
-        Recarga <span class="font-bold text-blue-700">(1 USD)</span> y obtén <span class="font-bold text-orange-500">(1000)</span> créditos para ganar tickets para tus juegos de Rifa.
+    <img src="/slot.png" alt="Slot" class="h-32 sm:h-48 w-auto sm:mr-8 mb-4 sm:mb-0 relative z-10" />
+    <div class="flex flex-col items-center flex-1 relative z-10 text-center">
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-yellow-400 mb-4 tracking-tight drop-shadow-lg">
+        ¡JUEGA, GANA Y CELEBRA!
+      </h1>
+      <p class="text-white mb-6 max-w-xl mx-auto text-sm sm:text-lg">
+        Recarga <span class="font-bold text-yellow-300">(1 USD)</span> y obtén 
+        <span class="font-bold text-orange-400">(1000)</span> créditos para ganar tickets.
       </p>
+
       <div class="flex justify-center items-center gap-4 mb-2">
-        <button class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl font-bold text-lg shadow-lg">¡PARTICIPAR!</button>
-        <div class="flex items-center gap-2">
-          <button class="bg-orange-500 hover:bg-orange-600 text-white px-10 py-3 rounded-xl font-bold text-lg shadow-lg flex items-center gap-2">
-            RECARGAR $
-            <span class="grid grid-cols-2 grid-rows-2 gap-1 ml-2">
-              <i class="fab fa-cc-visa text-white text-base"></i>
-              <i class="fab fa-cc-mastercard text-white text-base"></i>
-              <i class="fab fa-cc-amex text-white text-base"></i>
-              <i class="fab fa-cc-paypal text-white text-base"></i>
-            </span>
-          </button>
-          <div class="grid grid-cols-4 grid-rows-2 gap-1 w-32 h-10 items-center">
-            <i class="fab fa-cc-visa text-blue-700 text-base"></i>
-            <i class="fab fa-cc-mastercard text-red-500 text-base"></i>
-            <i class="fab fa-cc-amex text-green-500 text-base"></i>
-            <i class="fab fa-cc-paypal text-yellow-500 text-base"></i>
-            <i class="fab fa-cc-visa text-blue-700 text-base"></i>
-            <i class="fab fa-cc-mastercard text-red-500 text-base"></i>
-            <i class="fab fa-cc-amex text-green-500 text-base"></i>
-            <i class="fab fa-cc-paypal text-yellow-500 text-base"></i>
-          </div>
-        </div>
-      </div>
+        <button class="bg-blue-600 hover:bg-yellow-400 hover:text-blue-900 text-white px-10 py-3 rounded-xl font-bold text-lg shadow-lg transition">
+          ¡PARTICIPAR!
+        </button>
+        <button class="bg-orange-500 hover:bg-orange-600 text-white px-10 py-3 rounded-xl font-bold text-lg shadow-lg flex items-center gap-2">
+          RECARGAR $
+          <span class="grid grid-cols-2 grid-rows-2 gap-1 ml-2">
+            <i class="fab fa-cc-visa text-white text-base"></i>
+            <i class="fab fa-cc-mastercard text-white text-base"></i>
+            <i class="fab fa-cc-amex text-white text-base"></i>
+            <i class="fab fa-cc-paypal text-white text-base"></i>
+          </span>
+        </button>
       </div>
     </div>
+  </div>
 </template>
+
 
 <script setup>
 // Genera posiciones y tiempos aleatorios
