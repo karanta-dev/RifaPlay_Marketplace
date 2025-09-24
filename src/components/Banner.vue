@@ -1,6 +1,5 @@
 <template>
-  <div class="relative bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 px-4 sm:px-40 py-6 shadow-lg mb-8 flex flex-col sm:flex-row items-center justify-center overflow-hidden">
-    <!-- Partículas -->
+  <div class="relative bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 px-4 sm:px-40 py-2 sm:py-4 shadow-lg mb-8 flex flex-col sm:flex-row items-center justify-center overflow-hidden">
     <div class="absolute inset-0 pointer-events-none">
       <i
         v-for="n in 10"
@@ -22,22 +21,21 @@
       ></i>
     </div>
 
-    <!-- Contenido principal -->
-    <img src="/slot.png" alt="Slot" class="h-32 sm:h-48 w-auto sm:mr-8 mb-4 sm:mb-0 relative z-10" />
-    <div class="flex flex-col items-center flex-1 relative z-10 text-center">
-      <h1 class="text-3xl sm:text-4xl font-extrabold text-yellow-400 mb-4 tracking-tight drop-shadow-lg">
+    <img src="/slot.png" alt="Slot" class="h-28 sm:h-40 w-auto sm:mr-8 mb-4 sm:mb-0 relative z-10" />
+    <div class="flex flex-col items-center sm:items-start flex-1 relative z-10 text-center sm:text-left">
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-yellow-400 mb-2 sm:mb-2 tracking-tight drop-shadow-lg">
         ¡JUEGA, GANA Y CELEBRA!
       </h1>
-      <p class="text-white mb-6 max-w-xl mx-auto text-sm sm:text-lg">
+      <p class="text-white mb-3 sm:mb-4 max-w-xl mx-auto sm:mx-0 text-xs sm:text-base">
         Recarga <span class="font-bold text-yellow-300">(1 USD)</span> y obtén 
         <span class="font-bold text-orange-400">(1000)</span> créditos para ganar tickets.
       </p>
 
-      <div class="flex justify-center items-center gap-4 mb-2">
-        <button class="bg-blue-600 hover:bg-yellow-400 hover:text-blue-900 text-white px-10 py-3 rounded-xl font-bold text-lg shadow-lg transition">
+      <div class="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 mb-2">
+        <button class="bg-blue-600 hover:bg-yellow-400 hover:text-blue-900 text-white px-6 sm:px-8 py-2 sm:py-2.5 rounded-xl font-bold text-sm sm:text-base shadow-lg transition w-full sm:w-auto">
           ¡PARTICIPAR!
         </button>
-        <button class="bg-orange-500 hover:bg-orange-600 text-white px-10 py-3 rounded-xl font-bold text-lg shadow-lg flex items-center gap-2">
+        <button class="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 py-2 sm:py-2.5 rounded-xl font-bold text-sm sm:text-base shadow-lg flex items-center gap-2 w-full sm:w-auto">
           RECARGAR $
           <span class="grid grid-cols-2 grid-rows-2 gap-1 ml-2">
             <i class="fab fa-cc-visa text-white text-base"></i>
@@ -50,7 +48,6 @@
     </div>
   </div>
 </template>
-
 
 <script setup>
 // Genera posiciones y tiempos aleatorios

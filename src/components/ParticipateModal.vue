@@ -82,7 +82,11 @@
 import { reactive } from 'vue'
 import { useTicketStore } from '@/stores/useTicketStore'
 
-const props = defineProps<{ open: boolean }>()
+const props = defineProps<{
+  open: boolean
+  product: any | null
+}>()
+
 const emit = defineEmits(['close', 'confirmed'])
 
 const ticketStore = useTicketStore()

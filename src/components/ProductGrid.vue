@@ -1,44 +1,79 @@
 <template>
   <div>
-    <div class="w-full max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-2">
+    <div
+      class="w-full max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 p-2"
+    >
       <ProductCard
-        v-for="(item, i) in products"
+        v-for="(item, i) in topProducts"
         :key="i"
-        :image="item.image"
+        :image="item.images[0]"
         :title="item.title"
         :description="item.description"
-        :progress="item.progress"
+        :progress="productProgress(item)"
+        :drawDate="item.drawDate"
         @participar="showForm = true"
+        @view-details="openDetails(item)"
       />
     </div>
 
-    <!-- Modales -->
-    <ParticiparModal :open="showForm" @close="showForm = false" @confirmed="handleConfirmed" />
-    <ConfirmacionModal :open="showConfirm" @close="showConfirm = false" />
+    <!-- modal de participar -->
+    <ParticiparModal
+      :open="showForm"
+      :product="selectedProduct"
+      @close="showForm = false"
+      @confirmed="handleConfirmed"
+    />
+
+    <!-- modal de confirmación -->
+    <ConfirmacionModal
+      :open="showConfirm"
+      @close="showConfirm = false"
+    />
+
+        <!-- details modal -->
+    <DetailsModal
+      :open="showDetails"
+      :product="selectedProduct"
+      @close="showDetails = false"
+      @buy="openParticipateModal"
+      
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTicketStore } from '@/stores/useTicketStore'
+
 import ProductCard from './ProductCard.vue'
 import ParticiparModal from './ParticipateModal.vue'
 import ConfirmacionModal from './ConfirmationModal.vue'
+import DetailsModal from './ProductDetailsModal.vue'
+
 
 const showForm = ref(false)
 const showConfirm = ref(false)
+const showDetails = ref(false)
+const selectedProduct = ref<any | null>(null)
+
+const ticketStore = useTicketStore()
+const { topProducts } = storeToRefs(ticketStore)
+const { productProgress } = ticketStore
 
 const handleConfirmed = () => {
   showForm.value = false
   showConfirm.value = true
 }
-const products = [
-  { title: 'Toyota Corolla 2025', description: 'Nuevo', image: 'https://images.unsplash.com/photo-1511918984145-48de785d4c4e?auto=format&fit=crop&w=400&q=80', progress: 72 },
-  { title: 'iPhone Desbloqueado', description: 'Último modelo', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=400&q=80', progress: 80 },
-  { title: '$30,000 en efectivo', description: 'Dinero en mano', image: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80', progress: 65 },
-  { title: 'Tu casa nueva', description: 'Ideal para ti', image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80', progress: 45 },
-  { title: 'Viaje Cancún', description: '2 personas', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80', progress: 60 },
-  { title: 'Consola PS5', description: 'Nueva generación', image: 'https://images.unsplash.com/photo-1606813902912-0e2a4b9c3c9c?auto=format&fit=crop&w=400&q=80', progress: 65 },
-  { title: 'Moto', description: 'Lista para rodar', image: 'https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=format&fit=crop&w=400&q=80', progress: 51 },
-  { title: 'Viaje a Dubái', description: '2 personas', image: 'https://images.unsplash.com/photo-1504609813443-554e64a8f005?auto=format&fit=crop&w=400&q=80', progress: 21 }
-]
+const openDetails = (product: any) => {
+  selectedProduct.value = product
+  showDetails.value = true
+}
+
+function openParticipateModal(product: any) {
+  selectedProduct.value = product
+  showDetails.value = false
+  showForm.value = true
+}
+
 </script>
