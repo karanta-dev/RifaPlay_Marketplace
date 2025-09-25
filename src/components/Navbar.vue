@@ -10,7 +10,7 @@
       <span class="text-yellow-400 font-bold text-lg sm:text-2xl hidden sm:inline">Rifas</span>
 
       <div
-        class="bg-green-900 px-4 sm:px-12 py-2 sm:py-3 rounded-full flex flex-col items-center shadow-lg border-4 border-yellow-400"
+        class="bg-blue-900 px-4 sm:px-12 py-2 sm:py-3 rounded-full flex flex-col items-center shadow-lg border-4 border-yellow-400"
       >
         <span
           class="text-xl sm:text-3xl font-extrabold text-yellow-400 tracking-wide w-full text-center"
@@ -25,21 +25,32 @@
       </div>
     </div>
 
-    <button
-      class="bg-white text-blue-900 font-bold px-3 sm:px-5 py-2 rounded-xl shadow hover:bg-yellow-300 transition flex items-center gap-1 sm:gap-2"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="w-6 h-6 sm:w-8 sm:h-8"
-        viewBox="0 0 24 24"
-        fill="currentColor"
+    <div class="flex items-center gap-3">
+      <!-- Lupa visible solo en desktop -->
+      <button class="hidden sm:flex flex-col items-center text-sm text-white hover:text-yellow-400 bg-transparent focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </button>
+
+      <!-- Botón iniciar sesión -->
+      <button
+        class="bg-white text-blue-900 font-bold px-3 sm:px-5 py-2 rounded-xl shadow hover:bg-yellow-300 transition flex items-center gap-1 sm:gap-2"
       >
-        <path
-          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"
-        />
-      </svg>
-      <span class="hidden sm:inline">Iniciar sesion</span>
-    </button>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-6 h-6 sm:w-8 sm:h-8"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"
+          />
+        </svg>
+        <span class="hidden sm:inline">Iniciar sesion</span>
+      </button>
+    </div>
   </nav>
 </template>
 

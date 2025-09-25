@@ -3,6 +3,8 @@
     <Banner />
     <TopProductsCarousel />
     <ProductGrid />
+    <MobileNav />
+
   </div>
 </template>
 
@@ -10,6 +12,8 @@
 import Banner from '../components/Banner.vue'
 import ProductGrid from '../components/ProductGrid.vue'
 import TopProductsCarousel from '../components/TopProductsCarousel.vue'
+import MobileNav from '../components/MobileNav.vue'
+
 
 // Importar el store aquí para inicializarlo (queda disponible en todos los hijos también si usan el mismo)
 import { useTicketStore } from '@/stores/useTicketStore'

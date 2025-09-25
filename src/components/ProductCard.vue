@@ -56,7 +56,7 @@ const props = defineProps({
 })
 
 // Lógica de "Hot"
-const isHot = computed(() => props.progress! > 75 && props.progress! < 100)
+const isHot = computed(() => props.progress! > 70 && props.progress! < 100)
 // Lógica de "Vendido"
 const isSoldOut = computed(() => props.progress! === 100)
 
