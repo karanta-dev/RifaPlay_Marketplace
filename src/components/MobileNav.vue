@@ -8,7 +8,10 @@
   >
     <div class="flex justify-around items-center py-0">
       <!-- Home -->
-      <button class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none">
+      <button
+        @click="goHome"
+        class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none"
+      >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
             d="M3 12l9-9 9 9M4 10v10h6v-6h4v6h6V10" />
@@ -17,7 +20,10 @@
       </button>
 
       <!-- Search -->
-      <button class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none">
+      <button
+        @click="goSearch"
+        class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none"
+      >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
           <path stroke-linecap="round" stroke-linejoin="round"
             d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -39,6 +45,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 
 const isVisible = ref(true);
 let lastScrollY = window.scrollY;
@@ -50,6 +59,15 @@ const handleScroll = () => {
     isVisible.value = true;
   }
   lastScrollY = window.scrollY;
+};
+
+// Métodos de navegación
+const goHome = () => {
+  router.push({ name: "home" });
+};
+
+const goSearch = () => {
+  router.push({ name: "search" });
 };
 
 onMounted(() => {

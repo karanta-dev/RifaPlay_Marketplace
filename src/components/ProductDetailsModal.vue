@@ -1,18 +1,33 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTicketStore } from '@/stores/useTicketStore'
+import { useUserStore } from '@/stores/useUserStore'
+import { useRouter } from 'vue-router'
 
 const props = defineProps<{ open: boolean; product: any | null }>()
-const emit = defineEmits(['close', 'buy']) // 👈 añadimos 'buy'
+const emit = defineEmits(['close', 'buy'])
 
 const ticketStore = useTicketStore()
+const userStore = useUserStore()
+const router = useRouter()
+
+// 🧑‍💻 Buscar el usuario (rifero) por nombre
+const riferoUser = computed(() =>
+  props.product ? userStore.getUserByName(props.product.rifero) : null
+)
 
 const progress = computed(() =>
   props.product ? ticketStore.productProgress(props.product) : 0
 )
 
 function handleBuy() {
-  emit('buy', props.product) // 👈 enviamos el producto al padre
+  emit('buy', props.product)
+}
+
+function goToRiferoProfile() {
+  if (riferoUser.value) {
+    router.push({ name: 'user-profile', params: { id: riferoUser.value.id } })
+  }
 }
 </script>
 
@@ -21,7 +36,9 @@ function handleBuy() {
     v-if="open && product"
     class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4"
   >
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden relative">
+    <div
+      class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden relative"
+    >
       <!-- Close -->
       <button
         class="absolute top-3 right-3 bg-gray-200 hover:bg-gray-300 p-2 rounded-full"
@@ -31,7 +48,9 @@ function handleBuy() {
       </button>
 
       <!-- Galería -->
-      <div class="flex overflow-x-auto space-x-4 p-4 scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-blue-100">
+      <div
+        class="flex overflow-x-auto space-x-4 p-4 scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-blue-100"
+      >
         <img
           v-for="(img, i) in product.images"
           :key="i"
@@ -43,8 +62,31 @@ function handleBuy() {
       <!-- Detalles -->
       <div class="p-6">
         <h2 class="text-2xl font-bold text-gray-800">{{ product.title }}</h2>
-        <p class="text-sm text-gray-500 mb-2">Rifero: {{ product.rifero }}</p>
-        <p class="text-gray-600 mb-4">{{ product.description }}</p>
+
+        <!-- Rifero con foto e hipervínculo -->
+        <div
+          class="flex items-center space-x-2 cursor-pointer hover:opacity-80"
+          @click="goToRiferoProfile"
+        >
+          <img
+            v-if="riferoUser?.avatar"
+            :src="riferoUser.avatar"
+            alt="avatar"
+            class="w-8 h-8 rounded-full object-cover"
+          />
+          <div
+            v-else
+            class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold"
+          >
+            {{ product.rifero.charAt(0).toUpperCase() }}
+          </div>
+          <span class="text-sm text-blue-600 underline">
+            {{ product.rifero }}
+          </span>
+
+        </div>
+
+        <p class="text-gray-600 mb-4 mt-2">{{ product.description }}</p>
 
         <!-- Tickets -->
         <p class="font-semibold text-blue-800 mb-2">

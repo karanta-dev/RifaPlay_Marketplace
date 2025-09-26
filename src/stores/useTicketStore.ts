@@ -23,6 +23,20 @@ export const useTicketStore = defineStore('ticket', {
         ticketsMax: 1000,
         drawDate: '2025-11-25T10:00:00'
       },
+            {
+        title: 'Meru 2025',
+        rifero: 'Juan Pérez',
+        categories: ['Autos'],
+        description: 'Un carro usado pero que se ve como nuevo, directo de agencia. Incluye audio premium.',
+        images: [
+          'https://th.bing.com/th/id/R.5c7b5fea0c9a271bcb34bed0baa006aa?rik=c5nFsW2lrYoDng&riu=http%3a%2f%2ftopcarspecs.com%2fmanufacturers%2ftoyota%2ftoyota-meru%2ftoyota-meru-3.jpg&ehk=dtsNxgJbGz%2fh2D7vu9kkZF8nA%2b5GrkFN7pYcxOmL85U%3d&risl=&pid=ImgRaw&r=0',
+          'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80'
+        ],
+        ticketPrice: 10,
+        ticketsVendidos: 723,
+        ticketsMax: 1000,
+        drawDate: '2025-09-25T10:00:00'
+      },
       {
         title: 'iPhone + AirPods',
         rifero: 'Tech Store',
@@ -86,9 +100,9 @@ export const useTicketStore = defineStore('ticket', {
           'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80'
         ],
         ticketPrice: 12,
-        ticketsVendidos: 600,
+        ticketsVendidos: 1000,
         ticketsMax: 1000,
-        drawDate: '2025-12-10T11:00:00'
+        drawDate: '2025-09-26T11:00:00'
       },
       {
         title: 'Carro Honda CBR500R',
@@ -101,7 +115,7 @@ export const useTicketStore = defineStore('ticket', {
         ticketPrice: 20,
         ticketsVendidos: 180,
         ticketsMax: 300,
-        drawDate: '2025-12-15T16:00:00'
+        drawDate: '2025-09-25T15:00:00'
       }
     ]
   }),

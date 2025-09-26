@@ -1,12 +1,15 @@
-<template>
-  <h2 class="text-lg sm:text-2xl font-bold text-center text-white mb-2 sm:mb-6">
+<template><br>
+  <h2 class="text-2xl sm:text-3xl font-extrabold text-yellow-400 text-center mb-2 sm:mb-6 drop-shadow casino-title">
+    <i class="fas fa-dice text-green-400 mr-2"></i>
     🎟️ Productos con más tickets vendidos
   </h2>
-
-  <div
-    class="w-full max-w-7xl bg-blue-100 border border-blue-300 rounded-2xl py-1 overflow-hidden relative shadow"
-  >
-    <div class="whitespace-nowrap flex animate-marquee">
+  <div class="w-full max-w-7xl bg-gradient-to-br from-blue-950 via-blue-900 to-yellow-900 border rounded-2xl py-1 overflow-hidden relative shadow-xl casino-carousel">
+    <!-- Iconos casino flotantes -->
+    <i class="fas fa-coins text-yellow-400 absolute left-4 top-4 opacity-30 text-lg casino-float"></i>
+    <i class="fas fa-dice text-green-400 absolute right-4 top-4 opacity-30 text-lg casino-float"></i>
+    <i class="fas fa-ticket-alt text-orange-400 absolute left-1/2 top-2 opacity-30 text-lg casino-float"></i>
+    <div class="whitespace-nowrap flex animate-marquee relative z-10">
+      <!-- 🔹 Items -->
       <!-- 🔹 Items -->
       <div
         v-for="(item, i) in topProducts"
@@ -25,12 +28,11 @@
           ¡Caliente!
         </span>
 
-        <img
-          :src="item.images[0]"
-          alt="Producto"
-          class="w-24 h-16 sm:w-32 sm:h-24 object-cover rounded-lg mb-1 border"
-          @error="($event) => $event.target.src = '/default.png'"
-        />
+          <img
+            :src="item.images && item.images[0] ? item.images[0] : '/default.png'"
+            alt="Producto"
+            class="w-24 h-16 sm:w-32 sm:h-24 object-cover rounded-lg mb-1 border"
+          />
 
         <h3 class="font-bold text-gray-800 text-xs sm:text-base text-center truncate w-full">
           {{ item.title }}
@@ -170,6 +172,47 @@ const timeLeft = (item: any) => {
 </script>
 
 <style scoped>
+.casino-carousel {
+  box-shadow: 0 0 32px 8px #ffd70033, 0 0 8px 2px #00336699;
+  border-radius: 1.5rem;
+}
+.casino-title {
+  text-shadow: 0 2px 8px #ffd70099;
+  animation: casinoTitlePulse 2s infinite alternate;
+}
+@keyframes casinoTitlePulse {
+  0% { text-shadow: 0 2px 8px #ffd70099; }
+  100% { text-shadow: 0 4px 16px #00ff0099; }
+}
+.casino-bar {
+  animation: casinoBarGlow 2s infinite alternate;
+}
+@keyframes casinoBarGlow {
+  0% { box-shadow: 0 0 8px 2px #ffd70099; }
+  100% { box-shadow: 0 0 16px 4px #00ff0099; }
+}
+.casino-btn {
+  animation: casinoBtnPulse 1.2s infinite alternate;
+}
+@keyframes casinoBtnPulse {
+  0% { box-shadow: 0 0 8px 2px #ffd70099; }
+  100% { box-shadow: 0 0 16px 4px #00ff0099; }
+}
+.casino-float {
+  position: absolute;
+  animation: floatCasino 8s linear infinite;
+}
+@keyframes floatCasino {
+  0% { transform: translateY(0) scale(1); opacity: 0.3; }
+  50% { transform: translateY(-20px) scale(1.1); opacity: 0.5; }
+  100% { transform: translateY(-40px) scale(1); opacity: 0.3; }
+}
+.casino-card {
+  box-shadow: 0 0 24px 4px #ffd70033, 0 0 8px 2px #00336699;
+}
+.casino-img {
+  filter: drop-shadow(0 0 12px #ffd70088);
+}
 @keyframes marquee {
   0% { transform: translateX(0%); }
   100% { transform: translateX(-50%); }

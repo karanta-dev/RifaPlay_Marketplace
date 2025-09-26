@@ -1,80 +1,49 @@
-
 <template>
-  <div
-    class="relative w-full overflow-hidden"
-    @touchstart="handleTouchStart"
-    @touchend="handleTouchEnd"
-  >
+  <div class="w-full max-w-7xl mx-auto relative overflow-hidden casino-banner" @touchstart="handleTouchStart" @touchend="handleTouchEnd">
+    <!-- Fondo casino animado -->
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-950 via-blue-900 to-yellow-900 opacity-80 pointer-events-none"></div>
+    <!-- Floating casino icons -->
+    <div class="absolute inset-0 pointer-events-none">
+      <i v-for="n in 4" :key="`coin-${n}`" class="fas fa-coins text-yellow-400 casino-float" :style="randomStyle(n)"></i>
+      <i v-for="n in 2" :key="`dice-${n}`" class="fas fa-dice text-green-400 casino-float" :style="randomStyle(n+10)"></i>
+      <i v-for="n in 2" :key="`ticket-${n}`" class="fas fa-ticket-alt text-orange-400 casino-float" :style="randomStyle(n+20)"></i>
+      <i v-for="n in 6" :key="`star-${n}`" class="fas fa-star text-yellow-300 opacity-30 casino-float" :style="randomStyle(n+30)"></i>
+    </div>
     <!-- Slides container -->
-    <div
-      class="flex transition-transform duration-700 ease-in-out"
-      :style="{ transform: `translateX(-${currentIndex * 100}%)` }"
-    >
-      <div
-        v-for="(banner, i) in banners"
-        :key="i"
-        class="min-w-full flex items-center justify-center relative bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 px-6 sm:px-20 py-6 sm:py-12 shadow-lg"
-      >
-        <!-- Floating icons background -->
-        <div class="absolute inset-0 pointer-events-none">
-          <i
-            v-for="n in 10"
-            :key="`star-${i}-${n}`"
-            class="fas fa-star text-yellow-400 opacity-40 animate-float"
-            :style="randomStyle(n)"
-          ></i>
-        </div>
-
+    <div class="flex transition-transform duration-700 ease-in-out relative z-10" :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
+      <div v-for="(banner, i) in banners" :key="i" class="min-w-full flex items-center justify-center relative px-6 sm:px-20 py-4 sm:py-12 shadow-lg rounded-xl">
         <!-- Content -->
-        <img
-          :src="banner.image"
-          alt="Banner image"
-          class="h-28 sm:h-40 w-auto sm:mr-8 mb-4 sm:mb-0 relative z-10"
-        />
-        <div
-          class="flex flex-col items-center sm:items-start flex-1 relative z-10 text-center sm:text-left"
-        >
-          <h1
-            class="text-2xl sm:text-3xl font-extrabold text-yellow-400 mb-2 sm:mb-4 tracking-tight drop-shadow-lg"
-          >
-            {{ banner.title }}
-          </h1>
-          <p
-            class="text-white mb-3 sm:mb-4 max-w-xl mx-auto sm:mx-0 text-xs sm:text-base"
-          >
-            {{ banner.text }}
-          </p>
-
-          <div
-            class="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4"
-          >
-            <button
-              class="bg-blue-600 hover:bg-yellow-400 hover:text-blue-900 text-white px-6 sm:px-8 py-2 rounded-xl font-bold text-sm sm:text-base shadow-lg transition w-full sm:w-auto"
-            >
-              {{ banner.button1 }}
-            </button>
-            <button
-              class="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 py-2 rounded-xl font-bold text-sm sm:text-base shadow-lg flex items-center gap-2 w-full sm:w-auto"
-            >
-              {{ banner.button2 }}
-            </button>
+        <div class="flex flex-col sm:flex-row items-center justify-center w-full text-center">
+          <img :src="banner.image" alt="Banner image" class="h-28 sm:h-40 w-auto sm:mr-8 mb-4 sm:mb-0 relative z-10 casino-img" />
+          <div class="flex flex-col items-center justify-center flex-1 relative z-10 text-center">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-yellow-400 mb-2 sm:mb-4 tracking-tight drop-shadow-lg casino-title">
+              <i class="fas fa-dice text-green-400 mr-2"></i>
+              {{ banner.title }}
+            </h1>
+            <p class="text-yellow-100 mb-3 sm:mb-4 max-w-xl mx-auto text-xs sm:text-base font-semibold casino-desc">
+              {{ banner.text }}
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
+              <button class="bg-gradient-to-r from-yellow-400 via-blue-700 to-green-600 text-white px-6 sm:px-8 py-2 rounded-xl font-extrabold text-sm sm:text-base shadow-xl casino-btn transition w-full sm:w-auto">
+                <i class="fas fa-ticket-alt mr-2"></i>
+                {{ banner.button1 }}
+              </button>
+              <button class="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 py-2 rounded-xl font-bold text-sm sm:text-base shadow-lg flex items-center gap-2 w-full sm:w-auto">
+                <i class="fas fa-coins mr-2"></i>
+                {{ banner.button2 }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-
     <!-- Navigation dots -->
     <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
-      <button
-        v-for="(b, i) in banners"
-        :key="i"
-        class="w-3 h-3 rounded-full"
-        :class="i === currentIndex ? 'bg-yellow-400' : 'bg-white/40'"
-        @click="goToSlide(i)"
-      ></button>
+      <button v-for="(b, i) in banners" :key="i" class="w-3 h-3 rounded-full" :class="i === currentIndex ? 'bg-yellow-400' : 'bg-white/40'" @click="goToSlide(i)"></button>
     </div>
   </div>
 </template>
+
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue"
@@ -167,28 +136,38 @@ const randomStyle = (n) => {
 </script>
 
 <style scoped>
-@keyframes float {
-  0% {
-    transform: translateY(0) translateX(0);
-    opacity: 0;
-  }
-  20% {
-    opacity: 0.6;
-  }
-  50% {
-    transform: translateY(-40px) translateX(30px);
-    opacity: 0.4;
-  }
-  80% {
-    opacity: 0.6;
-  }
-  100% {
-    transform: translateY(-100px) translateX(-40px);
-    opacity: 0;
-  }
+.casino-banner {
+  box-shadow: 0 0 32px 8px #ffd70033, 0 0 8px 2px #00336699;
+  border-radius: 1.5rem;
 }
-.animate-float {
+.casino-title {
+  text-shadow: 0 2px 8px #ffd70099;
+  animation: casinoTitlePulse 2s infinite alternate;
+}
+@keyframes casinoTitlePulse {
+  0% { text-shadow: 0 2px 8px #ffd70099; }
+  100% { text-shadow: 0 4px 16px #00ff0099; }
+}
+.casino-desc {
+  text-shadow: 0 1px 4px #00336699;
+}
+.casino-btn {
+  animation: casinoBtnPulse 1.2s infinite alternate;
+}
+@keyframes casinoBtnPulse {
+  0% { box-shadow: 0 0 8px 2px #ffd70099; }
+  100% { box-shadow: 0 0 16px 4px #00ff0099; }
+}
+.casino-float {
   position: absolute;
-  animation: float linear infinite;
+  animation: floatCasino 8s linear infinite;
+}
+@keyframes floatCasino {
+  0% { transform: translateY(0) scale(1); opacity: 0.3; }
+  50% { transform: translateY(-20px) scale(1.1); opacity: 0.5; }
+  100% { transform: translateY(-40px) scale(1); opacity: 0.3; }
+}
+.casino-img {
+  filter: drop-shadow(0 0 12px #ffd70088);
 }
 </style>
