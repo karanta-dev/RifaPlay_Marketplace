@@ -31,7 +31,7 @@
 
             <!-- Search -->
       <button
-        @click="goSearch"
+        @click="goTickets"
         class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none casino-btn"
       >
         <i class="fas fa-ticket text-green-300 mb-1 text-xl"></i>
@@ -50,8 +50,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
+import { useAuthStore } from '@/stores/useAuthStore'
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 const isVisible = ref(true);
 let lastScrollY = window.scrollY;
@@ -72,6 +74,13 @@ const goHome = () => {
 
 const goSearch = () => {
   router.push({ name: "search" });
+};
+
+const goTickets = () => {
+  // Route requires a userId param. If the user is authenticated, use their id.
+  // Otherwise fallback to 'guest' so navigation succeeds and the page shows no tickets.
+  const userId = authStore.user?.id ?? 'guest'
+  router.push({ name: 'my-tickets', params: { userId } });
 };
 
 onMounted(() => {

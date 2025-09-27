@@ -84,17 +84,17 @@
       </button>
 
       <!-- 🔹 Si ya está logueado -->
-<div v-else class="relative" ref="dropdownRef">
-  <button 
-    @click="toggleDropdown" 
-    class="focus:outline-none bg-transparent p-0 border-none shadow-none group"
-  >
-    <img
-      :src="authStore.user?.avatar"
-      alt="avatar"
-      class="w-10 h-10 rounded-full border-2 border-yellow-400 shadow-md transition duration-300 group-hover:shadow-[0_0_16px_4px_rgba(255,215,0,0.8)]"
-    />
-  </button>
+      <div v-else class="relative" ref="dropdownRef">
+        <button
+          @click="toggleDropdown"
+          class="focus:outline-none bg-transparent p-0 border-none shadow-none group"
+        >
+          <img
+            :src="authStore.user?.avatar"
+            alt="avatar"
+            class="w-10 h-10 rounded-full border-2 border-yellow-400 shadow-md transition duration-300 group-hover:shadow-[0_0_16px_4px_rgba(255,215,0,0.8)]"
+          />
+        </button>
 
         <!-- Menú desplegable -->
         <transition name="fade">
@@ -102,6 +102,12 @@
             v-if="showDropdown"
             class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50"
           >
+            <button
+              @click="goMyTickets"
+              class="block w-full text-left px-4 py-2 text-gray-800 hover:bg-blue-100"
+            >
+              Mis tickets
+            </button>
             <button
               @click="goProfile"
               class="block w-full text-left px-4 py-2 text-gray-800 hover:bg-blue-100"
@@ -146,7 +152,14 @@ const goHome = () => {
   router.push({ name: "home" });
 };
 const goProfile = () => {
-  router.push({ name: "profile" });
+  // navegar al perfil del usuario autenticado
+  router.push({ name: "user-profile", params: { id: authStore.user?.id } });
+  showDropdown.value = false;
+};
+
+const goMyTickets = () => {
+  // navegar a la página de mis tickets usando el id del usuario
+  router.push({ name: 'my-tickets', params: { userId: authStore.user?.id } });
   showDropdown.value = false;
 };
 
