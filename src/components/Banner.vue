@@ -32,6 +32,7 @@
                 <i class="fas fa-coins mr-2"></i>
                 {{ banner.button2 }}
               </button>
+              <br></br>
             </div>
           </div>
         </div>

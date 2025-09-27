@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-primary-to-b from-green-50 via-blue-50 to-white min-h-screen py-8 px-2 flex flex-col items-center">
+  <div class="bg-gradient-to-br from-blue-950 via-blue-900 to-yellow-900 min-h-screen py-8 px-2 flex flex-col items-center animate-casino-fade">
     <!-- 🔍 Barra de búsqueda -->
     <div class="w-full max-w-lg flex items-center mb-4">
       <input
@@ -69,3 +69,13 @@ const filteredProducts = computed(() => {
   });
 });
 </script>
+
+<style scoped>
+.animate-casino-fade {
+  animation: casinoFadeIn 1.2s ease;
+}
+@keyframes casinoFadeIn {
+  0% { opacity: 0; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1); }
+}
+</style>

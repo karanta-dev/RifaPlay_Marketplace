@@ -2,41 +2,45 @@
   <!-- Mobile Navigation Bar -->
   <nav
     :class="[
-      'fixed bottom-0 left-0 w-full bg-blue-800 text-white shadow-lg sm:hidden transition-transform duration-300 z-50',
+      'fixed bottom-0 left-0 w-full bg-gradient-to-r from-blue-950 via-blue-900 to-yellow-900 text-white shadow-xl sm:hidden transition-transform duration-300 z-50 casino-mobile-nav',
       isVisible ? 'translate-y-0' : 'translate-y-full'
     ]"
   >
+    <!-- Iconos casino flotantes -->
+    <i class="fas fa-coins text-yellow-400 absolute left-4 top-2 opacity-30 text-lg casino-float"></i>
+    <i class="fas fa-dice text-green-400 absolute right-4 top-2 opacity-30 text-lg casino-float"></i>
+    <i class="fas fa-ticket-alt text-orange-400 absolute left-1/2 top-2 opacity-30 text-lg casino-float"></i>
     <div class="flex justify-around items-center py-0">
       <!-- Home -->
       <button
         @click="goHome"
-        class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none"
+        class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none casino-btn"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
-            d="M3 12l9-9 9 9M4 10v10h6v-6h4v6h6V10" />
-        </svg>
+        <i class="fas fa-home text-yellow-300 mb-1 text-xl"></i>
         Inicio
       </button>
 
       <!-- Search -->
       <button
         @click="goSearch"
-        class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none"
+        class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none casino-btn"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
+        <i class="fas fa-search text-green-300 mb-1 text-xl"></i>
         Buscar
       </button>
 
+            <!-- Search -->
+      <button
+        @click="goSearch"
+        class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none casino-btn"
+      >
+        <i class="fas fa-ticket text-green-300 mb-1 text-xl"></i>
+        Mis Tickets
+      </button>
+
       <!-- Support -->
-      <button class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M18.364 5.636A9 9 0 105.636 18.364 9 9 0 0018.364 5.636zM9 10h.01M15 10h.01M9.5 15a3.5 3.5 0 005 0" />
-        </svg>
+      <button class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none casino-btn">
+        <i class="fas fa-life-ring text-orange-300 mb-1 text-xl"></i>
         Soporte
       </button>
     </div>
@@ -78,3 +82,22 @@ onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll);
 });
 </script>
+
+<style scoped>
+.casino-mobile-nav {
+  box-shadow: 0 0 24px 4px #ffd70033, 0 0 8px 2px #00336699;
+}
+.casino-btn {
+  animation: casinoBtnPulse 1.2s infinite alternate;
+}
+
+.casino-float {
+  position: absolute;
+  animation: floatCasino 8s linear infinite;
+}
+@keyframes floatCasino {
+  0% { transform: translateY(0) scale(1); opacity: 0.3; }
+  50% { transform: translateY(-10px) scale(1.1); opacity: 0.5; }
+  100% { transform: translateY(-20px) scale(1); opacity: 0.3; }
+}
+</style>
