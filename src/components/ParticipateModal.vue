@@ -9,7 +9,7 @@
   <transition name="scale-fade"> 
     <div v-if="open" class="fixed inset-0 flex items-center justify-center z-50"> 
       <div 
-        :class="{'max-w-lg': selectionMode === 'auto', 'max-w-4xl': selectionMode === 'manual'}" 
+        :class="{'max-w-lg': selectionMode === 'auto', 'max-w-3xl': selectionMode === 'manual'}" 
         class="bg-white p-6 rounded-xl justify-center text-black shadow-lg w-full relative transition-all duration-300 mx-4 md:mx-0"
       > 
         <img src="/rifaLogo.png" alt="Slot" class="h-32 sm:h-48 w-auto mb-4 block mx-auto" /> 
