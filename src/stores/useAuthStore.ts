@@ -50,7 +50,6 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = null;
   };
 
-  // 👀 Persistencia automática en localStorage
   watch(user, (newUser) => {
     if (newUser) {
       localStorage.setItem("user", JSON.stringify(newUser));

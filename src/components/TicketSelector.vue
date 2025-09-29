@@ -45,10 +45,12 @@
     </div>
 
     <!-- Grilla de Tickets: max-h-[180px] para un scroll compacto -->
-    <div 
-      v-if="availableTickets.length > 0"
-      class="grid grid-cols-8 sm:grid-cols-12 md:grid-cols-15 lg:grid-cols-20 gap-1 p-2 border-2 border-blue-400 rounded-xl bg-white max-h-[180px] overflow-y-auto shadow-inner"
-    >
+<div 
+  v-if="availableTickets.length > 0"
+  class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 
+         gap-1 p-1 border-2 border-blue-400 rounded-xl bg-white 
+         shadow-inner"
+>
       <div 
         v-for="ticket in paginatedTickets" 
         :key="ticket" 
@@ -102,7 +104,7 @@ const availableTickets = computed<number[]>(() => {
 })
 
 // 2. Lógica de Paginación
-const TICKETS_PER_PAGE = 100 // Aumento la densidad de la página (más tickets por página)
+const TICKETS_PER_PAGE = 50 // Aumento la densidad de la página (más tickets por página)
 const currentPage = ref(1)
 
 // Cálculo del número total de páginas
