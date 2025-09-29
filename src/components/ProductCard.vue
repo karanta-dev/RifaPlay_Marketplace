@@ -1,40 +1,61 @@
 <template>
   <div
-    class="bg-white rounded-2xl shadow-lg p-3 sm:p-6 flex flex-col items-center border border-gray-200 transition-transform relative cursor-pointer"
-    :class="{
-      'bg-gray-300 pointer-events-none': isSoldOut,
-      'hover:shadow-2xl hover:scale-105': !isSoldOut
-    }"
+    class="relative bg-gradient-to-r from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-2xl p-5 border border-gray-700/50 shadow-lg hover:shadow-yellow-500/10 transition transform hover:scale-105 overflow-hidden group cursor-pointer"
+    :class="{ 'opacity-60 pointer-events-none': isSoldOut }"
     @click="$emit('view-details')"
   >
+    <!-- Glow decorativo -->
+    <div class="absolute inset-0 opacity-10 group-hover:opacity-20 transition bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.3),transparent)]"></div>
+
+    <!-- HOT badge -->
     <span
       v-if="isHot"
-      class="absolute top-0 right-0 mt-2 mr-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full uppercase z-10 animate-bounce"
+      class="absolute top-0 right-0 mt-2 mr-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full uppercase z-10 animate-bounce shadow-[0_0_10px_rgba(220,38,38,0.7)]"
     >
-      ¡Caliente!
+      🔥 ¡Caliente!
     </span>
 
-    <img :src="image" alt="Premio" class="w-full h-32 sm:h-56 object-cover mb-2 rounded-xl border" />
-    <h3 class="font-bold text-sm sm:text-lg text-gray-800 mb-1 text-center">{{ title }}</h3>
-    <p class="text-gray-600 text-xs sm:text-sm mb-1 text-center">{{ description }}</p>
+    <!-- Imagen -->
+    <img
+      :src="image"
+      alt="Premio"
+      class="w-full h-40 sm:h-56 object-cover rounded-xl border border-gray-600 shadow-md mb-4 relative z-5"
+    />
 
-    <div class="text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+    <!-- Título y descripción -->
+    <h3 class="font-bold text-lg text-white drop-shadow text-center mb-1 line-clamp-2">
+      {{ title }}
+    </h3>
+    <p class="text-gray-400 text-sm text-center mb-3 line-clamp-2">
+      {{ description }}
+    </p>
+
+    <!-- Tiempo restante -->
+    <div class="text-center text-sm font-semibold text-gray-300 mb-3">
       <p v-if="timeLeft.total > 0">
-        ⏱️ Termina en: {{ timeLeft.days }}d {{ timeLeft.hours }}h {{ timeLeft.minutes }}m {{ timeLeft.seconds }}s
+        ⏱️ Termina en:
+        <span class="font-mono text-yellow-300 drop-shadow">
+          {{ timeLeft.days }}d {{ timeLeft.hours }}h {{ timeLeft.minutes }}m {{ timeLeft.seconds }}s
+        </span>
       </p>
-      <p v-else class="text-red-500 font-bold">🎉 ¡Sorteado!</p>
+      <p v-else class="text-red-400 font-bold drop-shadow">🎉 ¡Sorteado!</p>
     </div>
 
-    <div class="w-full bg-gray-200 rounded-full h-2 sm:h-3 mb-1">
-      <div class="bg-blue-800 h-2 sm:h-3 rounded-full" :style="{ width: progress + '%' }"></div>
+    <!-- Barra de progreso -->
+    <div class="w-full bg-gray-700/50 rounded-full h-2 sm:h-3 mb-2 overflow-hidden">
+      <div
+        class="bg-yellow-400 h-2 sm:h-3 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.6)] transition-all duration-500"
+        :style="{ width: progress + '%' }"
+      ></div>
     </div>
-    <p class="text-xs text-gray-500 mb-2 text-center">{{ progress }}% vendido</p>
+    <p class="text-xs text-gray-400 text-center mb-4">{{ progress }}% vendido</p>
 
+    <!-- Botón participar -->
     <button
-      class="px-4 sm:px-6 py-1.5 sm:py-2 rounded-full w-full font-bold text-xs sm:text-base shadow border-4 mt-2"
+      class="px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
       :class="{
-        'bg-green-600 text-white': isSoldOut,
-        'bg-blue-800 text-white hover:bg-blue-500': !isSoldOut
+        'bg-green-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.6)]': isSoldOut,
+        'bg-yellow-500 text-black hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)]': !isSoldOut
       }"
       @click.stop="$emit('participar')"
       :disabled="isSoldOut"
@@ -101,5 +122,15 @@ const timeLeft = computed(() => {
 
 .animate-bounce {
   animation: bounce 1s infinite;
+}
+
+.bg-green-600 {
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+.bg-yellow-500 {
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.6);
+}
+.bg-red-600 {
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
 }
 </style>
