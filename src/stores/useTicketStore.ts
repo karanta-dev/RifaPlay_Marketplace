@@ -151,7 +151,7 @@ export const useTicketStore = defineStore('ticket', {
                 ],
                 ticketPrice: 12,
                 ticketsVendidos: 1000,
-                ticketsMax: 1000, // Agotado para simulación
+                ticketsMax: 1000,
                 drawDate: '2025-09-26T11:00:00'
             },
             {
