@@ -1,9 +1,10 @@
 <template>
-  <div
-    class="relative bg-gradient-to-r from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-2xl p-5 border border-gray-700/50 shadow-lg hover:shadow-yellow-500/10 transition transform hover:scale-105 overflow-hidden group cursor-pointer"
-    :class="{ 'opacity-60 pointer-events-none': isSoldOut }"
-    @click="$emit('view-details')"
-  >
+<div
+  class="relative bg-gradient-to-r from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-2xl p-5 border border-gray-700/50 shadow-lg hover:shadow-yellow-500/10 transition transform hover:scale-105 overflow-hidden group cursor-pointer
+         flex flex-col justify-between h-full"
+  :class="{ 'opacity-60 pointer-events-none': isSoldOut }"
+  @click="$emit('view-details')"
+>
     <!-- Glow decorativo -->
     <div class="absolute inset-0 opacity-10 group-hover:opacity-20 transition bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.3),transparent)]"></div>
 
@@ -16,40 +17,38 @@
     </span>
 
     <!-- Imagen -->
-    <img
-      :src="image"
-      alt="Premio"
-      class="w-full h-40 sm:h-56 object-cover rounded-xl border border-gray-600 shadow-md mb-4 relative z-5"
-    />
+    <div class="flex-1 flex flex-col justify-start">
+  <img
+    :src="image"
+    alt="Premio"
+    class="w-full h-40 sm:h-56 object-cover rounded-xl border border-gray-600 shadow-md mb-4 relative z-5"
+  />
 
-    <!-- Título y descripción -->
-    <h3 class="font-bold text-lg text-white drop-shadow text-center mb-1 line-clamp-2">
-      {{ title }}
-    </h3>
-    <p class="text-gray-400 text-sm text-center mb-3 line-clamp-2">
-      {{ description }}
+  <h3 class="font-bold text-lg text-white drop-shadow text-center mb-1 line-clamp-2">
+    {{ title }}
+  </h3>
+  <p class="text-gray-400 text-sm text-center mb-3 line-clamp-2">
+    {{ description }}
+  </p>
+
+  <div class="text-center text-sm font-semibold text-gray-300 mb-3">
+    <p v-if="timeLeft.total > 0">
+      ⏱️ Termina en:
+      <span class="font-mono text-yellow-300 drop-shadow">
+        {{ timeLeft.days }}d {{ timeLeft.hours }}h {{ timeLeft.minutes }}m {{ timeLeft.seconds }}s
+      </span>
     </p>
+    <p v-else class="text-red-400 font-bold drop-shadow">🎉 ¡Sorteado!</p>
+  </div>
 
-    <!-- Tiempo restante -->
-    <div class="text-center text-sm font-semibold text-gray-300 mb-3">
-      <p v-if="timeLeft.total > 0">
-        ⏱️ Termina en:
-        <span class="font-mono text-yellow-300 drop-shadow">
-          {{ timeLeft.days }}d {{ timeLeft.hours }}h {{ timeLeft.minutes }}m {{ timeLeft.seconds }}s
-        </span>
-      </p>
-      <p v-else class="text-red-400 font-bold drop-shadow">🎉 ¡Sorteado!</p>
-    </div>
-
-    <!-- Barra de progreso -->
-    <div class="w-full bg-gray-700/50 rounded-full h-2 sm:h-3 mb-2 overflow-hidden">
-      <div
-        class="bg-yellow-400 h-2 sm:h-3 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.6)] transition-all duration-500"
-        :style="{ width: progress + '%' }"
-      ></div>
-    </div>
-    <p class="text-xs text-gray-400 text-center mb-4">{{ progress }}% vendido</p>
-
+  <div class="w-full bg-gray-700/50 rounded-full h-2 sm:h-3 mb-2 overflow-hidden">
+    <div
+      class="bg-yellow-400 h-2 sm:h-3 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.6)] transition-all duration-500"
+      :style="{ width: progress + '%' }"
+    ></div>
+  </div>
+  <p class="text-xs text-gray-400 text-center mb-4">{{ progress }}% vendido</p>
+</div>
     <!-- Botón participar -->
     <button
       class="px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
