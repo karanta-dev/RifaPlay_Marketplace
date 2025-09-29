@@ -55,7 +55,7 @@
                 </div>
 
               <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm gap-2">
-                <div class="text-gray-400">📅 Sorteo: {{ formatDate(ticketInfo.product.drawDate) }}</div>
+                <div class="text-gray-400">  📅 Sorteo: {{ formatDate(ticketInfo.product.drawDate ?? '') }}</div>
                 <div>
                   <span 
                     :class="[ 

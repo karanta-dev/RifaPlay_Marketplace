@@ -14,9 +14,9 @@ import TopProductsCarousel from '../components/TopProductsCarousel.vue'
 
 
 // Importar el store aquí para inicializarlo (queda disponible en todos los hijos también si usan el mismo)
-import { useTicketStore } from '@/stores/useTicketStore'
+// import { useTicketStore } from '@/stores/useTicketStore'
 
-const ticketStore = useTicketStore()
+// const ticketStore = useTicketStore()
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="open" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div v-if="props.open" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
     <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md text-center">
       <h2 class="text-2xl font-bold text-green-600 mb-4">✅ Pago exitoso</h2>
 
