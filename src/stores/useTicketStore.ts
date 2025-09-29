@@ -171,13 +171,13 @@ export const useTicketStore = defineStore('ticket', {
     }),
     getters: {
         // Calcula el progreso de venta de un producto
-        productProgress: (state) => {
+        productProgress: () => {
             return (product: { ticketsVendidos: number; ticketsMax: number }) =>
                 Math.min(100, Math.round((product.ticketsVendidos / product.ticketsMax) * 100));
         },
 
         // Verifica si un producto está cerca de agotarse (70% o más)
-        productAlmostSoldOut: (state) => {
+        productAlmostSoldOut: () => {
             return (product: { ticketsVendidos: number; ticketsMax: number }) =>
                 (product.ticketsVendidos / product.ticketsMax) >= 0.7;
         },

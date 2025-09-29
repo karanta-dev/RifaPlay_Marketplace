@@ -13,77 +13,80 @@
     <div class="whitespace-nowrap flex animate-marquee relative z-10">
       <!-- 🔹 Items -->
       <div
-        v-for="(item, i) in topProducts"
-        :key="i"
-        class="inline-flex flex-col items-center bg-gradient-to-b from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-xl shadow-lg border border-gray-700/50 mx-2 px-3 py-3 min-w-[160px] sm:min-w-[260px] relative transition-all cursor-pointer casino-card group"
-        :class="{
-          'bg-gray-700/50 pointer-events-none grayscale': isSoldOut(item),
-          'animate-pulse-hot': isHot(item)
-        }"
-        @click="openDetails(item)"
-      >
-        <!-- Badge HOT -->
-        <span
-          v-if="isHot(item)"
-          class="absolute top-0 right-0 mt-1 mr-1 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full uppercase z-10 animate-bounce shadow-lg"
-        >
-          🔥 ¡Caliente!
-        </span>
+  v-for="(item, i) in topProducts"
+  :key="i"
+  class="inline-flex flex-col justify-between bg-gradient-to-b from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-xl shadow-lg border border-gray-700/50 mx-2 px-3 py-3 min-w-[160px] sm:min-w-[260px] relative transition-all cursor-pointer casino-card group"
+  :class="{
+    'bg-gray-700/50 pointer-events-none grayscale': isSoldOut(item),
+    'animate-pulse-hot': isHot(item)
+  }"
+  @click="openDetails(item)"
+>
+  <div class="flex flex-col items-center">
+    <!-- Badge HOT -->
+    <span
+      v-if="isHot(item)"
+      class="absolute top-0 right-0 mt-1 mr-1 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full uppercase z-10 animate-bounce shadow-lg"
+    >
+      🔥 ¡Caliente!
+    </span>
 
-        <!-- Imagen -->
-        <img
-          :src="item.images && item.images[0] ? item.images[0] : '/default.png'"
-          alt="Producto"
-          class="w-24 h-16 sm:w-32 sm:h-24 object-cover rounded-lg mb-2 border casino-img"
-        />
+    <!-- Imagen -->
+    <img
+      :src="item.images && item.images[0] ? item.images[0] : '/default.png'"
+      alt="Producto"
+      class="w-24 h-16 sm:w-32 sm:h-24 object-cover rounded-lg mb-2 border casino-img"
+    />
 
-        <!-- Título -->
-        <h3 class="font-bold text-white text-xs sm:text-base text-center truncate w-full drop-shadow">
-          {{ item.title }}
-        </h3>
+    <!-- Título -->
+    <h3 class="font-bold text-white text-xs sm:text-base text-center truncate w-full drop-shadow">
+      {{ item.title }}
+    </h3>
 
-        <!-- Timer -->
-        <div class="text-xs sm:text-sm font-semibold text-gray-300 mb-1">
-          <p v-if="timeLeft(item).total > 0">
-            ⏱️ Termina en: 
-            <span class="text-yellow-300">{{ timeLeft(item).days }}d {{ timeLeft(item).hours }}h {{ timeLeft(item).minutes }}m</span>
-          </p>
-          <p v-else class="text-red-400 font-bold">🎉 ¡Sorteado!</p>
-        </div>
+    <!-- Timer -->
+    <div class="text-xs sm:text-sm font-semibold text-gray-300 mb-1">
+      <p v-if="timeLeft(item).total > 0">
+        ⏱️ Termina en: 
+        <span class="text-yellow-300">{{ timeLeft(item).days }}d {{ timeLeft(item).hours }}h {{ timeLeft(item).minutes }}m</span>
+      </p>
+      <p v-else class="text-red-400 font-bold">🎉 ¡Sorteado!</p>
+    </div>
 
-        <!-- Progreso -->
-        <p class="text-yellow-300 font-extrabold text-sm sm:text-lg mt-0.5 drop-shadow">
-          {{ item.ticketsVendidos.toLocaleString() }} /
-          {{ item.ticketsMax.toLocaleString() }} 🎫
-        </p>
-        <div class="w-full bg-gray-700 rounded-full h-1.5 sm:h-3 mt-1 sm:mt-2 casino-bar">
-          <div
-            class="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-600 h-1.5 sm:h-3 rounded-full transition-all duration-500"
-            :style="{ width: productProgress(item) + '%' }"
-          ></div>
-        </div>
+    <!-- Progreso -->
+    <p class="text-yellow-300 font-extrabold text-sm sm:text-lg mt-0.5 drop-shadow">
+      {{ item.ticketsVendidos.toLocaleString() }} /
+      {{ item.ticketsMax.toLocaleString() }} 🎫
+    </p>
+    <div class="w-full bg-gray-700 rounded-full h-1.5 sm:h-3 mt-1 sm:mt-2 casino-bar">
+      <div
+        class="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-600 h-1.5 sm:h-3 rounded-full transition-all duration-500"
+        :style="{ width: productProgress(item) + '%' }"
+      ></div>
+    </div>
 
-        <!-- Casi agotado -->
-        <p
-          v-if="productAlmostSoldOut(item)"
-          class="mt-1 text-center text-red-400 bg-red-900/40 border border-red-500/30 rounded-lg px-1 py-0.5 text-xs font-semibold"
-        >
-          ⚠️ ¡Últimas oportunidades!
-        </p>
+    <!-- Casi agotado -->
+    <p
+      v-if="productAlmostSoldOut(item)"
+      class="mt-1 text-center text-red-400 bg-red-900/40 border border-red-500/30 rounded-lg px-1 py-0.5 text-xs font-semibold"
+    >
+      ⚠️ ¡Últimas oportunidades!
+    </p>
+  </div>
 
-        <!-- Botón -->
-        <button
-          class="mt-2 px-2 sm:px-6 py-1 sm:py-2 rounded-full w-full font-bold text-xs sm:text-base shadow-lg casino-btn"
-          :class="{
-            'bg-gray-500 text-white cursor-not-allowed': isSoldOut(item),
-            'bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 text-black hover:scale-105 hover:shadow-yellow-500/50': !isSoldOut(item)
-          }"
-          :disabled="isSoldOut(item)"
-          @click.stop="openParticipateModal(item)"
-        >
-          {{ isSoldOut(item) ? '¡VENDIDO!' : 'PARTICIPAR' }}
-        </button>
-      </div>
+  <!-- Botón siempre abajo -->
+  <button
+    class="mt-3 px-2 sm:px-6 py-1 sm:py-2 rounded-full w-full font-bold text-xs sm:text-base shadow-lg casino-btn"
+    :class="{
+      'bg-gray-500 text-white cursor-not-allowed': isSoldOut(item),
+      'bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 text-black hover:scale-105 hover:shadow-yellow-500/50': !isSoldOut(item)
+    }"
+    :disabled="isSoldOut(item)"
+    @click.stop="openParticipateModal(item)"
+  >
+    {{ isSoldOut(item) ? '¡VENDIDO!' : 'PARTICIPAR' }}
+  </button>
+</div>
+
     </div>
   </div>
 
