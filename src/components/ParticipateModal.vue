@@ -7,15 +7,16 @@
   </transition> 
 
   <transition name="scale-fade"> 
-    <div v-if="open" class="fixed inset-0 flex items-center justify-center z-50"> 
-<div 
-  :class="{
-    'max-w-lg': selectionMode === 'auto',
-    'max-w-2xl': selectionMode === 'manual'  // achiqué de 3xl → 2xl (~896px)
-  }"
-  class="bg-white p-6 rounded-xl justify-center text-black shadow-lg w-full relative transition-all duration-300 mx-4 md:mx-0
-         max-h-[90vh] overflow-y-auto"
->
+   <div v-if="open" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50" @click.self="close">
+
+      <div 
+        :class="{
+          'max-w-lg': selectionMode === 'auto',
+          'max-w-2xl': selectionMode === 'manual'
+        }"
+        class="bg-white p-6 rounded-xl justify-center text-black shadow-lg w-full relative transition-all duration-300 mx-4 md:mx-0
+               max-h-[90vh] overflow-y-auto"
+      >
         <img src="/rifaLogo.png" alt="Slot" class="h-24 sm:h-25 w-auto mb-4 block mx-auto" /> 
 
         <h2 class="text-xl font-bold mb-4 text-center">Formulario de Participación</h2> 

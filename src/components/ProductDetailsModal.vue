@@ -1,40 +1,8 @@
-<script setup lang="ts">
-import { computed } from 'vue'
-import { useTicketStore } from '@/stores/useTicketStore'
-import { useUserStore } from '@/stores/useUserStore'
-import { useRouter } from 'vue-router'
-
-const props = defineProps<{ open: boolean; product: any | null }>()
-const emit = defineEmits(['close', 'buy'])
-
-const ticketStore = useTicketStore()
-const userStore = useUserStore()
-const router = useRouter()
-
-// 🧑‍💻 Buscar el usuario (rifero) por nombre
-const riferoUser = computed(() =>
-  props.product ? userStore.getUserByName(props.product.rifero) : null
-)
-
-const progress = computed(() =>
-  props.product ? ticketStore.productProgress(props.product) : 0
-)
-
-function handleBuy() {
-  emit('buy', props.product)
-}
-
-function goToRiferoProfile() {
-  if (riferoUser.value) {
-    router.push({ name: 'user-profile', params: { id: riferoUser.value.id } })
-  }
-}
-</script>
-
 <template>
   <div
     v-if="open && product"
     class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4"
+    @click.self="close"
   >
     <div
       class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden relative"
@@ -117,3 +85,40 @@ function goToRiferoProfile() {
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useTicketStore } from '@/stores/useTicketStore'
+import { useUserStore } from '@/stores/useUserStore'
+import { useRouter } from 'vue-router'
+
+const props = defineProps<{ open: boolean; product: any | null }>()
+const emit = defineEmits(['close', 'buy'])
+
+const ticketStore = useTicketStore()
+const userStore = useUserStore()
+const router = useRouter()
+
+// 🧑‍💻 Buscar el usuario (rifero) por nombre
+const riferoUser = computed(() =>
+  props.product ? userStore.getUserByName(props.product.rifero) : null
+)
+
+const progress = computed(() =>
+  props.product ? ticketStore.productProgress(props.product) : 0
+)
+const close = () => {
+  // keep lastAssignedTickets for possible later inspection, but reset temporary form/ticketNumber
+  emit('close')
+}
+function handleBuy() {
+  emit('buy', props.product)
+}
+
+function goToRiferoProfile() {
+  if (riferoUser.value) {
+    router.push({ name: 'user-profile', params: { id: riferoUser.value.id } })
+  }
+}
+</script>
+
