@@ -16,7 +16,7 @@
   class="bg-white p-6 rounded-xl justify-center text-black shadow-lg w-full relative transition-all duration-300 mx-4 md:mx-0
          max-h-[90vh] overflow-y-auto"
 >
-        <img src="/rifaLogo.png" alt="Slot" class="h-24 sm:h-32 w-auto mb-4 block mx-auto" /> 
+        <img src="/rifaLogo.png" alt="Slot" class="h-24 sm:h-25 w-auto mb-4 block mx-auto" /> 
 
         <h2 class="text-xl font-bold mb-4 text-center">Formulario de Participación</h2> 
 
@@ -146,8 +146,8 @@
             </div>
 
             <div class="flex justify-end gap-3 mt-4"> 
-              <button type="button" @click="close" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">Cancelar</button> 
-              <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Confirmar</button> 
+              <button type="button" @click="close" class="px-4 py-0 bg-gray-200 rounded-lg hover:bg-gray-300 transition">Cancelar</button> 
+              <button type="submit" class="px-4 py-0 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Confirmar</button> 
             </div> 
           </template>
         </form> 
