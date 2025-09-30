@@ -134,8 +134,8 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import { useTicketStore } from "@/stores/useTicketStore";
-import { useAuthStore } from "@/stores/useAuthStore"; // 👈 nuevo
-import Authentication from "@/components/Authentication.vue"; // 👈 modal
+import { useAuthStore } from "@/stores/useAuthStore"; 
+import Authentication from "@/components/Authentication.vue"; 
 
 const router = useRouter();
 const ticketStore = useTicketStore();
@@ -257,4 +257,3 @@ onBeforeUnmount(() => {
   }
 }
 </style>
-<!-- ola -->
