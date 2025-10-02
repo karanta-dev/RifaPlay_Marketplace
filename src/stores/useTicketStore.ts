@@ -44,6 +44,23 @@ export interface TicketInfo {
   productTitle: string
 }
 
+export interface TicketStatus {
+  number: number
+  isSold: boolean
+}
+
+export interface TicketForm {
+  nombre: string
+  tipoId: string
+  numeroId: string
+  telefono: string
+  correo: string
+  tickets: number
+  metodoPago: string
+  referencia: string
+  comprobante: File | null
+}
+
 // --- DEFINICIÓN DEL STORE ---
 
 export const useTicketStore = defineStore('ticket', {
@@ -52,7 +69,17 @@ export const useTicketStore = defineStore('ticket', {
         ticketsVendidos: 1134283, // Total vendido en todas las rifas (simulación)
         
         // Estado temporal para el proceso de compra
-        formData: null as any | null,
+        formData: {
+        nombre: '',
+        tipoId: '',
+        numeroId: '',
+        telefono: '',
+        correo: '',
+        tickets: 1,
+        metodoPago: '',
+        referencia: '',
+        comprobante: null,
+        } as TicketForm,
         ticketNumber: null as number | null,
         lastAssignedTickets: [] as number[],
 
@@ -221,27 +248,27 @@ export const useTicketStore = defineStore('ticket', {
 
         // Obtiene la lista de TODOS los tickets para un producto con su estado (vendido o no)
         allTicketsForProduct: (state) => {
-            return (productId: string): TicketInfo[] => {
+            return (productId: string): TicketStatus[] => {
                 const p = state.topProducts.find((t: any) => t.title === productId);
                 if (!p) return [];
                 const ticketsMax = Number(p?.ticketsMax ?? 0);
-                
-                // Set de tickets comprados
+
                 const soldSet = new Set<number>(state.tickets
-                    .filter(t => t.productId === productId)
-                    .map(t => Number(t.ticketNumber))
+                .filter(t => t.productId === productId)
+                .map(t => Number(t.ticketNumber))
                 );
-                
-                const all: TicketInfo[] = [];
+
+                const all: TicketStatus[] = [];
                 for (let i = 1; i <= ticketsMax; i++) {
-                    all.push({
-                        number: i,
-                        isSold: soldSet.has(i) // true si ya fue vendido
-                    });
+                all.push({
+                    number: i,
+                    isSold: soldSet.has(i)
+                });
                 }
                 return all;
             }
-        }
+            }
+
     },
     actions: {
             // 🔴 Nuevo: conectar al WebSocket
@@ -289,6 +316,27 @@ export const useTicketStore = defineStore('ticket', {
       }
     };
   },
+  setComprobante(file: File | null) {
+  if (file) {
+    this.formData.comprobante = file
+    console.log("📄 Comprobante cargado:", file.name)
+  } else {
+    this.formData.comprobante = null
+  }
+},
+  clearForm() {
+      this.formData = {
+        nombre: '',
+        tipoId: '',
+        numeroId: '',
+        telefono: '',
+        correo: '',
+        tickets: 1,
+        metodoPago: '',
+        referencia: '',
+        comprobante: null,
+      }
+    },
       // 🔵 Métodos para enviar mensajes al WS
     reserveTicket(productId: string, ticketNumbers: number[], userId: number | string) {
       this.ws?.send(JSON.stringify({
@@ -447,7 +495,17 @@ export const useTicketStore = defineStore('ticket', {
 
         // Resetear datos temporales
         reset() {
-            this.formData = null;
+        this.formData = {
+            nombre: '',
+            tipoId: '',
+            numeroId: '',
+            telefono: '',
+            correo: '',
+            tickets: 1,
+            metodoPago: '',
+            referencia: '',
+            comprobante: null,
+        }
             this.ticketNumber = null;
         }
     }

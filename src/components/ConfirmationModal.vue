@@ -7,8 +7,8 @@
 
       <p class="text-lg mb-2">Gracias por tu compra, {{ ticketStore.formData?.nombre ?? 'Usuario' }}</p>
 
+      <p class="text-lg font-bold mb-2 sticky top-0 bg-yellow-100 pb-2 z-10">🎟️ Tickets asignados</p>
       <div class="bg-yellow-100 border-2 border-yellow-400 rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
-        <p class="text-lg font-bold mb-2 sticky top-0 bg-yellow-100 pb-2 z-10">🎟️ Tickets asignados</p>
         
         <div v-if="ticketStore.lastAssignedTickets && ticketStore.lastAssignedTickets.length > 0" class="flex flex-wrap justify-center gap-3">
           <div v-for="num in ticketStore.lastAssignedTickets" :key="num" class="px-4 py-2 bg-white rounded-lg shadow-inner border border-gray-200">
