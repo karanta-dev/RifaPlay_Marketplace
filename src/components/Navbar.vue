@@ -23,16 +23,16 @@
 
     <!-- Contador tickets -->
     <div class="flex items-center gap-3 sm:gap-6">
-
       <div
-        class="bg-blue-900 px-4 sm:px-2 py-2 sm:py-3 rounded-full flex flex-col items-center shadow-lg border-4 border-yellow-400 casino-counter"
+        class="bg-blue-900 px-1 sm:px-2 py-2 sm:py-3 rounded-full flex flex-col items-center shadow-lg border-4 border-yellow-400 casino-counter"
       >
-        <!-- 🔹 JackpotCounter en lugar del número plano -->
-        <JackpotCounter :value="ticketStore.ticketsVendidos" />
 
-        <span class="text-xs text-white font-semibold w-full text-center uppercase">
-          Tickets vendidos
-        </span>
+      <!-- Contador Jackpot -->
+      <div class="casino-jackpot">
+        <JackpotCounter :value="ticketStore.userTicketsCount(authStore.user?.id ?? 0)" />
+      </div>
+
+
       </div>
     </div>
 
@@ -211,7 +211,7 @@ onBeforeUnmount(() => {
   filter: drop-shadow(0 0 12px #ffd70088);
 }
 .casino-counter {
-  box-shadow: 0 0 12px 2px #ffd70055;
+  box-shadow: 0 0 14px 2px #ffd70055;
 }
 .animate-casino-count {
   animation: casinoCountPulse 1.2s infinite alternate;
@@ -252,4 +252,24 @@ onBeforeUnmount(() => {
     opacity: 0.3;
   }
 }
+
+/* Bloque envolvente del jackpot dentro del navbar */
+.casino-jackpot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #002b80, #001a4d);
+  border-radius: 14px;
+  padding: 6px 10px;
+  box-shadow: 0 0 16px 4px rgba(255,215,0,0.35), inset 0 0 8px rgba(255,255,255,0.1);
+  min-width: 180px;
+  animation: casinoGlow 2s infinite alternate;
+}
+
+/* Brillo suave estilo casino */
+@keyframes casinoGlow {
+  0% { box-shadow: 0 0 16px 4px rgba(255,215,0,0.35), inset 0 0 8px rgba(255,255,255,0.1); }
+  100% { box-shadow: 0 0 24px 6px rgba(255,215,0,0.55), inset 0 0 12px rgba(255,255,255,0.15); }
+}
+
 </style>

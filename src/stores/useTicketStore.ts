@@ -200,6 +200,13 @@ export const useTicketStore = defineStore('ticket', {
         ]) as Product[],
     }),
     getters: {
+
+        userTicketsCount: (state) => {
+        return (userId: number | string | null) => {
+        if (!userId) return 0
+        return state.tickets.filter(t => t.userId === userId).length
+        }
+    },
         // Calcula el progreso de venta de un producto
         productProgress: () => {
             return (product: { ticketsVendidos: number; ticketsMax: number }) =>

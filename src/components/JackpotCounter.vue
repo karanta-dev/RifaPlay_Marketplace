@@ -1,29 +1,40 @@
 <!-- JackpotCounter.vue -->
 <template>
-  <div ref="wrapperRef" class="jackpot-wrapper" role="img" aria-label="jackpot counter">
-    <div
-      v-for="(d, i) in digitsArray"
-      :key="`col-${i}-${d}`"
-      class="digit-column"
-    >
+  <div class="jackpot-container">
+    <!-- Encabezado -->
+    <div class="jackpot-header">ACUMULADO</div>
+<div class="cant_container">
+    <div ref="wrapperRef" class="jackpot-wrapper" role="img" aria-label="jackpot counter">
+      <!-- Símbolo de dólar fijo -->
+      <div class="symbol">$</div>
+
+      <!-- Columnas con dígitos -->
       <div
-        class="digit-stack"
-        :style="{
-          transform: `translateY(-${(currentOffsets?.[i] ?? 0) * digitHeight}px)`,
-          transition: `transform ${durations?.[i] ?? 0}ms cubic-bezier(.22,.98,.38,1)`
-        }"
+        v-for="(d, i) in digitsArray"
+        :key="`col-${i}-${d}`"
+        class="digit-column"
       >
         <div
-          v-for="n in TOTAL_ITEMS"
-          :key="`item-${i}-${n}`"
-          class="digit"
+          class="digit-stack"
+          :style="{
+            transform: `translateY(-${(currentOffsets?.[i] ?? 0) * digitHeight}px)`,
+            transition: `transform ${durations?.[i] ?? 0}ms cubic-bezier(.22,.98,.38,1)`
+          }"
         >
-          {{ stackItems[n - 1] }}
+          <div
+            v-for="n in TOTAL_ITEMS"
+            :key="`item-${i}-${n}`"
+            class="digit"
+          >
+            {{ stackItems[n - 1] }}
+          </div>
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
@@ -143,57 +154,87 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* usa variable CSS --digit-h para sincronizar CSS <-> JS */
+.jackpot-container {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  background: #003399; /* azul principal */
+  border-radius: 18px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  max-width: 100%;
+}
+.cant_container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000; /* azul oscuro */
+  border: 2px solid #ffd700; /* borde amarillo */
+  border-radius: 4px;
+  padding: 1px 20px;
+  box-shadow: 0 0 16px 4px rgba(255,215,0,0.35), inset 0 0 8px rgba(255,255,255,0.1);
+  min-width: 120px;
+}
+.jackpot-header {
+  background: #ffd700; /* amarillo */
+  color: #000;
+  font-weight: 800;
+  font-size: 0.9rem;
+  padding: 2px 10px;
+  border-radius: 2px;
+  margin-bottom: 0px;
+}
+
 .jackpot-wrapper {
-  --digit-h: 34px; /* valor por defecto (desktop) */
+  --digit-h: 34px;
   display: flex;
   gap: 6px;
   align-items: center;
-  padding: 8px 12px;
-  border-radius: 999px;
-  /* la imagen de fondo si la quieres, descomenta la línea siguiente y pon la ruta correcta */
-  /* background: url("/e53ab285-2a00-49dc-bfa6-de97cadd8d3e.png") no-repeat center/cover; */
-  max-width: 100%;
-  box-sizing: border-box;
 }
 
-/* cada columna (la "ventana" visible) */
+.symbol {
+  font-size: calc(var(--digit-h) * 0.7);
+  font-weight: 900;
+  color: #ffd700;
+  margin-right: 6px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+}
+
+/* Columnas */
 .digit-column {
-  width: calc(var(--digit-h) * 0.82); /* ancho proporcional a la altura */
-  height: var(--digit-h);             /* coincide con JS */
+  width: calc(var(--digit-h) * 0.8);
+  height: var(--digit-h);
   overflow: hidden;
-  display: inline-block;
-  border-radius: 6px;
-  background: rgba(0,0,0,0.35);
-  box-shadow: inset 0 -2px 6px rgba(0,0,0,0.4);
-  box-sizing: content-box;
+  border-radius: 2px;
+  background: #1c1c1c;
+  margin-left: -6px;
+  box-shadow: inset 0 -2px 4px rgb(15, 2, 157), inset 0 2px 4px rgba(0,0,0,0.6);
 }
 
-/* el stack que se mueve verticalmente */
 .digit-stack {
   will-change: transform;
 }
 
-/* cada dígito ocupa exactamente --digit-h */
 .digit {
   height: var(--digit-h);
-  line-height: var(--digit-h); /* centra verticalmente */
-  font-size: calc(var(--digit-h) * 0.65); /* escala con el tamaño */
+  line-height: var(--digit-h);
+  font-size: calc(var(--digit-h) * 0.85);
   font-weight: 800;
-  color: #ffd700;
+  color: #fff;
   text-shadow: 0 2px 6px rgba(0,0,0,0.9);
   text-align: center;
   user-select: none;
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
-/* --- Responsivo: ajusta sólo la variable, no las matemáticas --- */
+/* Responsivo */
 @media (max-width: 420px) {
-  .jackpot-wrapper { --digit-h: 26px; gap: 4px; padding: 6px 8px; }
+  .jackpot-wrapper { --digit-h: 24px; gap: 3px; }
+  .symbol { margin-right: 4px; }
+  .jackpot-header { font-size: 0.75rem; padding: 2px 6px; }
 }
 @media (min-width: 1400px) {
-  .jackpot-wrapper { --digit-h: 40px; gap: 8px; padding: 10px 16px; }
+  .jackpot-wrapper { --digit-h: 42px; gap: 8px; }
+  .jackpot-header { font-size: 1.1rem; }
 }
 </style>
+

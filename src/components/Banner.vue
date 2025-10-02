@@ -53,7 +53,7 @@ const currentIndex = ref(0)
 const banners = ref([
   {
     title: "¡JUEGA, GANA Y CELEBRA!",
-    text: "Recarga (1 USD) y obtén (1000) créditos para ganar tickets.",
+    text: "¿Quiere probar su suerte?, nosotros escogemos una rifa por usted.",
     image: "/slot.png",
     button1: "¡PARTICIPAR!",
     button2: "RECARGAR $",
