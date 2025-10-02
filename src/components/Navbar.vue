@@ -23,11 +23,9 @@
 
     <!-- Contador tickets -->
     <div class="flex items-center gap-3 sm:gap-6">
-      <span class="text-yellow-400 font-bold text-lg sm:text-2xl hidden sm:inline">
-        Rifas
-      </span>
+
       <div
-        class="bg-blue-900 px-4 sm:px-12 py-2 sm:py-3 rounded-full flex flex-col items-center shadow-lg border-4 border-yellow-400 casino-counter"
+        class="bg-blue-900 px-4 sm:px-2 py-2 sm:py-3 rounded-full flex flex-col items-center shadow-lg border-4 border-yellow-400 casino-counter"
       >
         <!-- 🔹 JackpotCounter en lugar del número plano -->
         <JackpotCounter :value="ticketStore.ticketsVendidos" />
