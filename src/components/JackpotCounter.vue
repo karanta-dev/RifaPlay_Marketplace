@@ -8,8 +8,9 @@
       <div
         class="digit-stack"
         :style="{
-          transform: `translateY(-${currentOffsets[i] * DIGIT_H}px)`,
-          transition: `transform ${durations[i]}ms cubic-bezier(.22,.98,.38,1)`
+          /* uso de fallback seguro: si currentOffsets[i] es undefined usamos 0 */
+          transform: `translateY(-${(currentOffsets?.[i] ?? 0) * DIGIT_H}px)`,
+          transition: `transform ${durations?.[i] ?? 0}ms cubic-bezier(.22,.98,.38,1)`
         }"
       >
         <div v-for="n in TOTAL_ITEMS" :key="`item-${i}-${n}`" class="digit">
@@ -70,7 +71,7 @@ currentOffsets.value = digitsArray.value.map(d => anchorIndexForDigit(d));
 durations.value = digitsArray.value.map(() => 0);
 
 /* Watcher: cuando cambia el valor, animamos estilo "jackpot" */
-watch(digitsArray, async (newDigits, oldDigits) => {
+watch(digitsArray, async (newDigits) => {
   const len = newDigits.length;
   ensureArraysMatch(len);
 
@@ -79,7 +80,7 @@ watch(digitsArray, async (newDigits, oldDigits) => {
   const stagger = 180;
 
   // Construir target offsets seguros dentro de TOTAL_ITEMS
-  const targets = newDigits.map((digit, i) => {
+  const targets = newDigits.map((digit) => {
     // elegir número de spins aleatorio dentro de lo permitido sin salirse del stack
     // spins entre 2 y (STACK_REPS - 3) para dejar espacio
     const maxSpins = Math.max(2, STACK_REPS - 3);

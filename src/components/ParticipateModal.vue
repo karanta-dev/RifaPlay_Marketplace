@@ -90,7 +90,7 @@
                 <!-- boton visible -->
                 <button
                   type="button"
-                  @click="fileInput?.value?.click()"
+                  @click="triggerFileDialog"
                   class="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
                   Insertar imagen foto/captura de pantalla
@@ -252,13 +252,15 @@ const selectedManualTickets = ref<number[]>([])
 
 // file input ref (el mismo ref se usa porque solo hay un bloque visible a la vez)
 const fileInput = ref<HTMLInputElement | null>(null)
-
+function triggerFileDialog() {
+  fileInput.value?.click()
+}
 // Tipado del form
 const form = ticketStore.formData
 
 // preview management
 const previewUrl = ref<string | null>(null)
-watch(() => form.comprobante, (newFile, oldFile) => {
+watch(() => form.comprobante, (newFile) => {
   if (previewUrl.value) {
     // revoke previous
     URL.revokeObjectURL(previewUrl.value)
@@ -277,9 +279,9 @@ function onFileChange(event: Event) {
   ticketStore.setComprobante(file)
 }
 
-function clearFile() {
-  ticketStore.setComprobante(null)
-}
+// function clearFile() {
+//   ticketStore.setComprobante(null)
+// }
 
 const error = ref<string | null>(null)
 
