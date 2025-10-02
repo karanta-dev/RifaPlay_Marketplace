@@ -29,12 +29,9 @@
       <div
         class="bg-blue-900 px-4 sm:px-12 py-2 sm:py-3 rounded-full flex flex-col items-center shadow-lg border-4 border-yellow-400 casino-counter"
       >
-        <span
-          class="text-xl sm:text-3xl font-extrabold text-yellow-400 tracking-wide w-full text-center animate-casino-count"
-        >
-          <i class="fas fa-ticket-alt mr-1"></i>
-          {{ ticketStore.ticketsVendidos.toLocaleString() }}
-        </span>
+        <!-- 🔹 JackpotCounter en lugar del número plano -->
+        <JackpotCounter :value="ticketStore.ticketsVendidos" />
+
         <span class="text-xs text-white font-semibold w-full text-center uppercase">
           Tickets vendidos
         </span>
@@ -136,6 +133,7 @@ import { useRouter } from "vue-router";
 import { useTicketStore } from "@/stores/useTicketStore";
 import { useAuthStore } from "@/stores/useAuthStore"; 
 import Authentication from "@/components/Authentication.vue"; 
+import JackpotCounter from "@/components/JackpotCounter.vue";
 
 const router = useRouter();
 const ticketStore = useTicketStore();
