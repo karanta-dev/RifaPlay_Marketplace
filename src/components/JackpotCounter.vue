@@ -117,8 +117,6 @@ watch(digitsArray, async (newDigits) => {
   display: flex;
   gap: 6px;
   align-items: center;
-  /* Usa la imagen que compartiste; ajusta tamaño/posición si quieres */
-  background: url("/e53ab285-2a00-49dc-bfa6-de97cadd8d3e.png") no-repeat center/cover;
   padding: 8px 12px;
   border-radius: 999px;
 }
