@@ -44,16 +44,32 @@ const props = defineProps<{ value: number }>();
 /* --- CONFIG --- */
 const STACK_REPS = 10;              // repeticiones 0..9 en el stack (más -> más vueltas)
 const TOTAL_ITEMS = STACK_REPS * 10;
+const TARGET_DIGIT_LENGTH = 8; // Aseguramos una longitud de 8 dígitos para la escala de millones
 
 // stack con repetición 0..9
 const stackItems = Array.from({ length: TOTAL_ITEMS }, (_, idx) => idx % 10);
 
-/* --- DIGITS (limpios sin separadores) --- */
-const digitsArray = computed(() => {
-  const s = Math.max(0, Math.floor(Number(props.value))).toString().replace(/\D/g, "");
-  return (s === "" ? "0" : s).split("").map(ch => parseInt(ch, 10));
+const formattedDisplay = computed(() => {
+  const num = Math.max(0, Math.floor(Number(props.value)));
+
+  // 1. Pad con ceros a la izquierda (ej. 121 -> "00000121")
+  let s = num.toString().padStart(TARGET_DIGIT_LENGTH, '0');
+
+  // 2. Insertar separadores de miles (puntos) desde la derecha
+  let parts = [];
+  while (s.length > 3) {
+    parts.unshift(s.slice(-3));
+    s = s.slice(0, s.length - 3);
+  }
+  parts.unshift(s);
+  return parts.join('.'); // Ej. "91.134.283"
 });
 
+/* --- DIGITS (limpios y SOLO numéricos para la animación) --- */
+const digitsArray = computed(() => {
+  // Solo extraemos los dígitos numéricos de la cadena formateada
+  return formattedDisplay.value.replace(/\D/g, "").split("").map(ch => parseInt(ch, 10));
+});
 /* --- reactive state --- */
 const currentOffsets = ref<number[]>([]);
 const durations = ref<number[]>([]);
@@ -160,7 +176,7 @@ onBeforeUnmount(() => {
   align-items: center;
   background: #003399; /* azul principal */
   border-radius: 18px;
-  padding: 10px 14px;
+  padding: 10px 0px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   max-width: 100%;
 }
@@ -171,7 +187,7 @@ onBeforeUnmount(() => {
   background: #000000; /* azul oscuro */
   border: 2px solid #ffd700; /* borde amarillo */
   border-radius: 4px;
-  padding: 1px 20px;
+  padding: 1px 12px;
   box-shadow: 0 0 16px 4px rgba(255,215,0,0.35), inset 0 0 8px rgba(255,255,255,0.1);
   min-width: 120px;
 }

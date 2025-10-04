@@ -24,7 +24,10 @@
               {{ banner.text }}
             </p>
             <div class="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
-              <button class="bg-gradient-to-r from-yellow-400 via-blue-700 to-green-600 text-white px-6 sm:px-8 py-2 rounded-xl font-extrabold text-sm sm:text-base shadow-xl casino-btn transition w-full sm:w-auto">
+              <button
+                v-if="i === 0"
+                @click="openRoulette"
+                class="bg-gradient-to-r from-yellow-400 via-blue-700 to-green-600 text-white px-6 sm:px-8 py-2 rounded-xl font-extrabold text-sm sm:text-base shadow-xl casino-btn transition w-full sm:w-auto">
                 <i class="fas fa-ticket-alt mr-2"></i>
                 {{ banner.button1 }}
               </button>
@@ -43,12 +46,29 @@
       <button v-for="(b, i) in banners" :key="i" class="w-3 h-3 rounded-full" :class="i === currentIndex ? 'bg-yellow-400' : 'bg-white/40'" @click="goToSlide(i)"></button>
     </div>
   </div>
+
+    <RouletteModal :isOpen="showRoulette" @close="showRoulette = false" @categoryPicked="handleCategoryPicked" />
+  <ProductModal :isOpen="showProduct" :category="selectedCategory" @close="showProduct = false" @participar="handleParticipar" />
+  <ParticiparModal
+  :open="showParticipar"
+  :product="selectedProduct"
+  @close="showParticipar = false"
+  @confirmed="() => { showParticipar.value = false }"
+/>
 </template>
 
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue"
+import RouletteModal from "./RouletteModal.vue"
+import ProductModal from "./ProductModal.vue"
+import ParticiparModal from "./ParticipateModal.vue"
 
+const showRoulette = ref(false)
+const showProduct = ref(false)
+const selectedCategory = ref("")
+const showParticipar = ref(false)
+const selectedProduct = ref(null)
 const currentIndex = ref(0)
 const banners = ref([
   {
@@ -84,6 +104,19 @@ const startAutoplay = () => {
 }
 const stopAutoplay = () => {
   if (interval) clearInterval(interval)
+}
+
+function openRoulette() {
+  showRoulette.value = true
+}
+function handleCategoryPicked(category) {
+  selectedCategory.value = category
+  showProduct.value = true
+}
+function handleParticipar(product) {
+  console.log("Abrir modal participar con producto:", product.title)
+  selectedProduct.value = product
+  showParticipar.value = true
 }
 const goToSlide = (index) => {
   currentIndex.value = index
