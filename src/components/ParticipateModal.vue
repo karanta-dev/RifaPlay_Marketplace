@@ -1,84 +1,126 @@
 <template>
   <transition name="fade">
-    <div v-if="open" class="fixed inset-0 bg-black bg-opacity-50 z-40" @click="close" />
+    <div v-if="open" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40" @click="close" />
   </transition>
 
   <transition name="scale-fade">
-    <div v-if="open" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50" @click.self="close">
-      <div
-        :class="{
-          'max-w-lg': selectionMode === 'auto',
-          'max-w-2xl': selectionMode === 'manual'
-        }"
-        class="bg-white p-6 rounded-xl justify-center text-black shadow-lg w-full relative transition-all duration-300 mx-4 md:mx-0 max-h-[90vh] overflow-y-auto"
-      >
+    <div v-if="open" class="fixed inset-0 flex items-center justify-center z-50 p-4" @click.self="close">
+<div
+  :class="{
+    'max-w-lg': selectionMode === 'auto',
+    'max-w-2xl': selectionMode === 'manual'
+  }"
+  class="bg-gradient-to-br from-blue-900 to-orange-800 rounded-2xl shadow-2xl p-8 relative transition-all duration-300 mx-4 md:mx-0 max-h-[90vh] overflow-y-auto overflow-x-hidden border border-purple-400/30"
+>
+        <!-- Efectos de brillo -->
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-yellow-400/10 rounded-full blur-xl"></div>
+        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-500/10 rounded-full blur-xl"></div>
+        
+        <!-- Logo -->
+        <div class="relative z-10 text-center mb-6">
+          
         <img src="/rifaLogo.png" alt="Slot" class="h-24 sm:h-25 w-auto mb-4 block mx-auto" />
 
-        <h2 class="text-xl font-bold mb-4 text-center">Formulario de Participación</h2>
+          <h2 class="text-2xl font-bold bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+            Formulario de Participación
+          </h2>
+        </div>
 
-        <form @submit.prevent="handleConfirm" class="space-y-4">
+        <form @submit.prevent="handleConfirm" class="space-y-6 relative z-10">
           <!-- Opciones de Selección -->
-          <div class="flex justify-center gap-4 p-2 bg-blue-50 rounded-lg">
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input type="radio" v-model="selectionMode" value="auto" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" />
-              <span class="font-semibold text-gray-700">Selección Automática</span>
+          <div class="flex justify-center gap-4 p-4 bg-black/30 rounded-xl border border-white/10">
+            <label class="flex items-center space-x-3 cursor-pointer group">
+              <div class="relative">
+                <input 
+                  type="radio" 
+                  v-model="selectionMode" 
+                  value="auto" 
+                  class="h-5 w-5 text-cyan-500 border-gray-300 focus:ring-cyan-500 bg-transparent"
+                />
+              </div>
+              <span class="font-semibold text-white group-hover:text-cyan-300 transition-colors">Selección Automática</span>
             </label>
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input type="radio" v-model="selectionMode" value="manual" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" />
-              <span class="font-semibold text-gray-700">Selección Manual</span>
+            <label class="flex items-center space-x-3 cursor-pointer group">
+              <div class="relative">
+                <input 
+                  type="radio" 
+                  v-model="selectionMode" 
+                  value="manual" 
+                  class="h-5 w-5 text-cyan-500 border-gray-300 focus:ring-cyan-500 bg-transparent"
+                />
+              </div>
+              <span class="font-semibold text-white group-hover:text-cyan-300 transition-colors">Selección Manual</span>
             </label>
           </div>
 
           <!-- BLOQUE: USUARIOS AUTENTICADOS -->
           <template v-if="authStore.isAuthenticated">
             <!-- Modo Automático -->
-            <div v-if="selectionMode === 'auto'" class="p-4 border rounded-xl bg-green-50">
-              <label class="font-semibold text-gray-700 mb-2 block">Cantidad de tickets (Automático)</label>
-              <div class="flex items-center gap-2">
+            <div v-if="selectionMode === 'auto'" class="p-5 bg-black/30 rounded-xl border border-cyan-500/30">
+              <label class="font-semibold text-cyan-300 mb-3 block text-lg">🎲 Cantidad de tickets (Automático)</label>
+              <div class="flex items-center gap-3">
                 <input
                   v-model.number="form.tickets"
                   type="number"
                   min="1"
                   :max="maxAvailable"
                   placeholder="Cantidad de tickets"
-                  class="input flex-grow"
+                  class="input-custom flex-grow"
                 />
-                <div class="text-sm text-gray-700 whitespace-nowrap">Disponibles: <strong>{{ maxAvailable }}</strong></div>
+                <div class="text-sm text-white whitespace-nowrap">
+                  Disponibles: <strong class="text-yellow-400">{{ maxAvailable }}</strong>
+                </div>
               </div>
             </div>
 
             <!-- Modo Manual - TicketSelector -->
-            <TicketSelector
-              v-else-if="selectionMode === 'manual' && product"
-              :product="product"
-              @update:selected="selectedManualTickets = $event"
-              :maxTickets="maxAvailable"
-            />
-
-            <!-- Métodos de pago y inputs comunes para auth -->
-            <select v-model="form.metodoPago" class="input">
-              <option value="">Seleccionar método de pago</option>
-              <option value="tarjeta">Tarjeta crédito/débito</option>
-              <option value="pago-movil">Pago móvil</option>
-              <option value="transferencia">Transferencia bancaria</option>
-              <option value="kontigo">KONTIGO</option>
-            </select>
-
-            <div v-if="form.metodoPago" class="p-3 bg-gray-100 rounded-lg text-sm">
-              <p v-if="form.metodoPago === 'tarjeta'">Número: 4111-1111-1111-1111</p>
-              <p v-if="form.metodoPago === 'pago-movil'">Teléfono: 0412-0000000</p>
-              <p v-if="form.metodoPago === 'transferencia'">Banco Ejemplo - Cuenta: 0102-123456789</p>
-              <p v-if="form.metodoPago === 'kontigo'">Kontigo - usuario@ejemplo.com</p>
+            <div v-else-if="selectionMode === 'manual' && product" class="bg-black/20 rounded-xl border border-white/10 p-4">
+              <TicketSelector
+                :product="product"
+                @update:selected="selectedManualTickets = $event"
+                :maxTickets="maxAvailable"
+              />
             </div>
 
-            <!-- NUEVOS CAMPOS: referencia + comprobante (imagen) -->
-            <div class="space-y-2">
-              <input v-model="form.referencia" type="text" placeholder="Referencia" class="input" required />
+            <!-- Métodos de pago -->
+            <div class="space-y-4">
+              <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
+              <select v-model="form.metodoPago" class="input-custom">
+                <option value="">Seleccionar método de pago</option>
+                <option value="tarjeta">Tarjeta crédito/débito</option>
+                <option value="pago-movil">Pago móvil</option>
+                <option value="transferencia">Transferencia bancaria</option>
+                <option value="kontigo">KONTIGO</option>
+              </select>
+
+              <div v-if="form.metodoPago" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
+                <p v-if="form.metodoPago === 'tarjeta'" class="flex items-center gap-2">
+                  <span class="text-cyan-400">🔒</span> Número: 4111-1111-1111-1111
+                </p>
+                <p v-if="form.metodoPago === 'pago-movil'" class="flex items-center gap-2">
+                  <span class="text-cyan-400">📱</span> Teléfono: 0412-0000000
+                </p>
+                <p v-if="form.metodoPago === 'transferencia'" class="flex items-center gap-2">
+                  <span class="text-cyan-400">🏦</span> Banco Ejemplo - Cuenta: 0102-123456789
+                </p>
+                <p v-if="form.metodoPago === 'kontigo'" class="flex items-center gap-2">
+                  <span class="text-cyan-400">⚡</span> Kontigo - usuario@ejemplo.com
+                </p>
+              </div>
+            </div>
+
+            <!-- Referencia + Comprobante -->
+            <div class="space-y-4">
+              <input 
+                v-model="form.referencia" 
+                type="text" 
+                placeholder="🔖 Número de referencia" 
+                class="input-custom" 
+                required 
+              />
 
               <div>
-                <label class="block font-semibold text-gray-700 mb-1">Comprobante de pago</label>
-
-                <!-- input file oculto -->
+                <label class="block font-semibold text-white mb-3 text-lg">📎 Comprobante de pago</label>
                 <input
                   ref="fileInput"
                   type="file"
@@ -86,142 +128,185 @@
                   class="hidden"
                   @change="onFileChange"
                 />
-
-                <!-- boton visible -->
                 <button
                   type="button"
                   @click="triggerFileDialog"
-                  class="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  class="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30"
                 >
-                  Insertar imagen foto/captura de pantalla
+                  📸 Insertar imagen del comprobante
                 </button>
-
-                <p v-if="form.comprobante" class="text-sm text-green-600 mt-2">Archivo seleccionado: {{ form.comprobante.name }}</p>
-
-                <div v-if="previewUrl" class="mt-2">
-                  <img :src="previewUrl" alt="preview" class="max-h-40 object-contain border rounded" />
+                <p v-if="form.comprobante" class="text-sm text-green-400 mt-2 flex items-center gap-2">
+                  <span>✅</span> Archivo seleccionado: {{ form.comprobante.name }}
+                </p>
+                <div v-if="previewUrl" class="mt-3">
+                  <img :src="previewUrl" alt="preview" class="max-h-40 object-contain border-2 border-cyan-500/50 rounded-xl shadow-lg" />
                 </div>
               </div>
             </div>
 
-            <!-- Resumen y botones -->
-            <div class="text-right text-lg font-bold pt-4 border-t mt-4">
-              Total: <span class="text-blue-700">{{ totalPrice }} USD</span>
+            <!-- Resumen -->
+            <div class="pt-4 border-t border-white/20 mt-6">
+              <div class="text-right space-y-2">
+                <p class="text-lg font-bold text-white">
+                  Total: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span>
+                </p>
+                <p v-if="currentQty > 0" class="text-sm text-cyan-300">
+                  Tickets a comprar: <strong class="text-white">{{ currentQty }}</strong>
+                </p>
+              </div>
             </div>
-            <p v-if="currentQty > 0" class="text-right text-sm text-gray-500">Tickets a comprar: **{{ currentQty }}**</p>
 
-            <div v-if="error" class="text-sm text-red-600">{{ error }}</div>
+            <div v-if="error" class="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm">
+              ⚠️ {{ error }}
+            </div>
 
-            <div class="flex justify-end gap-3 mt-4">
-              <button type="button" @click="close" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
+            <!-- Botones -->
+            <div class="flex justify-end gap-3 mt-6">
+              <button 
+                type="button" 
+                @click="close" 
+                class="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-300 transform hover:scale-105 border border-gray-500/30"
+              >
+                Cancelar
+              </button>
               <button
                 type="submit"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-green-400/30"
                 :disabled="currentQty === 0"
               >
-                Participar
+                🎉 Participar
               </button>
             </div>
           </template>
 
-          <!-- BLOQUE: USUARIOS NO AUTENTICADOS (AHORA con selección manual disponible) -->
+          <!-- BLOQUE: USUARIOS NO AUTENTICADOS -->
           <template v-else>
-            <input v-model="form.nombre" type="text" placeholder="Nombre completo" class="input" required />
-
-            <div class="flex gap-2">
-              <select v-model="form.tipoId" class="input w-20" required>
-                <option value="">Tipo</option>
-                <option>V</option>
-                <option>E</option>
-                <option>P</option>
-              </select>
-
-              <input
-                v-model="form.numeroId"
-                type="text"
-                placeholder="Número de identificación"
-                class="input flex-grow text-gray-800"
-                required
+            <div class="space-y-4 bg-black/20 p-5 rounded-xl border border-white/10">
+              <input 
+                v-model="form.nombre" 
+                type="text" 
+                placeholder="👤 Nombre completo" 
+                class="input-custom" 
+                required 
               />
+
+              <div class="flex gap-3">
+                <select v-model="form.tipoId" class="input-custom w-24" required>
+                  <option value="">Tipo</option>
+                  <option>V</option>
+                  <option>E</option>
+                  <option>P</option>
+                </select>
+                <input
+                  v-model="form.numeroId"
+                  type="text"
+                  placeholder="🆔 Número de identificación"
+                  class="input-custom flex-grow"
+                  required
+                />
+              </div>
+
+              <input v-model="form.telefono" type="tel" placeholder="📞 Teléfono" class="input-custom" required />
+              <input v-model="form.correo" type="email" placeholder="📧 Correo electrónico" class="input-custom" required />
             </div>
 
-            <input v-model="form.telefono" type="tel" placeholder="Teléfono" class="input" required />
-            <input v-model="form.correo" type="email" placeholder="Correo" class="input" required />
-
-            <!-- Automático -->
-            <div v-if="selectionMode === 'auto'" class="p-4 border rounded-xl bg-green-50">
-              <label class="font-semibold text-gray-700 mb-2 block">Cantidad de tickets (Automático)</label>
-              <div class="flex items-center gap-2">
+            <!-- Selección de tickets para no autenticados -->
+            <div v-if="selectionMode === 'auto'" class="p-5 bg-black/30 rounded-xl border border-cyan-500/30">
+              <label class="font-semibold text-cyan-300 mb-3 block text-lg">🎲 Cantidad de tickets (Automático)</label>
+              <div class="flex items-center gap-3">
                 <input
                   v-model.number="form.tickets"
                   type="number"
                   min="1"
                   :max="maxAvailable"
                   placeholder="Cantidad de tickets"
-                  class="input flex-grow"
+                  class="input-custom flex-grow"
                   required
                 />
-                <div class="text-sm text-gray-700 whitespace-nowrap">Disponibles: <strong>{{ maxAvailable }}</strong></div>
-              </div>
-            </div>
-
-            <!-- Manual (también para no autenticados) -->
-            <TicketSelector
-              v-else-if="selectionMode === 'manual' && product"
-              :product="product"
-              @update:selected="selectedManualTickets = $event"
-              :maxTickets="maxAvailable"
-            />
-
-            <select v-model="form.metodoPago" class="input" required>
-              <option value="">Seleccionar método de pago</option>
-              <option value="tarjeta">Tarjeta crédito/débito</option>
-              <option value="pago-movil">Pago móvil</option>
-              <option value="transferencia">Transferencia bancaria</option>
-              <option value="kontigo">KONTIGO</option>
-            </select>
-
-            <div v-if="form.metodoPago" class="p-3 bg-gray-100 rounded-lg text-sm">
-              <p v-if="form.metodoPago === 'tarjeta'">Número: 4111-1111-1111-1111</p>
-              <p v-if="form.metodoPago === 'pago-movil'">Teléfono: 0412-0000000</p>
-              <p v-if="form.metodoPago === 'transferencia'">Banco Ejemplo - Cuenta: 0102-123456789</p>
-              <p v-if="form.metodoPago === 'kontigo'">Kontigo - usuario@ejemplo.com</p>
-            </div>
-
-            <!-- NUEVOS CAMPOS para no autenticados: referencia + comprobante -->
-            <div class="space-y-2">
-              <input v-model="form.referencia" type="text" placeholder="Referencia" class="input" required />
-
-              <div>
-                <label class="block font-semibold text-gray-700 mb-1">Comprobante de pago</label>
-
-                <!-- input file oculto (mismo ref, solo uno visible a la vez) -->
-                <input ref="fileInput" type="file" class="hidden" @change="onFileChange" />
-
-                  <button
-                    type="button"
-                    @click="fileInput?.click()"
-                    class="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                  >
-                    Insertar imagen foto/captura de pantalla
-                  </button>
-
-
-                <p v-if="form.comprobante" class="text-sm text-green-600 mt-2">Archivo seleccionado: {{ form.comprobante.name }}</p>
-
-                <div v-if="previewUrl" class="mt-2">
-                  <img :src="previewUrl" alt="preview" class="max-h-40 object-contain border rounded" />
+                <div class="text-sm text-white whitespace-nowrap">
+                  Disponibles: <strong class="text-yellow-400">{{ maxAvailable }}</strong>
                 </div>
               </div>
             </div>
 
-            <div class="text-right text-lg font-bold pt-4 border-t mt-4">
-              Total: <span class="text-blue-700">{{ totalPrice }} USD</span>
+            <div v-else-if="selectionMode === 'manual' && product" class="bg-black/20 rounded-xl border border-white/10 p-4">
+              <TicketSelector
+                :product="product"
+                @update:selected="selectedManualTickets = $event"
+                :maxTickets="maxAvailable"
+              />
             </div>
 
-            <div class="flex justify-end gap-3 mt-4">
-              <button type="button" @click="close" class="px-4 py-0 bg-gray-200 rounded-lg hover:bg-gray-300 transition">Cancelar</button>
-              <button type="submit" class="px-4 py-0 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Confirmar</button>
+            <!-- Resto del formulario para no autenticados -->
+            <div class="space-y-4">
+              <select v-model="form.metodoPago" class="input-custom" required>
+                <option value="">💳 Seleccionar método de pago</option>
+                <option value="tarjeta">Tarjeta crédito/débito</option>
+                <option value="pago-movil">Pago móvil</option>
+                <option value="transferencia">Transferencia bancaria</option>
+                <option value="kontigo">KONTIGO</option>
+              </select>
+
+              <div v-if="form.metodoPago" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
+                <p v-if="form.metodoPago === 'tarjeta'" class="flex items-center gap-2">
+                  <span class="text-cyan-400">🔒</span> Número: 4111-1111-1111-1111
+                </p>
+                <p v-if="form.metodoPago === 'pago-movil'" class="flex items-center gap-2">
+                  <span class="text-cyan-400">📱</span> Teléfono: 0412-0000000
+                </p>
+                <p v-if="form.metodoPago === 'transferencia'" class="flex items-center gap-2">
+                  <span class="text-cyan-400">🏦</span> Banco Ejemplo - Cuenta: 0102-123456789
+                </p>
+                <p v-if="form.metodoPago === 'kontigo'" class="flex items-center gap-2">
+                  <span class="text-cyan-400">⚡</span> Kontigo - usuario@ejemplo.com
+                </p>
+              </div>
+            </div>
+
+            <!-- Referencia + Comprobante para no autenticados -->
+            <div class="space-y-4">
+              <input v-model="form.referencia" type="text" placeholder="🔖 Referencia" class="input-custom" required />
+              <div>
+                <label class="block font-semibold text-white mb-3 text-lg">📎 Comprobante de pago</label>
+                <input ref="fileInput" type="file" class="hidden" @change="onFileChange" />
+                <button
+                  type="button"
+                  @click="fileInput?.click()"
+                  class="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30"
+                >
+                  📸 Insertar imagen del comprobante
+                </button>
+                <p v-if="form.comprobante" class="text-sm text-green-400 mt-2 flex items-center gap-2">
+                  <span>✅</span> Archivo seleccionado: {{ form.comprobante.name }}
+                </p>
+                <div v-if="previewUrl" class="mt-3">
+                  <img :src="previewUrl" alt="preview" class="max-h-40 object-contain border-2 border-cyan-500/50 rounded-xl shadow-lg" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Resumen para no autenticados -->
+            <div class="text-right text-lg font-bold pt-4 border-t border-white/20 mt-6">
+              <p class="text-white">
+                Total: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span>
+              </p>
+            </div>
+
+            <!-- Botones para no autenticados -->
+            <div class="flex justify-end gap-3 mt-6">
+              <button 
+                type="button" 
+                @click="close" 
+                class="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-300 transform hover:scale-105 border border-gray-500/30"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg border border-green-400/30"
+              >
+                🎉 Confirmar
+              </button>
             </div>
           </template>
         </form>
@@ -250,19 +335,18 @@ const authStore = useAuthStore()
 const selectionMode = ref<'auto' | 'manual'>('auto')
 const selectedManualTickets = ref<number[]>([])
 
-// file input ref (el mismo ref se usa porque solo hay un bloque visible a la vez)
+// file input ref
 const fileInput = ref<HTMLInputElement | null>(null)
 function triggerFileDialog() {
   fileInput.value?.click()
 }
-// Tipado del form
+
 const form = ticketStore.formData
 
 // preview management
 const previewUrl = ref<string | null>(null)
 watch(() => form.comprobante, (newFile) => {
   if (previewUrl.value) {
-    // revoke previous
     URL.revokeObjectURL(previewUrl.value)
     previewUrl.value = null
   }
@@ -279,10 +363,6 @@ function onFileChange(event: Event) {
   ticketStore.setComprobante(file)
 }
 
-// function clearFile() {
-//   ticketStore.setComprobante(null)
-// }
-
 const error = ref<string | null>(null)
 
 const close = () => {
@@ -296,7 +376,6 @@ const maxAvailable = computed(() => {
   return Math.max(1, (p.ticketsMax || Infinity) - (p.ticketsVendidos || 0))
 })
 
-// Unificamos: si selectionMode manual => cantidad = seleccionados, sino => form.tickets
 const currentQty = computed(() => {
   return selectionMode.value === 'manual'
     ? selectedManualTickets.value.length
@@ -315,7 +394,6 @@ const handleConfirm = () => {
   let ticketsToBuy: number[] | undefined = undefined
   let quantity: number
 
-  // Ahora manual está permitido tanto para auth como para no auth
   if (selectionMode.value === 'manual') {
     ticketsToBuy = selectedManualTickets.value
     quantity = ticketsToBuy.length
@@ -324,7 +402,6 @@ const handleConfirm = () => {
       return
     }
   } else {
-    // Auto
     quantity = Math.max(1, Number(form.tickets ?? 1))
     if (quantity > maxAvailable.value) {
       error.value = `Solo quedan ${maxAvailable.value} tickets disponibles`
@@ -332,48 +409,57 @@ const handleConfirm = () => {
     }
   }
 
-  // Obtener userId (null si no autenticado)
   const userId = authStore.user?.id ?? null
-
-  // Pasar form y ticketsToBuy (si manual) al store
   ticketStore.generateTicket(form, props.product, userId, ticketsToBuy)
   emit('confirmed')
 }
 </script>
 
 <style scoped>
-.input {
+.input-custom {
   width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
   outline: none;
-  @apply border-gray-300 focus:ring-2 focus:ring-blue-500;
-  background-color: #ffffff; /* fondo blanco */
-  color: #000000; /* texto negro */
-  
+  background: rgba(0, 0, 0, 0.3);
+  color: white;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
-.input option {
-  background-color: #ffffff;
-  color: #000000;
+.input-custom:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+  background: rgba(0, 0, 0, 0.5);
 }
-/* Animaciones */
+
+.input-custom::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.input-custom option {
+  background: #1e1b4b;
+  color: white;
+}
+
+/* Animaciones mejoradas */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.4s ease;
 }
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
+
 .scale-fade-enter-active,
 .scale-fade-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .scale-fade-enter-from {
   opacity: 0;
-  transform: scale(0.9);
+  transform: scale(0.8) translateY(-20px);
 }
 .scale-fade-leave-to {
   opacity: 0;
