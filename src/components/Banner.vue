@@ -102,7 +102,7 @@ import { ref, onMounted, onUnmounted } from "vue"
 // Estos componentes modales son placeholders. Asegúrate de que existan en el entorno real.
 import RouletteModal from "./RouletteModal.vue"
 import ProductModal from "./ProductModal.vue"
-import ParticiparModal from "./ProductModal.vue" // Se mantiene el nombre por defecto en el script
+import ParticiparModal from "./ParticipateModal.vue" // Se mantiene el nombre por defecto en el script
 
 const showRoulette = ref(false)
 const showProduct = ref(false)

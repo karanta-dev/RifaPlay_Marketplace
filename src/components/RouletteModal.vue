@@ -58,7 +58,7 @@
         ✅ Categoría: **{{ selectedCategory }}**
       </p>
 
-      <button @click="emits('close')" class="mt-6 px-4 py-2 bg-gray-200 rounded-lg">Cerrar</button>
+    <button @click="handleClose" class="mt-6 px-4 py-2 bg-gray-200 rounded-lg">Cerrar</button>
     </div>
   </div>
 </template>
@@ -128,6 +128,7 @@ const isSpinning = ref(false);
 const rotation = ref(0);
 const selectedCategory = ref(null);
 let finalIndex = null; 
+let closeTimeout = null;
 
 // Propiedad computada que genera el fondo de la ruleta usando Conic Gradients
 const conicGradient = computed(() => {
@@ -152,57 +153,65 @@ const conicGradient = computed(() => {
 
 // Inicia el giro cuando el modal se abre
 watch(() => props.isOpen, (open) => {
-  if (open) {
-    // 1. Reinicia la rotación a 0 y borra el ganador
-    rotation.value = 0;
-    selectedCategory.value = null; 
-
-    if (itemCount.value > 0) {
-      // 2. CORRECCIÓN DEL GIRO: Usar setTimeout para asegurar que la ruleta se "resetee" a 0 
-      //    antes de aplicar la gran rotación final, forzando la transición CSS.
-      setTimeout(spin, 50); 
+  if (open) {
+    // Cuando el modal se abre
+    rotation.value = 0;
+    isSpinning.value = false; // ✅ Resetear isSpinning al abrir
+    selectedCategory.value = null; 
+    
+    // Esto es un error de lógica del código anterior. No deberías girar automáticamente al abrir,
+    // a menos que el botón de girar desaparezca y el giro sea inmediato.
+    // Lo comento para que el giro se haga solo al presionar el botón:
+    /*
+    if (itemCount.value > 0) {
+        setTimeout(spin, 50); 
+    }
+    */
+  } else {
+    // ✅ Cuando el modal se cierra (por el botón 'Cerrar' o la prop externa)
+    isSpinning.value = false; // ✅ Forzar el estado a false para la próxima vez
+    if (closeTimeout) { // ✅ Cancelar el temporizador de cierre (si existe)
+        clearTimeout(closeTimeout);
+        closeTimeout = null;
     }
-  }
+  }
 });
 
 
 // Función principal de giro, usa el valor de 'rotation' para la animación CSS
 function spin() {
-  if (isSpinning.value || itemCount.value === 0) return;
+    if (isSpinning.value || itemCount.value === 0) return;
 
-  isSpinning.value = true;
-  
-  // 1. Determinar el índice ganador
-  finalIndex = Math.floor(Math.random() * itemCount.value);
+    isSpinning.value = true;
+    
+    // 1. Determinar el índice ganador
+    finalIndex = Math.floor(Math.random() * itemCount.value);
 
-  // 2. Calcular la rotación
-  const fullSpins = 5 * 360; // Mínimo 5 vueltas completas
-  
-  // Normaliza la rotación actual para calcular la rotación necesaria DESDE donde está
-  const currentNormalizedRotation = rotation.value % 360;
-  
-  // Ángulo del inicio del segmento ganador (en 0 grados es el tope superior)
-  const targetStartAngle = finalIndex * degPerSlice.value; 
-  
-  // Para detenerse de forma aleatoria dentro del segmento ganador
-  const offsetWithinSlice = Math.random() * degPerSlice.value;
-  
-  // El ángulo del punto dentro del segmento que debe alinearse con el puntero (270 grados)
-  const finalTargetAngle = targetStartAngle + offsetWithinSlice; 
+    // 2. Determinar la rotación mínima base
+    // Garantizamos que la ruleta siempre gire al menos 5 vueltas COMPLETAS desde la posición actual
+    const baseRotation = Math.floor(rotation.value / 360) * 360 + (5 * 360); 
 
-  // Rotación adicional necesaria (0 a 360) para mover el finalTargetAngle a la posición del puntero (270°)
-  let angleToAlign = POINTER_ANGLE - finalTargetAngle;
+    // 3. Calcular el ángulo del segmento ganador
+    const targetStartAngle = finalIndex * degPerSlice.value;
+    const offsetWithinSlice = Math.random() * degPerSlice.value;
+    const finalTargetAngle = targetStartAngle + offsetWithinSlice; 
 
-  // Normalizar angleToAlign para que sea un ángulo positivo (giro en sentido de las agujas)
-  if (angleToAlign < 0) {
-    angleToAlign += 360; 
-  }
+    // 4. Calcular el ángulo extra para alinear el ganador con el puntero (270 grados)
+    // El puntero está en 270 grados. Necesitamos que el finalTargetAngle se alinee con 270.
+    // La ruleta gira en sentido de las agujas (positivo), por lo que debemos calcular cuánta rotación
+    // extra se necesita desde el inicio de la vuelta base.
+    let angleToAlign = 360 - finalTargetAngle + POINTER_ANGLE; 
+    
+    // Si la ruleta está en 0 grados (arriba), y el ganador está en 90 grados,
+    // se necesitan 360 - 90 + 270 = 540 grados. 
+    // Como 540 > 360, es lo mismo que 180 grados, pero el cálculo con la base lo maneja bien.
 
-  // Rotación total (vueltas completas + ángulo de alineación)
-  const totalRotationNeeded = fullSpins + angleToAlign;
-
-  // Acumular la rotación total a la rotación actual
-  rotation.value = currentNormalizedRotation + totalRotationNeeded;
+    // 5. Aplicar la rotación final
+    rotation.value = baseRotation + angleToAlign; 
+    
+    // NOTA: La clase `roulette-spinning` ya no es estrictamente necesaria porque 
+    // la animación se define directamente en la propiedad `transition` del CSS.
+    // La dejamos para manejo de estado del botón.
 }
 
 // Lógica al finalizar la animación CSS
@@ -220,11 +229,13 @@ function onSpinEnd(event) {
     const winner = categories.value[finalIndex];
     selectedCategory.value = winner.name;
     
-    // 3. Cerrar el modal después de 2 segundos (UX)
-    setTimeout(() => {
-        emits("categoryPicked", winner.name);
-        emits("close");
-    }, 2000); 
+    // 3. Cerrar el modal después de 2 segundos (UX)
+    if (closeTimeout) clearTimeout(closeTimeout); // Cancelar si existe
+    closeTimeout = setTimeout(() => { // ✅ Usar la variable closeTimeout
+        emits("categoryPicked", winner.name);
+        emits("close");
+        closeTimeout = null; // Limpiar el temporizador
+    }, 2000); 
 }
 
 
@@ -240,6 +251,17 @@ function segmentStyle(i) {
     transformOrigin: '50% 50%',
     pointerEvents: 'none', 
   };
+}
+function handleClose() {
+    // Si la ruleta estaba girando, forzamos la detención
+    isSpinning.value = false;
+    // Cancelamos el temporizador de cierre automático
+    if (closeTimeout) {
+        clearTimeout(closeTimeout);
+        closeTimeout = null;
+    }
+    // Cerramos el modal
+    emits('close');
 }
 
 // Estilo de la etiqueta de texto dentro del segmento
