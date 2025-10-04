@@ -92,8 +92,7 @@
   :open="showParticipar"
   :product="selectedProduct"
   @close="showParticipar = false"
-  @confirmed="() => { showParticipar.value = false }"
-/>
+  @confirmed="() => { showParticipar = false }" />
 </template>
 
 
@@ -156,10 +155,15 @@ function handleCategoryPicked(category) {
   showProduct.value = true
 }
 function handleParticipar(product) {
-  console.log("Abrir modal participar con producto:", product.title)
-  selectedProduct.value = product
-  showParticipar.value = true
+  console.log("Abrir modal participar con producto:", product.title)
+  
+  // ✅ CAMBIO CLAVE: Cierra el ProductModal antes de abrir ParticipateModal
+  showProduct.value = false; 
+  
+  selectedProduct.value = product
+  showParticipar.value = true
 }
+
 const goToSlide = (index) => {
   currentIndex.value = index
   startAutoplay() // Reinicia el autoplay al cambiar manualmente

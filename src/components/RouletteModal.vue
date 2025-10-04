@@ -180,40 +180,41 @@ watch(() => props.isOpen, (open) => {
 
 // Función principal de giro, usa el valor de 'rotation' para la animación CSS
 function spin() {
-    if (isSpinning.value || itemCount.value === 0) return;
+    if (isSpinning.value || itemCount.value === 0) return;
 
-    isSpinning.value = true;
+    isSpinning.value = true;
+    
+    // 1. Determinar el índice ganador
+    finalIndex = Math.floor(Math.random() * itemCount.value);
+
+    // 2. Determinar la rotación mínima base
+    // Garantizamos que la ruleta siempre gire al menos 5 vueltas COMPLETAS desde la posición actual
+    const baseRotation = Math.floor(rotation.value / 360) * 360 + (5 * 360); 
+
+    // 3. Calcular el rango de ángulos del segmento ganador
+    const targetStartAngle = finalIndex * degPerSlice.value;
+    const targetEndAngle = targetStartAngle + degPerSlice.value;
     
-    // 1. Determinar el índice ganador
-    finalIndex = Math.floor(Math.random() * itemCount.value);
+    // ✅ CLAVE DE LA MEJORA: Elegir un ángulo de parada COMPLETAMENTE aleatorio dentro del segmento.
+    // Esto asegura que la aguja no se detenga siempre en el mismo 'patrón' dentro de cada categoría.
+    // El '- 5' y '+ 5' asegura que no aterrice justo en la línea divisoria.
+    const randomAngleWithinSegment = 
+        targetStartAngle + 
+        (Math.random() * (degPerSlice.value - 10)) + 5; // Dejamos un margen de 5 grados a cada lado.
 
-    // 2. Determinar la rotación mínima base
-    // Garantizamos que la ruleta siempre gire al menos 5 vueltas COMPLETAS desde la posición actual
-    const baseRotation = Math.floor(rotation.value / 360) * 360 + (5 * 360); 
 
-    // 3. Calcular el ángulo del segmento ganador
-    const targetStartAngle = finalIndex * degPerSlice.value;
-    const offsetWithinSlice = Math.random() * degPerSlice.value;
-    const finalTargetAngle = targetStartAngle + offsetWithinSlice; 
-
-    // 4. Calcular el ángulo extra para alinear el ganador con el puntero (270 grados)
-    // El puntero está en 270 grados. Necesitamos que el finalTargetAngle se alinee con 270.
-    // La ruleta gira en sentido de las agujas (positivo), por lo que debemos calcular cuánta rotación
-    // extra se necesita desde el inicio de la vuelta base.
-    let angleToAlign = 360 - finalTargetAngle + POINTER_ANGLE; 
+    // 4. Calcular el ángulo extra para alinear el ganador con el puntero (270 grados)
+    // Queremos que el ángulo 'randomAngleWithinSegment' se alinee con el puntero (270°).
+    // La ruleta gira en sentido de las agujas (positivo).
+    let angleToAlign = 360 - randomAngleWithinSegment + POINTER_ANGLE; 
     
-    // Si la ruleta está en 0 grados (arriba), y el ganador está en 90 grados,
-    // se necesitan 360 - 90 + 270 = 540 grados. 
-    // Como 540 > 360, es lo mismo que 180 grados, pero el cálculo con la base lo maneja bien.
+    // Si angleToAlign es > 360, significa que estamos dando una vuelta extra, lo cual es manejado
+    // por la suma a 'baseRotation'.
 
-    // 5. Aplicar la rotación final
-    rotation.value = baseRotation + angleToAlign; 
-    
-    // NOTA: La clase `roulette-spinning` ya no es estrictamente necesaria porque 
-    // la animación se define directamente en la propiedad `transition` del CSS.
-    // La dejamos para manejo de estado del botón.
+    // 5. Aplicar la rotación final
+    rotation.value = baseRotation + angleToAlign; 
+    
 }
-
 // Lógica al finalizar la animación CSS
 function onSpinEnd(event) {
     // Solo actuamos si la animación que terminó es la del giro de la ruleta
