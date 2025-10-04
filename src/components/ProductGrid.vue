@@ -23,7 +23,12 @@
       @close="showForm = false"
       @confirmed="handleConfirmed"
     />
-
+    <ProductModal
+      :isOpen="showProductModal"
+      :category="selectedCategory"
+      @close="showProductModal = false"
+      @participar="openParticipateModal"
+    />
     <!-- modal de confirmación -->
     <ConfirmacionModal
       :open="showConfirm"
@@ -49,6 +54,7 @@ import ProductCard from "./ProductCard.vue"
 import ParticiparModal from "./ParticipateModal.vue"
 import ConfirmacionModal from "./ConfirmationModal.vue"
 import DetailsModal from "./ProductDetailsModal.vue"
+import ProductModal from "./ProductModal.vue"
 
 // ✅ Nuevo: recibir productos opcionales
 const props = defineProps<{
@@ -69,6 +75,8 @@ const items = computed(() => {
 
 const showForm = ref(false)
 const showConfirm = ref(false)
+const showProductModal = ref(false)
+const selectedCategory = ref<string | null>(null)
 const showDetails = ref(false)
 const selectedProduct = ref<any | null>(null)
 

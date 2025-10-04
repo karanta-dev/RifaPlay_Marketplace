@@ -1,74 +1,135 @@
 <template>
-  <div class="w-full max-w-7xl mx-auto relative overflow-hidden casino-banner" @touchstart="handleTouchStart" @touchend="handleTouchEnd">
-    <!-- Fondo casino animado -->
+  <div class="w-full max-w-7xl mx-auto relative overflow-hidden casino-banner">
+    
     <div class="absolute inset-0 bg-gradient-to-br from-blue-950 via-blue-900 to-yellow-900 opacity-80 pointer-events-none"></div>
-    <!-- Floating casino icons -->
+    
     <div class="absolute inset-0 pointer-events-none">
-      <i v-for="n in 4" :key="`coin-${n}`" class="fas fa-coins text-yellow-400 casino-float" :style="randomStyle(n)"></i>
-      <i v-for="n in 2" :key="`dice-${n}`" class="fas fa-dice text-green-400 casino-float" :style="randomStyle(n+10)"></i>
-      <i v-for="n in 2" :key="`ticket-${n}`" class="fas fa-ticket-alt text-orange-400 casino-float" :style="randomStyle(n+20)"></i>
-      <i v-for="n in 6" :key="`star-${n}`" class="fas fa-star text-yellow-300 opacity-30 casino-float" :style="randomStyle(n+30)"></i>
+      <!-- Iconos flotantes del casino -->
+      <i v-for="n in 4" v-bind:key="`coin-${n}`" class="fas fa-coins text-yellow-400 casino-float" v-bind:style="randomStyle(n)"></i>
+      <i v-for="n in 2" v-bind:key="`dice-${n}`" class="fas fa-dice text-green-400 casino-float" v-bind:style="randomStyle(n+10)"></i>
+      <i v-for="n in 2" v-bind:key="`ticket-${n}`" class="fas fa-ticket-alt text-orange-400 casino-float" v-bind:style="randomStyle(n+20)"></i>
+      <i v-for="n in 6" v-bind:key="`star-${n}`" class="fas fa-star text-yellow-300 opacity-30 casino-float" v-bind:style="randomStyle(n+30)"></i>
     </div>
-    <!-- Slides container -->
-    <div class="flex transition-transform duration-700 ease-in-out relative z-10" :style="{ transform: `translateX(-${currentIndex * 100}%)` }">
-      <div v-for="(banner, i) in banners" :key="i" class="min-w-full flex items-center justify-center relative px-6 sm:px-20 py-4 sm:py-12 shadow-lg rounded-xl">
-        <!-- Content -->
-        <div class="flex flex-col sm:flex-row items-center justify-center w-full text-center">
-          <img :src="banner.image" alt="Banner image" class="h-28 sm:h-40 w-auto sm:mr-8 mb-4 sm:mb-0 relative z-10 casino-img" />
-          <div class="flex flex-col items-center justify-center flex-1 relative z-10 text-center">
-            <h1 class="text-3xl sm:text-4xl font-extrabold text-yellow-400 mb-2 sm:mb-4 tracking-tight drop-shadow-lg casino-title">
-              <i class="fas fa-dice text-green-400 mr-2"></i>
+    
+    <div 
+      class="flex transition-transform duration-700 ease-in-out relative z-10" 
+      :style="{ transform: `translateX(-${currentIndex * 100}%)` }"
+      @touchstart="handleTouchStart" 
+      @touchend="handleTouchEnd"
+    >
+      <div v-for="(banner, i) in banners" :key="i" class="min-w-full flex items-center justify-center relative px-6 sm:px-20 py-10 sm:py-2 shadow-lg rounded-xl">
+        
+        <!-- Aplica diseño de imagen a la derecha y texto a la izquierda para el banner 2 (i=1) y banner 3 (i=2) en desktop. -->
+        <!-- En móvil, se usa flex-col-reverse para que la imagen (que está primero en el código) aparezca debajo del texto. -->
+        <div 
+          :class="[i === 1 || i === 2 
+            ? 'sm:flex-row-reverse text-left flex-col-reverse' // Invertir orden en móvil y usar flex-row-reverse en desktop
+            : 'sm:flex-row text-center flex-col' // Orden normal en móvil y desktop
+          ]"
+          class="flex flex-col items-center justify-between w-full"
+        >
+          
+          <img
+            :src="banner.image"
+            alt="Banner image"
+            :class="[
+              
+              i === 1 || i === 2 
+                
+                // Las clases aseguran que la imagen es grande y se alinea en la parte inferior sin margen negativo.
+                // En móvil usamos mb-0 (margen inferior 0) para que pegue al borde.
+                ? 'h-40 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-0 sm:-mb-12 relative z-10 casino-img' 
+                
+                : 'h-28 sm:h-40 w-auto sm:mr-8 mb-4 sm:mb-3 relative z-10 casino-img object-contain'
+            ]"
+          />
+
+          
+          <div 
+            :class="[i === 1 || i === 2 ? 'items-start sm:mr-8 mb-4 sm:mb-0' : 'items-center']"
+            class="flex flex-col justify-center flex-1 relative z-10"
+          >
+            
+            <h1 class="text-3xl font-extrabold text-yellow-400 mb-2 sm:mb-4 tracking-tight drop-shadow-lg casino-title"
+                :class="[i === 1 ? 'sm:text-5xl text-white' : 'sm:text-4xl']">
+              <i class="fas fa-dice text-green-400 mr-2" v-if="i === 0"></i>
               {{ banner.title }}
             </h1>
-            <p class="text-yellow-100 mb-3 sm:mb-4 max-w-xl mx-auto text-xs sm:text-base font-semibold casino-desc">
+            
+            <p class="text-yellow-100 font-semibold casino-desc"
+               :class="[i === 1 || i === 2 ? 'text-lg sm:text-2xl max-w-full' : 'text-xs sm:text-base max-w-xl mx-auto mb-3 sm:mb-4']">
               {{ banner.text }}
             </p>
-            <div class="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
-              <button class="bg-gradient-to-r from-yellow-400 via-blue-700 to-green-600 text-white px-6 sm:px-8 py-2 rounded-xl font-extrabold text-sm sm:text-base shadow-xl casino-btn transition w-full sm:w-auto">
+
+            
+            <div v-if="i !== 1 && i !== 2" class="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 mt-3">
+              
+              <button
+                v-if="i === 0"
+                @click="openRoulette"
+                class="bg-gradient-to-r from-yellow-400 via-blue-700 to-green-600 text-white px-6 sm:px-8 py-2 rounded-xl font-extrabold text-sm sm:text-base shadow-xl casino-btn transition w-full sm:w-auto">
                 <i class="fas fa-ticket-alt mr-2"></i>
                 {{ banner.button1 }}
               </button>
-              <button class="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 py-2 rounded-xl font-bold text-sm sm:text-base shadow-lg flex items-center gap-2 w-full sm:w-auto">
-                <i class="fas fa-coins mr-2"></i>
-                {{ banner.button2 }}
-              </button>
-              <br></br>
+              
+              
+
             </div>
           </div>
         </div>
+        
       </div>
     </div>
-    <!-- Navigation dots -->
+    
     <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
       <button v-for="(b, i) in banners" :key="i" class="w-3 h-3 rounded-full" :class="i === currentIndex ? 'bg-yellow-400' : 'bg-white/40'" @click="goToSlide(i)"></button>
     </div>
   </div>
+
+    <RouletteModal :isOpen="showRoulette" @close="showRoulette = false" @categoryPicked="handleCategoryPicked" />
+  <ProductModal :isOpen="showProduct" :category="selectedCategory" @close="showProduct = false" @participar="handleParticipar" />
+  <ParticiparModal
+  :open="showParticipar"
+  :product="selectedProduct"
+  @close="showParticipar = false"
+  @confirmed="() => { showParticipar = false }" />
 </template>
 
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue"
+// Estos componentes modales son placeholders. Asegúrate de que existan en el entorno real.
+import RouletteModal from "./RouletteModal.vue"
+import ProductModal from "./ProductModal.vue"
+import ParticiparModal from "./ParticipateModal.vue" // Se mantiene el nombre por defecto en el script
 
+const showRoulette = ref(false)
+const showProduct = ref(false)
+const selectedCategory = ref("")
+const showParticipar = ref(false)
+const selectedProduct = ref(null)
 const currentIndex = ref(0)
 const banners = ref([
   {
     title: "¡JUEGA, GANA Y CELEBRA!",
-    text: "Recarga (1 USD) y obtén (1000) créditos para ganar tickets.",
+    text: "¿Quiere probar su suerte?, nosotros escogemos una rifa por usted.",
     image: "/slot.png",
     button1: "¡PARTICIPAR!",
-    button2: "RECARGAR $",
+    button2: "", // Eliminado el botón
   },
   {
-    title: "Categorías destacadas",
-    text: "Descubre rifas de autos, tecnología, viajes y más.",
-    image: "/slot.png",
-    button1: "EXPLORAR",
-    button2: "VER MÁS",
+    // Banner 2
+    title: "¡Empieza a ganar con nosotros!",
+    text: "Participa en cualquiera de nuestras rifas y gana premios increíbles.",
+    image: "/persona.png",
+    button1: "", // Eliminado el botón
+    button2: "", // Eliminado el botón
   },
   {
+    // Banner 3
     title: "Promociones especiales",
     text: "Aprovecha ofertas exclusivas y duplica tus tickets.",
-    image: "/slot.png",
+    image: "/persona2.png",
     button1: "APROVECHAR",
     button2: "DETALLES",
   },
@@ -85,6 +146,24 @@ const startAutoplay = () => {
 const stopAutoplay = () => {
   if (interval) clearInterval(interval)
 }
+
+function openRoulette() {
+  showRoulette.value = true
+}
+function handleCategoryPicked(category) {
+  selectedCategory.value = category
+  showProduct.value = true
+}
+function handleParticipar(product) {
+  console.log("Abrir modal participar con producto:", product.title)
+  
+  // ✅ CAMBIO CLAVE: Cierra el ProductModal antes de abrir ParticipateModal
+  showProduct.value = false; 
+  
+  selectedProduct.value = product
+  showParticipar.value = true
+}
+
 const goToSlide = (index) => {
   currentIndex.value = index
   startAutoplay() // Reinicia el autoplay al cambiar manualmente

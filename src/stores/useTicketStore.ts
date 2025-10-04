@@ -37,9 +37,28 @@ interface TicketRecord {
     isWinner?: boolean;
 }
 
-interface TicketInfo {
-    number: number;
-    isSold: boolean;
+export interface TicketInfo {
+  id: number
+  number: number
+  userId: number
+  productTitle: string
+}
+
+export interface TicketStatus {
+  number: number
+  isSold: boolean
+}
+
+export interface TicketForm {
+  nombre: string
+  tipoId: string
+  numeroId: string
+  telefono: string
+  correo: string
+  tickets: number
+  metodoPago: string
+  referencia: string
+  comprobante: File | null
 }
 
 // --- DEFINICIÓN DEL STORE ---
@@ -50,12 +69,23 @@ export const useTicketStore = defineStore('ticket', {
         ticketsVendidos: 1134283, // Total vendido en todas las rifas (simulación)
         
         // Estado temporal para el proceso de compra
-        formData: null as any | null,
+        formData: {
+        nombre: '',
+        tipoId: '',
+        numeroId: '',
+        telefono: '',
+        correo: '',
+        tickets: 1,
+        metodoPago: '',
+        referencia: '',
+        comprobante: null,
+        } as TicketForm,
         ticketNumber: null as number | null,
         lastAssignedTickets: [] as number[],
 
         // Tickets individuales asociados a usuario/producto (Simulación de DB)
         tickets: (persisted?.tickets ?? []) as TicketRecord[],
+        ws: null as WebSocket | null, // 🔴 Guardamos la conexión WS aquí
 
         // Lista de rifas (productos) con datos simulados (Simulación de DB)
         topProducts: (persisted?.topProducts ?? [
@@ -170,6 +200,13 @@ export const useTicketStore = defineStore('ticket', {
         ]) as Product[],
     }),
     getters: {
+
+        userTicketsCount: (state) => {
+        return (userId: number | string | null) => {
+        if (!userId) return 0
+        return state.tickets.filter(t => t.userId === userId).length
+        }
+    },
         // Calcula el progreso de venta de un producto
         productProgress: () => {
             return (product: { ticketsVendidos: number; ticketsMax: number }) =>
@@ -218,29 +255,136 @@ export const useTicketStore = defineStore('ticket', {
 
         // Obtiene la lista de TODOS los tickets para un producto con su estado (vendido o no)
         allTicketsForProduct: (state) => {
-            return (productId: string): TicketInfo[] => {
+            return (productId: string): TicketStatus[] => {
                 const p = state.topProducts.find((t: any) => t.title === productId);
                 if (!p) return [];
                 const ticketsMax = Number(p?.ticketsMax ?? 0);
-                
-                // Set de tickets comprados
+
                 const soldSet = new Set<number>(state.tickets
-                    .filter(t => t.productId === productId)
-                    .map(t => Number(t.ticketNumber))
+                .filter(t => t.productId === productId)
+                .map(t => Number(t.ticketNumber))
                 );
-                
-                const all: TicketInfo[] = [];
+
+                const all: TicketStatus[] = [];
                 for (let i = 1; i <= ticketsMax; i++) {
-                    all.push({
-                        number: i,
-                        isSold: soldSet.has(i) // true si ya fue vendido
-                    });
+                all.push({
+                    number: i,
+                    isSold: soldSet.has(i)
+                });
                 }
                 return all;
             }
-        }
+            }
+
     },
     actions: {
+            // 🔴 Nuevo: conectar al WebSocket
+    connectToTicketWS() {
+    const ws = new WebSocket("ws://localhost:3000");
+
+    ws.onopen = () => {
+      console.log("✅ Conectado al WebSocket de tickets");
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "ticket_sold" || data.type === "ticket_reserved") {
+          const { productId, ticketNumbers, userId } = data;
+
+          ticketNumbers.forEach((n: number) => {
+            if (!this.tickets.find(t => t.ticketNumber === n && t.productId === productId)) {
+              this.tickets.push({
+                ticketNumber: n,
+                productId,
+                userId,
+                createdAt: new Date().toISOString(),
+                isWinner: false,
+              });
+            }
+          });
+
+          const p = this.topProducts.find(p => p.title === productId);
+          if (p) p.ticketsVendidos += ticketNumbers.length;
+
+          this._savePersist();
+        }
+
+        if (data.type === "ticket_released") {
+          const { productId, ticketNumbers } = data;
+          this.tickets = this.tickets.filter(
+            t => !(ticketNumbers.includes(t.ticketNumber) && t.productId === productId)
+          );
+          this._savePersist();
+        }
+      } catch (err) {
+        console.error("❌ Error parsing WS message:", err);
+      }
+    };
+  },
+  setComprobante(file: File | null) {
+  if (file) {
+    this.formData.comprobante = file
+    console.log("📄 Comprobante cargado:", file.name)
+  } else {
+    this.formData.comprobante = null
+  }
+},
+  clearForm() {
+      this.formData = {
+        nombre: '',
+        tipoId: '',
+        numeroId: '',
+        telefono: '',
+        correo: '',
+        tickets: 1,
+        metodoPago: '',
+        referencia: '',
+        comprobante: null,
+      }
+    },
+      // 🔵 Métodos para enviar mensajes al WS
+    reserveTicket(productId: string, ticketNumbers: number[], userId: number | string) {
+      this.ws?.send(JSON.stringify({
+        type: "ticket_reserved",
+        productId,
+        ticketNumbers,
+        userId,
+      }));
+    },
+
+     releaseTicket(productId: string, ticketNumbers: number[]) {
+      this.ws?.send(JSON.stringify({
+        type: "ticket_released",
+        productId,
+        ticketNumbers,
+      }));
+    },
+
+    markTicketAsSold(productTitle: string, ticket: number) {
+    if (!this.tickets.find(t => t.productId === productTitle && t.ticketNumber === ticket)) {
+        this.tickets.push({
+        ticketNumber: ticket,
+        productId: productTitle,
+        userId: null,
+        createdAt: new Date().toISOString(),
+        isWinner: false,
+        });
+        const p = this.topProducts.find(p => p.title === productTitle);
+        if (p) p.ticketsVendidos++;
+        this._savePersist();
+    }
+    },
+
+        confirmTicket(productId: string, ticketNumbers: number[], userId: number | string) {
+      this.ws?.send(JSON.stringify({
+        type: "ticket_sold",
+        productId,
+        ticketNumbers,
+        userId,
+      }));
+    },
         // Helper: genera un número de ticket único no usado
         _generateUnique6Digit(usedSet: Set<number>, ticketsMax: number): number {
             const MAX_ATTEMPTS = 2000;
@@ -358,8 +502,19 @@ export const useTicketStore = defineStore('ticket', {
 
         // Resetear datos temporales
         reset() {
-            this.formData = null;
+        this.formData = {
+            nombre: '',
+            tipoId: '',
+            numeroId: '',
+            telefono: '',
+            correo: '',
+            tickets: 1,
+            metodoPago: '',
+            referencia: '',
+            comprobante: null,
+        }
             this.ticketNumber = null;
         }
     }
+    
 });
