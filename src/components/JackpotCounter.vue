@@ -176,7 +176,7 @@ onBeforeUnmount(() => {
   align-items: center;
   background: #003399; /* azul principal */
   border-radius: 18px;
-  padding: 10px 0px;
+  padding: 0px 10px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   max-width: 100%;
 }
@@ -187,7 +187,6 @@ onBeforeUnmount(() => {
   background: #000000; /* azul oscuro */
   border: 2px solid #ffd700; /* borde amarillo */
   border-radius: 4px;
-  padding: 1px 12px;
   box-shadow: 0 0 16px 4px rgba(255,215,0,0.35), inset 0 0 8px rgba(255,255,255,0.1);
   min-width: 120px;
 }
@@ -196,7 +195,7 @@ onBeforeUnmount(() => {
   color: #000;
   font-weight: 800;
   font-size: 0.9rem;
-  padding: 2px 10px;
+  padding: 0px 8px;
   border-radius: 2px;
   margin-bottom: 0px;
 }

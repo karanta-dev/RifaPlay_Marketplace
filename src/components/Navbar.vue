@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="bg-gradient-to-r from-blue-950 via-blue-900 to-yellow-900 shadow-xl flex items-center justify-between px-4 sm:px-8 py-2 casino-navbar relative"
+    class="bg-gradient-to-r from-blue-950 via-blue-900 to-yellow-900 shadow-xl flex items-center justify-between px-4 sm:px-10 py-2 casino-navbar relative"
   >
     <!-- Iconos casino flotantes -->
     <i
@@ -24,7 +24,7 @@
     <!-- Contador tickets -->
     <div class="flex items-center gap-3 sm:gap-6">
       <div
-        class="bg-blue-900 px-1 sm:px-2 py-2 sm:py-3 rounded-full flex flex-col items-center shadow-lg border-4 border-yellow-400 casino-counter"
+        class="bg-blue-900 px-0.8 sm:px-0.8 py-2 sm:py-3 rounded-full flex flex-col items-center shadow-lg border-4 border-yellow-400 casino-counter"
       >
 
       <!-- Contador Jackpot -->
