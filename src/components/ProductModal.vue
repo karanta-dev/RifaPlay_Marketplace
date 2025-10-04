@@ -5,11 +5,21 @@
     @click.self="closeModal"
   >
     <div class="bg-gradient-to-br from-blue-900 to-orange-800 rounded-2xl shadow-2xl p-8 text-center w-[90%] max-w-md relative overflow-hidden border border-purple-400/30">
+
+              <!-- Botón cerrar -->
+      <button
+        class="absolute top-4 right-4 z-30 bg-black/40 hover:bg-black/60 text-white/80 hover:text-white p-2 rounded-full transition-all duration-300 border border-white/20 backdrop-blur-sm"
+        @click="closeModal"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      
       <!-- Efecto de brillo -->
       <div class="absolute -top-24 -right-24 w-48 h-48 bg-yellow-400/10 rounded-full blur-xl"></div>
       <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-500/10 rounded-full blur-xl"></div>
       
-
       <!-- Icono de celebración -->
       <div class="relative z-10">
         <div class="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
@@ -100,6 +110,7 @@ function participar() {
 function closeModal() {
   emits("close")
 }
+
 
 function launchConfetti() {
   const end = Date.now() + 2000

@@ -57,7 +57,7 @@
             :style="segmentStyle(i)"
           >
             <span class="label absolute text-white font-bold" :style="labelStyle(i)">
-              <span class="text align-middle drop-shadow-lg">{{ cat.name }}</span>
+              <span class="text align-middle drop-shadow-lg text-black">{{ cat.name }}</span>
             </span>
           </div>
         </div>

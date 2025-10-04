@@ -5,6 +5,7 @@
 
   <transition name="scale-fade">
     <div v-if="open" class="fixed inset-0 flex items-center justify-center z-50 p-4" @click.self="close">
+      
 <div
   :class="{
     'max-w-lg': selectionMode === 'auto',
@@ -12,6 +13,15 @@
   }"
   class="bg-gradient-to-br from-blue-900 to-orange-800 rounded-2xl shadow-2xl p-8 relative transition-all duration-300 mx-4 md:mx-0 max-h-[90vh] overflow-y-auto overflow-x-hidden border border-purple-400/30"
 >
+      <!-- Botón cerrar -->
+      <button
+        class="absolute top-4 right-4 z-30 bg-black/40 hover:bg-black/60 text-white/80 hover:text-white p-2 rounded-full transition-all duration-300 border border-white/20 backdrop-blur-sm"
+        @click="emit('close')"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
         <!-- Efectos de brillo -->
         <div class="absolute -top-24 -right-24 w-48 h-48 bg-yellow-400/10 rounded-full blur-xl"></div>
         <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-500/10 rounded-full blur-xl"></div>
