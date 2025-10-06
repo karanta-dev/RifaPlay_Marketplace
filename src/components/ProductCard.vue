@@ -43,7 +43,7 @@
 
    <!-- Contador actualizado con condicional de tiempo límite -->
       <div class="text-center mb-3">
-        <div v-if="!isTimeUp" class="inline-flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-2 border border-gray-600/50">
+        <div v-if="!isTimeUp" class="inline-flex flex-col items-center bg-gray-800/70 rounded-lg px-0 py-2 border border-gray-600/50">
           <span class="text-xs text-gray-300 mb-1">Tiempo restante:</span>
           <div class="flex items-center justify-center space-x-1">
             <div class="flex flex-col items-center">

@@ -1,6 +1,6 @@
 <template>
  <nav
-    class="bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 shadow-2xl border-b border-yellow-400/30 flex items-center justify-between px-4 sm:px-8 py-3 casino-navbar relative overflow-hidden"
+    class="bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 shadow-2xl border-b border-yellow-400/30 flex items-center justify-between px-4 sm:px-8 py-3 casino-navbar relative"
   >
 
     <!-- Iconos casino flotantes -->
@@ -53,6 +53,7 @@
             d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"
           />
         </svg>
+        <span class="text-yellow-400 font-semibold text-sm hidden lg:inline">BUSCAR</span>
 
       </button>
       <!-- 🔹 Si no está logueado -->
@@ -274,7 +275,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #1e40af 100%);
   border-radius: 12px;
-  padding: 8px 16px;
+  padding: 8px 12px;
   border: 1px solid rgba(255, 215, 0, 0.3);
   box-shadow: 
     0 4px 12px rgba(0, 0, 0, 0.3),
