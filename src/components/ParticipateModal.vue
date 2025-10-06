@@ -345,6 +345,9 @@ const authStore = useAuthStore()
 const selectionMode = ref<'auto' | 'manual'>('auto')
 const selectedManualTickets = ref<number[]>([])
 
+// ✅ NUEVO: Guardar el estado inicial ANTES de generar tickets
+const initialTicketsCount = ref(0)
+
 // file input ref
 const fileInput = ref<HTMLInputElement | null>(null)
 function triggerFileDialog() {
@@ -398,6 +401,20 @@ const totalPrice = computed(() => {
   return (currentQty.value * Number(price)).toFixed(2)
 })
 
+// ✅ CALCULAR ESTADO INICIAL CUANDO SE ABRE EL MODAL
+watch(() => props.open, (open) => {
+  if (open) {
+    // Calcular tickets iniciales ANTES de cualquier compra
+    const userId = authStore.user?.id
+    if (userId) {
+      initialTicketsCount.value = ticketStore.userTicketsCount(userId)
+    } else {
+      initialTicketsCount.value = ticketStore.tickets.filter(t => t.userId === null).length
+    }
+    console.log('📊 Initial tickets calculated:', initialTicketsCount.value)
+  }
+})
+
 const handleConfirm = () => {
   error.value = null
 
@@ -420,8 +437,30 @@ const handleConfirm = () => {
   }
 
   const userId = authStore.user?.id ?? null
+  
+  // ✅ Guardar el estado inicial ANTES de generar tickets
+  const initialTickets = initialTicketsCount.value
+  const purchasedTickets = quantity
+  
+  console.log('🎫 Pre-generateTicket:', {
+    initialTickets,
+    purchasedTickets,
+    ticketsToBuy
+  })
+  
+  // Generar tickets
   ticketStore.generateTicket(form, props.product, userId, ticketsToBuy)
-  emit('confirmed')
+  
+  console.log('🎫 Post-generateTicket:', {
+    lastAssignedTickets: ticketStore.lastAssignedTickets,
+    ticketNumber: ticketStore.ticketNumber
+  })
+  
+  // ✅ Emitir con los datos CORRECTOS del estado anterior
+  emit('confirmed', {
+    initialTickets,
+    purchasedTickets
+  })
 }
 </script>
 

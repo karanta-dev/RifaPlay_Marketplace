@@ -1,7 +1,8 @@
 <template>
-  <nav
-    class="bg-gradient-to-r from-blue-950 via-blue-900 to-yellow-900 shadow-xl flex items-center justify-between px-4 sm:px-10 py-2 casino-navbar relative"
+ <nav
+    class="bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 shadow-2xl border-b border-yellow-400/30 flex items-center justify-between px-4 sm:px-8 py-3 casino-navbar relative"
   >
+
     <!-- Iconos casino flotantes -->
     <i
       class="fas fa-coins text-yellow-400 absolute left-4 top-2 opacity-30 text-lg casino-float"
@@ -22,34 +23,29 @@
     </div>
 
     <!-- Contador tickets -->
-    <div class="flex items-center gap-3 sm:gap-6">
-      <div
-        class="bg-blue-900 px-0.8 sm:px-0.8 py-2 sm:py-3 rounded-full flex flex-col items-center shadow-lg border-4 border-yellow-400 casino-counter"
-      >
-
+    <!-- Contador tickets y usuario -->
+    <div class="flex items-center gap-4 z-10">
       <!-- Contador Jackpot -->
-      <div class="casino-jackpot">
+      <div class="casino-jackpot" v-if="authStore.isAuthenticated">
         <JackpotCounter :value="ticketStore.userTicketsCount(authStore.user?.id ?? 0)" />
-      </div>
-
-
       </div>
     </div>
 
     <!-- Botón búsqueda + autenticación -->
     <div class="flex items-center gap-3">
       <!-- Lupa visible solo en desktop -->
+      <!-- Búsqueda desktop -->
       <button
-        class="hidden sm:flex flex-col items-center text-sm text-white hover:text-yellow-400 bg-transparent focus:outline-none casino-btn"
+        class="hidden sm:flex items-center gap-2 px-4 py-4 rounded-xl bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-400/30 transition-all duration-300 group"
         @click="goSearch"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="h-7 w-7 mb-1"
+          class="h-5 w-5 text-yellow-400 group-hover:scale-110 transition-transform"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          stroke-width="3"
+          stroke-width="2"
         >
           <path
             stroke-linecap="round"
@@ -57,8 +53,9 @@
             d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"
           />
         </svg>
-      </button>
+        <span class="text-yellow-400 font-semibold text-sm hidden lg:inline">BUSCAR</span>
 
+      </button>
       <!-- 🔹 Si no está logueado -->
       <button
         v-if="!authStore.isAuthenticated"
@@ -183,6 +180,24 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.casino-navbar {
+  background: linear-gradient(135deg, #0c0c0c 0%, #1a365d 50%, #2d3748 100%);
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(255, 215, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.casino-navbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,215,0,0.5), transparent);
+}
 
 .fade-enter-active,
 .fade-leave-active {
@@ -258,18 +273,41 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, #002b80, #001a4d);
-  border-radius: 14px;
-  padding: 6px 10px;
-  box-shadow: 0 0 16px 4px rgba(255,215,0,0.35), inset 0 0 8px rgba(255,255,255,0.1);
-  min-width: 180px;
-  animation: casinoGlow 2s infinite alternate;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #1e40af 100%);
+  border-radius: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(255, 215, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  min-width: 200px;
+  position: relative;
+  overflow: hidden;
 }
 
+.casino-jackpot::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: shimmer 3s infinite;
+}
 /* Brillo suave estilo casino */
 @keyframes casinoGlow {
   0% { box-shadow: 0 0 16px 4px rgba(255,215,0,0.35), inset 0 0 8px rgba(255,255,255,0.1); }
   100% { box-shadow: 0 0 24px 6px rgba(255,215,0,0.55), inset 0 0 12px rgba(255,255,255,0.15); }
 }
+/* Patrón de fondo para el navbar */
+.bg-casino-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
 
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
 </style>
