@@ -163,16 +163,16 @@ const banners = ref([
     title: "¡Empieza a ganar con nosotros!",
     text: "Participa en cualquiera de nuestras rifas y gana premios increíbles.",
     image: "/persona.png",
-    button1: "", // Eliminado el botón
-    button2: "", // Eliminado el botón
+    button1: "",
+    button2: "",
   },
   {
     // Banner 3
-    title: "Promociones especiales",
-    text: "Aprovecha ofertas exclusivas y duplica tus tickets.",
+    title: "Promociones especiales en RifaPlay",
+    text: "Aprovecha ofertas, promos exclusivas y duplica tus tickets.",
     image: "/persona2.png",
-    button1: "APROVECHAR",
-    button2: "DETALLES",
+    button1: "",
+    button2: "",
   },
 ])
 
