@@ -31,16 +31,6 @@
     {{ description }}
   </p>
 
-  <div class="text-center text-sm font-semibold text-gray-300 mb-3">
-    <p v-if="timeLeft.total > 0">
-      ⏱️ Termina en:
-      <span class="font-mono text-yellow-300 drop-shadow">
-        {{ timeLeft.days }}d {{ timeLeft.hours }}h {{ timeLeft.minutes }}m {{ timeLeft.seconds }}s
-      </span>
-    </p>
-    <p v-else class="text-red-400 font-bold drop-shadow">🎉 ¡Sorteado!</p>
-  </div>
-
   <div class="w-full bg-gray-700/50 rounded-full h-2 sm:h-3 mb-2 overflow-hidden">
     <div
       class="bg-yellow-400 h-2 sm:h-3 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.6)] transition-all duration-500"
@@ -49,6 +39,36 @@
   </div>
   <p class="text-xs text-gray-400 text-center mb-4">{{ progress }}% vendido</p>
 </div>
+
+
+   <!-- Contador actualizado -->
+      <div class="text-center mb-3">
+        <div class="inline-flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-2 border border-gray-600/50">
+          <span class="text-xs text-gray-300 mb-1">Tiempo restante:</span>
+          <div class="flex items-center justify-center space-x-1">
+            <div class="flex flex-col items-center">
+              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.days }}</span>
+              <span class="text-xs text-gray-400 mt-0.5">Días</span>
+            </div>
+            <span class="text-yellow-300 font-bold -mt-5">:</span>
+            <div class="flex flex-col items-center">
+              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.hours }}</span>
+              <span class="text-xs text-gray-400 mt-0.5">Horas</span>
+            </div>
+            <span class="text-yellow-300 font-bold -mt-5">:</span>
+            <div class="flex flex-col items-center">
+              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.minutes }}</span>
+              <span class="text-xs text-gray-400 mt-0.5">Min</span>
+            </div>
+            <span class="text-yellow-300 font-bold -mt-5">:</span>
+            <div class="flex flex-col items-center">
+              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.seconds }}</span>
+              <span class="text-xs text-gray-400 mt-0.5">Seg</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
     <!-- Botón participar -->
     <button
       class="px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
@@ -95,14 +115,20 @@ onUnmounted(() => {
 
 const timeLeft = computed(() => {
   const diff = new Date(props.drawDate!).getTime() - now.value
-  if (diff < 0) return { total: 0 }
+  if (diff < 0) return { total: 0, days: 0, hours: 0, minutes: 0, seconds: 0 }
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24)
   const minutes = Math.floor((diff / 1000 / 60) % 60)
   const seconds = Math.floor((diff / 1000) % 60)
 
-  return { total: diff, days, hours, minutes, seconds }
+  return { 
+    total: diff, 
+    days: days.toString().padStart(2, '0'), 
+    hours: hours.toString().padStart(2, '0'), 
+    minutes: minutes.toString().padStart(2, '0'), 
+    seconds: seconds.toString().padStart(2, '0') 
+  }
 })
 </script>
 
