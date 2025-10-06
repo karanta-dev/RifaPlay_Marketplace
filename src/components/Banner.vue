@@ -86,28 +86,69 @@
     </div>
   </div>
 
-    <RouletteModal :isOpen="showRoulette" @close="showRoulette = false" @categoryPicked="handleCategoryPicked" />
-  <ProductModal :isOpen="showProduct" :category="selectedCategory" @close="showProduct = false" @participar="handleParticipar" />
+  <!-- MODALES COMPLETOS -->
+  <RouletteModal :isOpen="showRoulette" @close="showRoulette = false" @categoryPicked="handleCategoryPicked" />
+  
+  <ProductModal 
+    :isOpen="showProduct" 
+    :category="selectedCategory" 
+    @close="showProduct = false" 
+    @participar="handleProductModalParticipar" 
+  />
+  
+  <!-- FLUJO COMPLETO DE COMPRA -->
   <ParticiparModal
-  :open="showParticipar"
-  :product="selectedProduct"
-  @close="showParticipar = false"
-  @confirmed="() => { showParticipar = false }" />
-</template>
+    :open="showParticipar"
+    :product="selectedProduct"
+    @close="handleParticiparClose"
+    @confirmed="handleParticiparConfirmed"
+  />
+  
+  <ConfirmacionModal
+    :open="showConfirmacion"
+    @close="showConfirmacion = false"
+    @showJackpot="handleShowJackpot"
+  />
+  
+  <JackpotAnimation
+    :show="showJackpot"
+    :initial-tickets="userInitialTickets"
+    :purchased-tickets="purchasedTicketsCount"
+    @close="handleJackpotClose"
+  />
 
+
+</template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue"
-// Estos componentes modales son placeholders. Asegúrate de que existan en el entorno real.
+import { useTicketStore } from '@/stores/useTicketStore'
+import { useAuthStore } from '@/stores/useAuthStore'
+
+// Importar todos los modales
 import RouletteModal from "./RouletteModal.vue"
 import ProductModal from "./ProductModal.vue"
-import ParticiparModal from "./ParticipateModal.vue" // Se mantiene el nombre por defecto en el script
+import ParticiparModal from "./ParticipateModal.vue"
+import ConfirmacionModal from "./ConfirmationModal.vue"
+import JackpotAnimation from "./JackpotAnimation.vue"
 
+const ticketStore = useTicketStore()
+const authStore = useAuthStore()
+
+// Estados para los modales
 const showRoulette = ref(false)
 const showProduct = ref(false)
-const selectedCategory = ref("")
 const showParticipar = ref(false)
+const showConfirmacion = ref(false)
+const showJackpot = ref(false)
+
+// Datos para el flujo
+const selectedCategory = ref("")
 const selectedProduct = ref(null)
+const userInitialTickets = ref(0)
+const purchasedTicketsCount = ref(0)
+
+// Banner carousel
 const currentIndex = ref(0)
 const banners = ref([
   {
@@ -135,6 +176,102 @@ const banners = ref([
   },
 ])
 
+// --- FLUJO DE MODALES COMPLETO ---
+
+// 1. Abrir ruleta desde el banner
+function openRoulette() {
+  showRoulette.value = true
+}
+
+// 2. Categoría seleccionada desde la ruleta
+function handleCategoryPicked(category) {
+  selectedCategory.value = category
+  showRoulette.value = false
+  showProduct.value = true
+}
+
+// 3. Participar desde ProductModal
+function handleProductModalParticipar(product) {
+  console.log("Abrir modal participar desde ProductModal:", product.title)
+  showProduct.value = false
+  selectedProduct.value = product
+  showParticipar.value = true
+}
+
+// 4. Cerrar ParticiparModal
+function handleParticiparClose() {
+  showParticipar.value = false
+  // Opcional: resetear el store si es necesario
+  // ticketStore.reset()
+}
+
+// 5. Confirmación de compra desde ParticiparModal
+function handleParticiparConfirmed(data) {
+  console.log("✅ Compra confirmada:", data)
+  showParticipar.value = false
+  
+  // Calcular tickets para el jackpot
+  if (data && data.initialTickets !== undefined) {
+    // Usar datos proporcionados por ParticiparModal
+    userInitialTickets.value = data.initialTickets
+    purchasedTicketsCount.value = data.purchasedTickets
+  } else {
+    // Calcular basado en el store actual
+    userInitialTickets.value = getUserInitialTickets()
+    purchasedTicketsCount.value = getPurchasedTicketsCount()
+  }
+  
+  console.log("🎰 Datos para jackpot:", {
+    initial: userInitialTickets.value,
+    purchased: purchasedTicketsCount.value
+  })
+  
+  // Mostrar confirmación
+  showConfirmacion.value = true
+}
+
+// 6. Mostrar jackpot desde ConfirmacionModal
+function handleShowJackpot() {
+  console.log("🎯 Mostrando jackpot...")
+  showConfirmacion.value = false
+  showJackpot.value = true
+}
+
+// 7. Cerrar jackpot
+function handleJackpotClose() {
+  console.log("🎯 Cerrando jackpot...")
+  showJackpot.value = false
+  // Resetear para próxima compra
+  setTimeout(() => {
+    ticketStore.reset()
+    selectedProduct.value = null
+  }, 500)
+}
+
+// --- FUNCIONES AUXILIARES ---
+
+// Calcular tickets iniciales del usuario
+const getUserInitialTickets = () => {
+  const userId = authStore.user?.id
+  
+  if (userId) {
+    const currentCount = ticketStore.userTicketsCount(userId)
+    const justPurchased = ticketStore.lastAssignedTickets?.length || 0
+    return Math.max(0, currentCount - justPurchased)
+  }
+  
+  const currentNullTickets = ticketStore.tickets.filter(t => t.userId === null).length
+  const justPurchased = ticketStore.lastAssignedTickets?.length || 0
+  return Math.max(0, currentNullTickets - justPurchased)
+}
+
+// Calcular tickets comprados
+const getPurchasedTicketsCount = () => {
+  return ticketStore.lastAssignedTickets?.length || 
+         (ticketStore.ticketNumber ? 1 : 0) ||
+         Number(ticketStore.formData?.tickets) || 1
+}
+
 // --- Autoplay control ---
 let interval = null
 const startAutoplay = () => {
@@ -145,23 +282,6 @@ const startAutoplay = () => {
 }
 const stopAutoplay = () => {
   if (interval) clearInterval(interval)
-}
-
-function openRoulette() {
-  showRoulette.value = true
-}
-function handleCategoryPicked(category) {
-  selectedCategory.value = category
-  showProduct.value = true
-}
-function handleParticipar(product) {
-  console.log("Abrir modal participar con producto:", product.title)
-  
-  // ✅ CAMBIO CLAVE: Cierra el ProductModal antes de abrir ParticipateModal
-  showProduct.value = false; 
-  
-  selectedProduct.value = product
-  showParticipar.value = true
 }
 
 const goToSlide = (index) => {

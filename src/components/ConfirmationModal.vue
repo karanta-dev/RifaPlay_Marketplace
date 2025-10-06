@@ -90,9 +90,9 @@
         </p>
       </div>
 
-      <!-- Botón cerrar -->
+      <!-- Botón continuar - AHORA EMITE EL EVENTO -->
       <button 
-        @click="close" 
+        @click="handleContinue" 
         class="relative overflow-hidden group bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold px-8 py-3 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 w-full"
       >
         <span class="relative z-10 flex items-center justify-center gap-2">
@@ -121,16 +121,25 @@ import { useTicketStore } from '@/stores/useTicketStore'
 const ticketStore = useTicketStore()
 
 const props = defineProps<{ open: boolean }>()
-const emit = defineEmits(['close'])
+// ✅ AGREGAR NUEVO EVENTO PARA EL JACKPOT
+const emit = defineEmits(['close', 'showJackpot'])
 
 const close = () => {
   ticketStore.reset()
   emit('close')
 }
+
+// ✅ NUEVA FUNCIÓN PARA MANEJAR EL BOTÓN CONTINUAR
+const handleContinue = () => {
+  // Emitir el evento para mostrar el jackpot
+  emit('showJackpot')
+  // También cerramos este modal
+  emit('close')
+}
 </script>
 
 <style scoped>
-/* Animación personalizada para el scroll */
+/* (Mantener los mismos estilos) */
 .bg-gradient-to-br::-webkit-scrollbar {
   width: 6px;
 }
@@ -149,7 +158,6 @@ const close = () => {
   background: linear-gradient(to bottom, #eab308, #ea580c);
 }
 
-/* Animación de entrada para el modal */
 .fixed {
   animation: modalSuccess 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -165,7 +173,6 @@ const close = () => {
   }
 }
 
-/* Efecto de confeti virtual */
 @keyframes float {
   0%, 100% {
     transform: translateY(0px);
