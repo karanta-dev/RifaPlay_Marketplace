@@ -15,7 +15,7 @@
     </div>
 
     <!-- Contenedor principal del jackpot -->
-    <div class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-800 rounded-3xl shadow-2xl p-8 w-[95%] max-w-2xl relative border-2 border-yellow-400/50 overflow-hidden">
+    <div class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-800 rounded-3xl shadow-2xl p-3 w-[95%] max-w-2xl relative border-2 border-yellow-400/50 overflow-hidden">
       
       <!-- Efectos de brillo -->
       <div class="absolute -top-32 -right-32 w-64 h-64 bg-yellow-400/20 rounded-full blur-xl"></div>

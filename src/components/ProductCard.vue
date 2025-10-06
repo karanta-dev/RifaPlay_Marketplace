@@ -2,7 +2,7 @@
 <div
   class="relative bg-gradient-to-r from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-2xl p-5 border border-gray-700/50 shadow-lg hover:shadow-yellow-500/10 transition transform hover:scale-105 overflow-hidden group cursor-pointer
          flex flex-col justify-between h-full"
-  :class="{ 'opacity-60 pointer-events-none': isSoldOut }"
+  :class="{ 'opacity-60 pointer-events-none': isSoldOut || isTimeUp }"
   @click="$emit('view-details')"
 >
     <!-- Glow decorativo -->
@@ -41,9 +41,9 @@
 </div>
 
 
-   <!-- Contador actualizado -->
+   <!-- Contador actualizado con condicional de tiempo límite -->
       <div class="text-center mb-3">
-        <div class="inline-flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-2 border border-gray-600/50">
+        <div v-if="!isTimeUp" class="inline-flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-2 border border-gray-600/50">
           <span class="text-xs text-gray-300 mb-1">Tiempo restante:</span>
           <div class="flex items-center justify-center space-x-1">
             <div class="flex flex-col items-center">
@@ -67,19 +67,25 @@
             </div>
           </div>
         </div>
+        <div v-else class="inline-flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-2 border border-gray-600/50">
+          <span class="text-xs text-gray-300 mb-1">Estado:</span>
+          <div class="flex items-center justify-center">
+            <span class="text-green-400 font-bold text-sm drop-shadow">🎉 ¡SORTEADO!</span>
+          </div>
+        </div>
       </div>
 
     <!-- Botón participar -->
     <button
       class="px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
       :class="{
-        'bg-green-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.6)]': isSoldOut,
-        'bg-yellow-500 text-black hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)]': !isSoldOut
+        'bg-green-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.6)]': isSoldOut || isTimeUp,
+        'bg-yellow-500 text-black hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)]': !isSoldOut && !isTimeUp
       }"
       @click.stop="$emit('participar')"
-      :disabled="isSoldOut"
+      :disabled="isSoldOut || isTimeUp"
     >
-      {{ isSoldOut ? '¡VENDIDO!' : 'PARTICIPAR' }}
+      {{ isTimeUp ? '¡SORTEADO!' : (isSoldOut ? '¡VENDIDO!' : 'PARTICIPAR') }}
     </button>
   </div>
 </template>
@@ -99,6 +105,8 @@ const props = defineProps({
 const isHot = computed(() => props.progress! > 70 && props.progress! < 100)
 // Lógica de "Vendido"
 const isSoldOut = computed(() => props.progress! === 100)
+// Lógica de "Tiempo Agotado"
+const isTimeUp = computed(() => timeLeft.value.total <= 0)
 
 const now = ref(Date.now())
 let interval: any = null
