@@ -170,7 +170,20 @@ function handleBuy() {
 
 function goToRiferoProfile() {
   if (riferoUser.value) {
-    router.push({ name: 'user-profile', params: { id: riferoUser.value.id } })
+    // Determinar qué ruta usar según el usuario
+    let routeName = 'user-profile'
+    
+    if (riferoUser.value.name === "Juan Pérez") {
+      routeName = 'user-profile-juan'
+    } else if (riferoUser.value.name === "Tech Store") {
+      routeName = 'user-profile-tech'
+    }
+    
+    router.push({ 
+      name: routeName, 
+      params: { id: riferoUser.value.id } 
+    })
+    emit('close') // Cerrar el modal después de navegar
   }
 }
 </script>
