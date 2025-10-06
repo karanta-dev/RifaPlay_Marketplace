@@ -10,7 +10,7 @@
         v-for="i in 30" 
         :key="i" 
         class="absolute w-2 h-2 bg-yellow-400 rounded-full opacity-60"
-        :style="particleStyle(i)"
+        :style="particleStyle()"
       ></div>
     </div>
 
@@ -158,7 +158,7 @@ const formatNumber = (num: number) => {
 }
 
 // Estilos para partículas de fondo
-const particleStyle = (index: number) => {
+const particleStyle = () => {
   const top = Math.random() * 100
   const left = Math.random() * 100
   const size = 2 + Math.random() * 4
