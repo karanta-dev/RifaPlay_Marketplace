@@ -13,6 +13,8 @@ import ProductGrid from '../components/ProductGrid.vue'
 import TopProductsCarousel from '../components/TopProductsCarousel.vue'
 
 
+
+
 // Importar el store aquí para inicializarlo (queda disponible en todos los hijos también si usan el mismo)
 // import { useTicketStore } from '@/stores/useTicketStore'
 

@@ -106,6 +106,18 @@ const handleLogin = async () => {
   }
 };
 
+// Service
+// const handleLogin = async () => {
+//   const success = await authStore.login(email.value, password.value);
+//   if (success) {
+//     await authStore.loadUserProfile(); // ✅ Carga perfil desde el backend
+//     toast.success("✅ Sesión iniciada correctamente");
+//     emit("close");
+//   } else {
+//     toast.error("❌ Error al iniciar sesión");
+//   }
+// };
+
 const handleRegister = async () => {
   const success = await authStore.register({
     name: name.value,
