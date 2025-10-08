@@ -150,8 +150,8 @@ export const useTicketStore = defineStore('ticket', {
                 categories: ['Electrodomésticos', 'Gaming'],
                 description: 'Consola PS5 edición estándar + 3 juegos a elegir.',
                 images: [
-                    'https://images.unsplash.com/photo-1606813907299-98c7d4d50ebd?auto=format&fit=crop&w=800&q=80',
-                    'https://images.unsplash.com/photo-1606813907505-9a74a9ffb1ac?auto=format&fit=crop&w=800&q=80'
+                    'https://cdn.hobbyconsolas.com/sites/navi.axelspringer.es/public/media/image/2021/10/consola-ps5-playstation-5-2497497.jpg?tf=3840x',
+                    'https://cdn.hobbyconsolas.com/sites/navi.axelspringer.es/public/media/image/2021/10/consola-ps5-playstation-5-2497497.jpg?tf=3840x'
                 ],
                 ticketPrice: 8,
                 ticketsVendidos: 900,

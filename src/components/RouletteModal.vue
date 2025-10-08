@@ -28,10 +28,14 @@
       </div>
 
       <!-- Contenedor de la Ruleta -->
-      <div 
-        class="roulette-container relative mx-auto mb-8" 
-        :style="{ width: ROULETTE_SIZE + 'px', height: ROULETTE_SIZE + 'px' }"
-      >
+<div 
+  class="roulette-container relative flex items-center justify-center mx-auto mb-8"
+  :style="{ 
+    width: '100%',
+    maxWidth: ROULETTE_SIZE + 'px',
+    aspectRatio: '1 / 1'
+  }"
+>
         
         <!-- Flecha Indicadora Mejorada -->
         <div class="markers">
