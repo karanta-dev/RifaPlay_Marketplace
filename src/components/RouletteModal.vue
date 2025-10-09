@@ -84,7 +84,7 @@
         >
           <div class="relative">
             <span class="relative z-10">GIRAR</span>
-            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 rounded-full"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent -skew-x-12 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 rounded-full"></div>
           </div>
         </button>
       </div>
@@ -101,7 +101,6 @@
         </div>
       </div>
 
-      <!-- Botón Cerrar Mejorado -->
 
     </div>
   </div>
@@ -119,11 +118,9 @@ const emits = defineEmits(["close", "categoryPicked"])
 const store = useTicketStore()
 
 // Paleta de colores mejorada con tonos más vibrantes
-// ✅ SOLUCIÓN: Simplificar a solo 2 colores y usar lógica de alternancia
 const RED_COLOR = '#e53935';
 const BLACK_COLOR = '#000000';
 
-// ✅ AGREGAR estas funciones para manejar colores y texto
 function getSegmentColor(index) {
   return index % 2 === 0 ? RED_COLOR : BLACK_COLOR;
 }
@@ -309,7 +306,6 @@ function labelStyle(i) {
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* === 🎡 Estilos visuales tipo “What to eat” === */
 
 /* Contenedor principal de la ruleta */
 .roulette-container {
