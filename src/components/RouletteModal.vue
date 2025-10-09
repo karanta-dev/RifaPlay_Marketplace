@@ -1,8 +1,7 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-50 p-4 transition-all duration-300">
     <!-- Modal con diseño premium -->
-    <div class="bg-gradient-to-br from-purple-900 to-indigo-800 rounded-2xl shadow-2xl p-8 text-center w-full max-w-md relative border border-purple-400/30 overflow-hidden">
-      <!-- Efectos de brillo -->
+<div class="modal_bg bg-cover bg-center bg-no-repeat rounded-2xl shadow-2xl p-8 text-center w-full max-w-md relative border border-purple-400/30 overflow-hidden" style="background-image: url('/bg.png');">      <!-- Efectos de brillo -->
       <div class="absolute -top-24 -right-24 w-48 h-48 bg-yellow-400/10 rounded-full blur-xl"></div>
       <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-500/10 rounded-full blur-xl"></div>
       
@@ -306,6 +305,23 @@ function labelStyle(i) {
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+/* Estilos para el modal con imagen de fondo */
+.modal_bg {
+  position: relative;
+}
+
+/* Capa overlay para mejorar legibilidad del texto */
+.modal_bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 1rem; /* Mismo border-radius que el modal */
+  z-index: 1;
+}
+
 
 /* Contenedor principal de la ruleta */
 .roulette-container {
@@ -316,15 +332,21 @@ function labelStyle(i) {
   box-shadow:
     0 0 40px rgba(0, 0, 0, 0.6),
     inset 0 0 20px rgba(255, 255, 255, 0.1);
-  border: 4px solid #111;
-}
+border: 4px solid #B8860B; /* Dorado oscuro más elegante */
+  background: 
+    radial-gradient(circle at center, #111 10%, #000 90%),
+    linear-gradient(45deg, #FFD700, #FFA500, #FFD700);
+  background-clip: padding-box, border-box;
+  background-origin: border-box;}
 
 /* Rueda Giratoria */
 .spinner-wheel {
   transition: transform 5000ms cubic-bezier(0.2, 0.4, 0.4, 1.025);
   border-radius: 50%;
-  border: 3px solid #222;
-  box-shadow: inset 0 0 25px rgba(255, 255, 255, 0.05);
+  border: 3px solid #FFD700; /* Dorado brillante */
+  box-shadow: 
+    inset 0 0 25px rgba(255, 255, 255, 0.05),
+    0 0 15px rgba(255, 215, 0, 0.3); /* Sombra dorada exterior */
   backface-visibility: hidden;
   z-index: 1;
 }
