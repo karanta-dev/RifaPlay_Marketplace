@@ -37,7 +37,7 @@
       // Banners 2 y 3 - estilo actual 
       ? 'h-40 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-2 sm:-mb-12 relative z-10 casino-img' 
       
-      // BANNER 1 
+      // BANNER 1 CON NUEVA FOTO
       : 'h-40 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-0 sm:-mb-12 relative z-10 casino-img'
   ]"
 />
