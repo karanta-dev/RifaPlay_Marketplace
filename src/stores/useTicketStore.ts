@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia';
+import { RaffleService } from "@/services/RaffleService";
 
 // Clave para la persistencia en localStorage
 const PERSIST_KEY = 'rifa_ticket_store_v1';
+localStorage.removeItem('rifa_ticket_store_v1')
 
 // Intentar leer el estado persistido
 let persisted: any = null;
@@ -16,6 +18,7 @@ try {
 // --- TIPOS DE DATOS ---
 
 interface Product {
+    uuid?: string;
     title: string;
     rifero: string;
     categories: string[];
@@ -67,7 +70,8 @@ export const useTicketStore = defineStore('ticket', {
     state: () => ({
         // Datos generales de la simulación
         ticketsVendidos: 1134283, // Total vendido en todas las rifas (simulación)
-        
+            loading: false,
+        pagination: null as any,
         // Estado temporal para el proceso de compra
         formData: {
         nombre: '',
@@ -86,6 +90,7 @@ export const useTicketStore = defineStore('ticket', {
         // Tickets individuales asociados a usuario/producto (Simulación de DB)
         tickets: (persisted?.tickets ?? []) as TicketRecord[],
         ws: null as WebSocket | null, // 🔴 Guardamos la conexión WS aquí
+        // topProducts: [] as Product[],
 
         // Lista de rifas (productos) con datos simulados (Simulación de DB)
         topProducts: (persisted?.topProducts ?? [
@@ -150,8 +155,8 @@ export const useTicketStore = defineStore('ticket', {
                 categories: ['Electrodomésticos', 'Gaming'],
                 description: 'Consola PS5 edición estándar + 3 juegos a elegir.',
                 images: [
-                    'https://images.unsplash.com/photo-1606813907299-98c7d4d50ebd?auto=format&fit=crop&w=800&q=80',
-                    'https://images.unsplash.com/photo-1606813907505-9a74a9ffb1ac?auto=format&fit=crop&w=800&q=80'
+                    'https://cdn.hobbyconsolas.com/sites/navi.axelspringer.es/public/media/image/2021/10/consola-ps5-playstation-5-2497497.jpg?tf=3840x',
+                    'https://cdn.hobbyconsolas.com/sites/navi.axelspringer.es/public/media/image/2021/10/consola-ps5-playstation-5-2497497.jpg?tf=3840x'
                 ],
                 ticketPrice: 8,
                 ticketsVendidos: 900,
@@ -279,6 +284,7 @@ export const useTicketStore = defineStore('ticket', {
     },
     actions: {
             // 🔴 Nuevo: conectar al WebSocket
+            
     connectToTicketWS() {
     const ws = new WebSocket("ws://localhost:3000");
 
@@ -342,6 +348,35 @@ export const useTicketStore = defineStore('ticket', {
         metodoPago: '',
         referencia: '',
         comprobante: null,
+      }
+    },
+    async loadRaffles(page = 1, perPage = 16) {
+      this.loading = true;
+
+      try {
+        const { data, meta } = await RaffleService.getAll(page, perPage);
+
+        // 🔹 Guardamos los productos (mapeo a tu estructura actual)
+        this.topProducts = data.map((r) => ({
+          uuid: r.uuid,
+          title: r.name,
+          rifero: r.created_by?.name ?? "Desconocido",
+          categories: r.categories?.map((c) => c.name) ?? [],
+          description: r.description,
+          images: r.images?.map((i) => i.url) ?? [],
+          ticketPrice: r.ticket_price,
+          status: r.status,
+          ticketsVendidos: r.tickets_sold,
+          ticketsMax: r.end_range,
+          drawDate: r.raffle_date,
+        }));
+
+        // 🔹 Guardamos la metadata (paginación)
+        this.pagination = meta || null;
+      } catch (error) {
+        console.error("❌ No se pudieron cargar las rifas:", error);
+      } finally {
+        this.loading = false;
       }
     },
       // 🔵 Métodos para enviar mensajes al WS

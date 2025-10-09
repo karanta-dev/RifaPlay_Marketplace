@@ -76,7 +76,7 @@
     </p>
   </div>
 
-  <p class="font-semibold mt-3 text-white">Vendido: 🔴 Pendiente: 🔘 Seleccionados por ti: 🟢</p>
+  <p class="font-semibold mt-3 text-white">Vendido: 🔴 Pendiente: 🔘 Seleccionados: 🟢</p>
 </template>
 
 <script setup lang="ts">

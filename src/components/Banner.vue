@@ -40,7 +40,8 @@
                 // En móvil usamos mb-0 (margen inferior 0) para que pegue al borde.
                 ? 'h-40 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-0 sm:-mb-12 relative z-10 casino-img' 
                 
-                : 'h-28 sm:h-40 w-auto sm:mr-8 mb-4 sm:mb-3 relative z-10 casino-img object-contain'
+                // BANNER 1 (Rueda aleatoria) - IMAGEN MÁS GRANDE
+                : 'h-20 sm:h-60 w-auto sm:mr-8 mb-4 sm:mb-3 relative z-10 casino-img object-contain transform hover:scale-105 transition-transform duration-300'
             ]"
           />
 
@@ -154,7 +155,7 @@ const banners = ref([
   {
     title: "¡JUEGA, GANA Y CELEBRA!",
     text: "¿Quiere probar su suerte?, nosotros escogemos una rifa por usted.",
-    image: "/slot.png",
+    image: "/ruedaaleatoria.png",
     button1: "¡PARTICIPAR!",
     button2: "", // Eliminado el botón
   },
@@ -369,5 +370,16 @@ const randomStyle = (n) => {
 }
 .casino-img {
   filter: drop-shadow(0 0 12px #ffd70088);
+}
+
+/* Animación especial para la rueda aleatoria */
+.casino-img:hover {
+  animation: wheelSpin 2s ease-in-out;
+}
+
+@keyframes wheelSpin {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.05) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
 }
 </style>

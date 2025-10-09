@@ -27,7 +27,6 @@
               <div class="flex gap-4 mt-2 text-sm">
                 <span class="text-green-400">✅ Ganados: {{ stats.won }}</span>
                 <span class="text-yellow-400">⏳ En curso: {{ stats.inProgress }}</span>
-                <span class="text-red-400">❌ Perdidos: {{ stats.lost }}</span>
                 <span class="text-blue-400">🎟️ Total: {{ stats.total }}</span>
               </div>
             </div>
@@ -66,7 +65,6 @@
               <option value="all">Todos los estados</option>
               <option value="En transcurso">En transcurso</option>
               <option value="Ganador">Ganados</option>
-              <option value="Perdiste">Perdidos</option>
             </select>
 
             <!-- Filtro por categoría -->
