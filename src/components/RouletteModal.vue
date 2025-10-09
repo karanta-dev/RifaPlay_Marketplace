@@ -328,7 +328,6 @@ function labelStyle(i) {
   position: relative;
   border-radius: 50%;
   overflow: hidden;
-  background: radial-gradient(circle at center, #111 10%, #000 90%);
   box-shadow:
     0 0 40px rgba(0, 0, 0, 0.6),
     inset 0 0 20px rgba(255, 255, 255, 0.1);

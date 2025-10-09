@@ -29,21 +29,18 @@
           class="flex flex-col items-center justify-between w-full"
         >
           
-          <img
-            :src="banner.image"
-            alt="Banner image"
-            :class="[
-              
-              i === 1 || i === 2 
-                
-                // Las clases aseguran que la imagen es grande y se alinea en la parte inferior sin margen negativo.
-                // En móvil usamos mb-0 (margen inferior 0) para que pegue al borde.
-                ? 'h-40 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-0 sm:-mb-12 relative z-10 casino-img' 
-                
-                // BANNER 1 (Rueda aleatoria) - IMAGEN MÁS GRANDE
-                : 'h-20 sm:h-60 w-auto sm:mr-8 mb-4 sm:mb-3 relative z-10 casino-img object-contain transform hover:scale-105 transition-transform duration-300'
-            ]"
-          />
+<img
+  :src="banner.image"
+  alt="Banner image"
+  :class="[
+    i === 1 || i === 2 
+      // Banners 2 y 3 - estilo actual 
+      ? 'h-40 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-2 sm:-mb-12 relative z-10 casino-img' 
+      
+      // BANNER 1 
+      : 'h-40 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-0 sm:-mb-12 relative z-10 casino-img'
+  ]"
+/>
 
           
           <div 
@@ -152,10 +149,11 @@ const purchasedTicketsCount = ref(0)
 // Banner carousel
 const currentIndex = ref(0)
 const banners = ref([
+  //banner 1
   {
     title: "¡JUEGA, GANA Y CELEBRA!",
     text: "¿Quiere probar su suerte?, nosotros escogemos una rifa por usted.",
-    image: "/ruedaaleatoria.png",
+    image: "/persona3.png",
     button1: "¡PARTICIPAR!",
     button2: "", // Eliminado el botón
   },
