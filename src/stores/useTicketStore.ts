@@ -4,6 +4,8 @@ import { RaffleService } from "@/services/RaffleService";
 // Clave para la persistencia en localStorage
 const PERSIST_KEY = 'rifa_ticket_store_v1';
 
+// localStorage.removeItem('rifa_ticket_store_v1')
+
 // Intentar leer el estado persistido
 let persisted: any = null;
 try {
