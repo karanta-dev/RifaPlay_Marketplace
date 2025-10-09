@@ -90,7 +90,7 @@
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div
-              v-for="(prize, index) in prizes"
+              v-for="(prize) in prizes"
               :key="prize.uuid"
               class="bg-gradient-to-br from-purple-900/50 to-blue-900/50 p-4 rounded-xl border border-purple-400/30 backdrop-blur-sm"
             >
