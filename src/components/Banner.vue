@@ -17,7 +17,8 @@
       @touchstart="handleTouchStart" 
       @touchend="handleTouchEnd"
     >
-      <div v-for="(banner, i) in banners" :key="i" class="min-w-full flex items-center justify-center relative px-6 sm:px-20 py-10 sm:py-2 shadow-lg rounded-xl">
+<div v-for="(banner, i) in banners" :key="i" 
+     class="min-w-full flex items-center justify-center relative px-4 sm:px-20 py-4 sm:py-10 shadow-lg rounded-xl">
         
         <!-- Aplica diseño de imagen a la derecha y texto a la izquierda para el banner 2 (i=1) y banner 3 (i=2) en desktop. -->
         <!-- En móvil, se usa flex-col-reverse para que la imagen (que está primero en el código) aparezca debajo del texto. -->
@@ -34,13 +35,11 @@
   alt="Banner image"
   :class="[
     i === 1 || i === 2 
-      // Banners 2 y 3 - estilo actual 
-      ? 'h-40 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-2 sm:-mb-12 relative z-10 casino-img' 
-      
-      // BANNER 1 CON NUEVA FOTO AJUSTADO
-      : 'h-40 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-0 sm:-mb-12 relative z-10 casino-img'
+      ? 'h-24 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-3 sm:-mb-12 relative z-10 casino-img' 
+      : 'h-24 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-2 sm:-mb-12 relative z-10 casino-img'
   ]"
 />
+
 
           
           <div 
@@ -79,7 +78,7 @@
       </div>
     </div>
     
-    <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
+    <div class="absolute bottom-1 left-0 right-0 flex justify-center gap-1 z-20">
       <button v-for="(b, i) in banners" :key="i" class="w-3 h-3 rounded-full" :class="i === currentIndex ? 'bg-yellow-400' : 'bg-white/40'" @click="goToSlide(i)"></button>
     </div>
   </div>
@@ -379,5 +378,16 @@ const randomStyle = (n) => {
   0% { transform: scale(1) rotate(0deg); }
   50% { transform: scale(1.05) rotate(5deg); }
   100% { transform: scale(1) rotate(0deg); }
+}
+@media (max-width: 640px) {
+  .casino-title {
+    font-size: 1.0rem; /* text-xl */
+  }
+  .casino-desc {
+    font-size: 0.75rem; /* text-sm */
+  }
+  .casino-banner {
+    border-radius: 1rem;
+  }
 }
 </style>
