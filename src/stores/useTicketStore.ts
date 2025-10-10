@@ -3,6 +3,7 @@ import { RaffleService } from "@/services/RaffleService";
 
 // Clave para la persistencia en localStorage
 const PERSIST_KEY = 'rifa_ticket_store_v1';
+localStorage.removeItem('rifa_ticket_store_v1')
 
 // localStorage.removeItem('rifa_ticket_store_v1')
 
@@ -136,20 +137,6 @@ export const useTicketStore = defineStore('ticket', {
                 ticketsVendidos: 1450,
                 ticketsMax: 2000,
                 drawDate: '2025-11-28T12:30:00'
-            },
-                        {
-                title: 'Moto Yamaha 2025',
-                rifero: 'Juan Pérez',
-                categories: ['Motos'],
-                description: 'Una moto nueva, directo de agencia. Incluye audio premium.',
-                images: [
-                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg',
-                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg'
-                ],
-                ticketPrice: 10,
-                ticketsVendidos: 699, // Vendidos simulados
-                ticketsMax: 1000, // Máximo de tickets
-                drawDate: '2025-11-25T10:00:00'
             },
             {
                 title: 'Viaje a París',
