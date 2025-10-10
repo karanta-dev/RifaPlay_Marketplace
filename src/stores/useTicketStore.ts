@@ -3,7 +3,8 @@ import { RaffleService } from "@/services/RaffleService";
 
 // Clave para la persistencia en localStorage
 const PERSIST_KEY = 'rifa_ticket_store_v1';
-localStorage.removeItem('rifa_ticket_store_v1')
+
+// localStorage.removeItem('rifa_ticket_store_v1')
 
 // Intentar leer el estado persistido
 let persisted: any = null;
@@ -121,6 +122,21 @@ export const useTicketStore = defineStore('ticket', {
                 ticketsVendidos: 723,
                 ticketsMax: 1000,
                 drawDate: '2025-09-25T10:00:00'
+            },
+            
+              {
+                title: 'Moto Honda 2025',
+                rifero: 'Juan Pérez',
+                categories: ['Motos'],
+                description: 'Una moto usada pero que se ve como nuevo, directo de agencia. Incluye audio premium.',
+                images: [
+                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg',
+                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg'
+                ],
+                ticketPrice: 10,
+                ticketsVendidos: 723,
+                ticketsMax: 1000,
+                drawDate: '2025-10-25T10:00:00'
             },
             {
                 title: 'iPhone + AirPods',
