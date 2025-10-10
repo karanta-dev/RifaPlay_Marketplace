@@ -155,11 +155,28 @@
             </div>
 
             <!-- Resumen -->
-            <div class="pt-4 border-t border-white/20 mt-6">
+            <div class="pt-4 border-t border-white/20 mt-6 ">
+                  <!-- ✅ NUEVO: Precio en bolívares -->
+                <div class="flex flex-col items-end gap-1">
+                  <p class="text-lg font-bold text-white">
+                    Precio:
+                    <strong class="text-2xl text-yellow-400 ml-2">
+                      {{ loadingBcv ? 'Cargando...' : `${totalPriceBs} Bs` }}
+                    </strong>
+                  </p>
+                  
+                  <span v-if="!loadingBcv && bcvRate > 0" class="text-sm text-gray-400">
+                    (Tasa BCV: {{ bcvRate.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }} Bs/USD)
+                  </span>
+                </div>
+
               <div class="text-right space-y-2">
                 <p class="text-lg font-bold text-white">
-                  Total: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span>
+                  Precio: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span>
                 </p>
+                
+
+                
                 <p v-if="currentQty > 0" class="text-sm text-cyan-300">
                   Tickets a comprar: <strong class="text-white">{{ currentQty }}</strong>
                 </p>
@@ -295,11 +312,33 @@
               </div>
             </div>
 
-            <!-- Resumen para no autenticados -->
-            <div class="text-right text-lg font-bold pt-4 border-t border-white/20 mt-6">
-              <p class="text-white">
-                Total: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span>
-              </p>
+            <!-- Resumen -->
+            <div class="pt-4 border-t border-white/20 mt-6 ">
+                  <!-- ✅ NUEVO: Precio en bolívares -->
+                <div class="flex flex-col items-end gap-1">
+                  <p class="text-lg font-bold text-white">
+                    Precio:
+                    <strong class="text-2xl text-yellow-400 ml-2">
+                      {{ loadingBcv ? 'Cargando...' : `${totalPriceBs} Bs` }}
+                    </strong>
+                  </p>
+                  
+                  <span v-if="!loadingBcv && bcvRate > 0" class="text-sm text-gray-400">
+                    (Tasa BCV: {{ bcvRate.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }} Bs/USD)
+                  </span>
+                </div>
+
+              <div class="text-right space-y-2">
+                <p class="text-lg font-bold text-white">
+                  Precio: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span>
+                </p>
+                
+
+                
+                <p v-if="currentQty > 0" class="text-sm text-cyan-300">
+                  Tickets a comprar: <strong class="text-white">{{ currentQty }}</strong>
+                </p>
+              </div>
             </div>
 
             <!-- Botones para no autenticados -->
@@ -340,7 +379,8 @@ const emit = defineEmits(['close', 'confirmed'])
 
 const ticketStore = useTicketStore()
 const authStore = useAuthStore()
-
+const bcvRate = ref(0)
+const loadingBcv = ref(false)
 // SELECCIÓN
 const selectionMode = ref<'auto' | 'manual'>('auto')
 const selectedManualTickets = ref<number[]>([])
@@ -414,7 +454,48 @@ watch(() => props.open, (open) => {
     console.log('📊 Initial tickets calculated:', initialTicketsCount.value)
   }
 })
+// ✅ NUEVO: Función para obtener la tasa BCV
+async function fetchBcvRate() {
+  loadingBcv.value = true
+  try {
+    const response = await fetch('https://bcv-api.karanta.dev/rates/')
+    const data = await response.json()
+    bcvRate.value = data.bcv || 0
+    console.log('💰 BCV Rate:', bcvRate.value)
+  } catch (error) {
+    console.error('❌ Error fetching BCV rate:', error)
+    bcvRate.value = 0
+  } finally {
+    loadingBcv.value = false
+  }
+}
 
+// ✅ NUEVO: Computed para el precio en bolívares
+const totalPriceBs = computed(() => {
+  if (!bcvRate.value) return '0,00'
+  const totalUsd = parseFloat(totalPrice.value)
+  const totalBs = totalUsd * bcvRate.value
+  return totalBs.toLocaleString('es-VE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+})
+
+// ✅ NUEVO: Cargar tasa BCV cuando se abre el modal
+watch(() => props.open, (open) => {
+  if (open) {
+    fetchBcvRate()
+    
+    // Calcular tickets iniciales ANTES de cualquier compra
+    const userId = authStore.user?.id
+    if (userId) {
+      initialTicketsCount.value = ticketStore.userTicketsCount(userId)
+    } else {
+      initialTicketsCount.value = ticketStore.tickets.filter(t => t.userId === null).length
+    }
+    console.log('📊 Initial tickets calculated:', initialTicketsCount.value)
+  }
+})
 const handleConfirm = () => {
   error.value = null
 
