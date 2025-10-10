@@ -1,8 +1,7 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-50 p-4 transition-all duration-300">
     <!-- Modal con diseño premium -->
-    <div class="bg-gradient-to-br from-purple-900 to-indigo-800 rounded-2xl shadow-2xl p-8 text-center w-full max-w-md relative border border-purple-400/30 overflow-hidden">
-      <!-- Efectos de brillo -->
+<div class="modal_bg bg-cover bg-center bg-no-repeat rounded-2xl shadow-2xl p-8 text-center w-full max-w-md relative border border-purple-400/30 overflow-hidden" style="background-image: url('/bg.png');">      <!-- Efectos de brillo -->
       <div class="absolute -top-24 -right-24 w-48 h-48 bg-yellow-400/10 rounded-full blur-xl"></div>
       <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-500/10 rounded-full blur-xl"></div>
       
@@ -38,10 +37,13 @@
 >
         
         <!-- Flecha Indicadora Mejorada -->
-        <div class="markers">
-          <div class="triangle-marker"></div>
-          <div class="glow-effect"></div>
-        </div>
+  <div class="markers">
+    <div class="triangle-marker"></div>
+    <div class="glow-effect"></div>
+    <!-- Agregar un círculo de base para más estabilidad visual -->
+    <div class="marker-base"></div>
+  </div>
+
 
         <!-- Rueda Giratoria -->
         <div 
@@ -61,8 +63,7 @@
             :style="segmentStyle(i)"
           >
             <span class="label absolute text-white font-bold" :style="labelStyle(i)">
-              <span class="text align-middle drop-shadow-lg text-black">{{ cat.name }}</span>
-            </span>
+<span class="text align-middle drop-shadow-lg" :class="i % 2 === 0 ? 'text-white' : 'text-gray-200'">{{ cat.name }}</span>            </span>
           </div>
         </div>
         
@@ -82,7 +83,7 @@
         >
           <div class="relative">
             <span class="relative z-10">GIRAR</span>
-            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 rounded-full"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent -skew-x-12 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 rounded-full"></div>
           </div>
         </button>
       </div>
@@ -99,7 +100,6 @@
         </div>
       </div>
 
-      <!-- Botón Cerrar Mejorado -->
 
     </div>
   </div>
@@ -117,44 +117,42 @@ const emits = defineEmits(["close", "categoryPicked"])
 const store = useTicketStore()
 
 // Paleta de colores mejorada con tonos más vibrantes
-const COLOR_PALETTE = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD',
-  '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9', '#F8C471', '#82E0AA',
-  '#F1948A', '#85C1E9', '#D7BDE2', '#F9E79F', '#A9DFBF', '#FAD7A0'
-];
+const RED_COLOR = '#e53935';
+const BLACK_COLOR = '#000000';
 
+function getSegmentColor(index) {
+  return index % 2 === 0 ? RED_COLOR : BLACK_COLOR;
+}
+
+function getTextColorClass(index) {
+  return index % 2 === 0 ? 'text-white' : 'text-gray-200';
+}
 // Lógica mejorada para manejar si las categorías son strings o objetos, y asignar colores
 const categories = computed(() => {
     const rawCategories = store.allCategories;
     
-    // 1. Manejo de datos dummy/fallback
     if (!rawCategories || rawCategories.length < 2) {
         console.warn("Se necesitan al menos 2 categorías. Usando categorías por defecto.");
         return [
-          { name: 'Viajes', color: COLOR_PALETTE[0] },
-          { name: 'Música', color: COLOR_PALETTE[1] },
-          { name: 'Deportes', color: COLOR_PALETTE[2] },
-          { name: 'Tecnología', color: COLOR_PALETTE[3] },
-          { name: 'Moda', color: COLOR_PALETTE[4] },
-          { name: 'Gastronomía', color: COLOR_PALETTE[5] },
+          { name: 'Viajes' },
+          { name: 'Música' },
+          { name: 'Deportes' },
+          { name: 'Tecnología' },
+          { name: 'Moda' },
+          { name: 'Gastronomía' },
         ];
     }
     
-    // 2. Estandarizar las categorías del store
     return rawCategories.map((cat, i) => {
-        const defaultColor = COLOR_PALETTE[i % COLOR_PALETTE.length];
-        
         if (typeof cat === 'string') {
-            return { name: cat, color: defaultColor };
+            return { name: cat };
         }
         
         return {
-            name: cat.name || cat.id || `Categoría ${i + 1}`,
-            color: cat.color || defaultColor
+            name: cat.name || cat.id || `Categoría ${i + 1}`
         };
     });
 });
-
 // **CONSTANTES y ESTADO**
 const ROULETTE_SIZE = 320; // Ligeramente más grande para mejor visibilidad
 const POINTER_ANGLE = 270;
@@ -175,11 +173,13 @@ const conicGradient = computed(() => {
     let gradientString = 'conic-gradient(';
     let currentAngle = 0;
 
-    categories.value.forEach((cat) => {
+    categories.value.forEach((cat, i) => {
         const sliceAngle = degPerSlice.value;
         const nextAngle = currentAngle + sliceAngle;
+        // ✅ Alternar correctamente entre rojo y negro
+        const segmentColor = i % 2 === 0 ? RED_COLOR : BLACK_COLOR;
         
-        gradientString += `${cat.color} ${currentAngle}deg ${nextAngle}deg, `;
+        gradientString += `${segmentColor} ${currentAngle}deg ${nextAngle}deg, `;
         currentAngle = nextAngle;
     });
 
@@ -296,152 +296,183 @@ function labelStyle(i) {
 <style scoped>
 @import url('https://fonts.googleapis.com/css?family=Material+Icons|Work+Sans:400,700,900');
 
-/* Animación de entrada para el modal */
+/* Animación del modal */
 .fixed {
   animation: modalEnter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 @keyframes modalEnter {
-  from {
-    opacity: 0;
-    transform: scale(0.8) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  from { opacity: 0; transform: scale(0.8) translateY(-20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+/* Estilos para el modal con imagen de fondo */
+.modal_bg {
+  position: relative;
+}
+
+/* Capa overlay para mejorar legibilidad del texto */
+.modal_bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 1rem; /* Mismo border-radius que el modal */
+  z-index: 1;
+}
+
 
 /* Contenedor principal de la ruleta */
 .roulette-container {
+  position: relative;
   border-radius: 50%;
   overflow: hidden;
-  font-family: 'Work Sans', sans-serif;
-  box-shadow: 
-    0 0 40px rgba(139, 92, 246, 0.3),
-    inset 0 0 40px rgba(0, 0, 0, 0.2);
-  border: 3px solid rgba(255, 255, 255, 0.1);
-}
+  box-shadow:
+    0 0 40px rgba(0, 0, 0, 0.6),
+    inset 0 0 20px rgba(255, 255, 255, 0.1);
+border: 4px solid #B8860B; /* Dorado oscuro más elegante */
+  background: 
+    radial-gradient(circle at center, #111 10%, #000 90%),
+    linear-gradient(45deg, #FFD700, #FFA500, #FFD700);
+  background-clip: padding-box, border-box;
+  background-origin: border-box;}
 
 /* Rueda Giratoria */
 .spinner-wheel {
   transition: transform 5000ms cubic-bezier(0.2, 0.4, 0.4, 1.025);
+  border-radius: 50%;
+  border: 3px solid #FFD700; /* Dorado brillante */
+  box-shadow: 
+    inset 0 0 25px rgba(255, 255, 255, 0.05),
+    0 0 15px rgba(255, 215, 0, 0.3); /* Sombra dorada exterior */
   backface-visibility: hidden;
   z-index: 1;
 }
 
-/* Efecto de giro activo */
+/* Efecto al girar */
 .roulette-spinning {
-  filter: brightness(1.1) contrast(1.1);
+  filter: brightness(1.15) contrast(1.1);
 }
 
-
-
-/* Glow exterior */
+/* Glow exterior tenue */
 .outer-glow {
   position: absolute;
-  top: -10px; left: -10px; right: -10px; bottom: -10px;
+  inset: -8px;
   border-radius: 50%;
-  background: radial-gradient(circle at center, rgba(168, 85, 247, 0.2) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 0, 0, 0.2) 0%, transparent 70%);
   z-index: -1;
   pointer-events: none;
 }
 
-/* Contenedor de marcadores mejorado */
-.markers {
-  display: block;
-  position: absolute;
-  top: -1px; left: -1px; right: -1px; bottom: -1px;
-  overflow: hidden;
-  border-radius: 100%;
-  z-index: 20;
-  pointer-events: none;
-}
-
-/* Flecha marcadora mejorada */
+/* Marcador blanco lateral */
 .triangle-marker {
   width: 0;
   height: 0;
   border-style: solid;
-  border-width: 1.2em 0 1.2em 1.5em;
-  border-color: transparent transparent transparent #FFF;
+  border-width: 50px 0 50px 35px; /* Más ancho y alto */
+  border-color: transparent transparent transparent #fff;
   position: absolute;
   top: 50%;
-  left: -2px;
-  margin-top: -1.2em;
+  left: -15px; /* Más hacia afuera */
+  transform: translateY(-50%);
   filter: 
-    drop-shadow(0 0.25em 0.5em rgba(0, 0, 0, 0.3))
-    drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
-  z-index: 21;
+    drop-shadow(0 0 12px rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 25px rgba(255, 0, 0, 0.6)); /* Más efectos de sombra */
+  z-index: 25; /* Mayor z-index */
+  animation: marker-pulse 2s ease-in-out infinite; /* Animación de pulso */
 }
 
-/* Efecto de brillo para la flecha */
 .glow-effect {
   position: absolute;
   top: 50%;
-  left: 0;
-  width: 4px;
-  height: 80px;
+  left: -5px;
+  width: 8px; /* Más ancho */
+  height: 120px; /* Más largo */
   background: linear-gradient(to right, 
     transparent,
-    rgba(255, 255, 255, 0.8),
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.7),
     transparent);
   transform: translateY(-50%);
-  filter: blur(1px);
-  z-index: 19;
+  filter: blur(3px); /* Más desenfoque */
+  z-index: 24;
+  animation: glow-pulse 2s ease-in-out infinite alternate;
+}
+/* Animación de pulso para el marcador */
+@keyframes marker-pulse {
+  0%, 100% {
+    transform: translateY(-50%) scale(1);
+    filter: 
+      drop-shadow(0 0 12px rgba(255, 255, 255, 0.9))
+      drop-shadow(0 0 25px rgba(255, 0, 0, 0.6));
+  }
+  50% {
+    transform: translateY(-50%) scale(1.05);
+    filter: 
+      drop-shadow(0 0 15px rgba(255, 255, 255, 1))
+      drop-shadow(0 0 30px rgba(255, 0, 0, 0.8))
+      drop-shadow(0 0 40px rgba(255, 100, 100, 0.4));
+  }
 }
 
-/* Etiquetas de texto mejoradas */
-
-/* Botón de giro premium */
+/* Animación de pulso para el efecto de brillo */
+@keyframes glow-pulse {
+  0% {
+    opacity: 0.6;
+    transform: translateY(-50%) scaleY(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scaleY(1.1);
+  }
+}
+/* Centro negro con texto */
 .button-spin {
-  width: 6.5em;
-  height: 6.5em;
-  line-height: 6.5em;
+  width: 6em;
+  height: 6em;
   font-size: 1.1em;
-  border: none;
-  color: #4b5563;
-  outline: none;
-  cursor: pointer;
-  user-select: none;
-  box-shadow: 
-    0 0.6em 0 rgba(0, 0, 0, 0.25),
-    0 0 30px rgba(255, 255, 255, 0.2);
-  text-align: center;
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  z-index: 15;
-}
-
-.button-spin:hover:not(.busy) {
-  color: #374151;
-  transform: translate(-50%, -50%) scale(1.1);
-  box-shadow: 
-    0 0.8em 0 rgba(0, 0, 0, 0.25),
-    0 0 40px rgba(255, 255, 255, 0.3);
-}
-
-.button-spin span {
-  font-size: 1.1em;
-  letter-spacing: -0.03em;
+  color: #fff;
+  background: #000;
+  border: 3px solid #444;
+  border-radius: 50%;
   font-weight: 900;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-shadow: 0 0 6px rgba(255,255,255,0.2);
+  box-shadow:
+    0 0 30px rgba(0, 0, 0, 0.8),
+    inset 0 0 15px rgba(255,255,255,0.05);
+  transition: all 0.3s ease;
+  z-index: 10;
 }
-
-/* Estado de giro activo */
+.button-spin:hover:not(.busy) {
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow:
+    0 0 40px rgba(255, 0, 0, 0.3),
+    inset 0 0 20px rgba(255, 255, 255, 0.1);
+}
 .button-spin.busy {
+  background: #111;
+  color: #777;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
   transform: scale(0.9) translate(-50%, -50%);
-  box-shadow: 0 0.2em 0 rgba(0, 0, 0, 0.25);
-  color: #9ca3af;
-  cursor: default;
-  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
 }
 
-/* Asegurar posición cuando no está girando */
-.button-spin:not(.busy) {
-  transform: translate(-50%, -50%);
+/* Texto de categorías */
+.label-segment .label span {
+  color: #fff !important;
+  text-transform: uppercase;
+  font-weight: bold;
+  text-shadow: 0 0 3px rgba(0,0,0,0.8);
 }
 
-/* Efectos de brillo en hover para el botón principal */
-.group:hover .group-hover\:translate-x-\[100\%\] {
-  transform: translateX(100%);
+/* Sombra interior leve */
+.shadow-inner-circle {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.05);
 }
+
 </style>

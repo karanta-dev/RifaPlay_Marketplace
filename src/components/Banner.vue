@@ -17,7 +17,8 @@
       @touchstart="handleTouchStart" 
       @touchend="handleTouchEnd"
     >
-      <div v-for="(banner, i) in banners" :key="i" class="min-w-full flex items-center justify-center relative px-6 sm:px-20 py-10 sm:py-2 shadow-lg rounded-xl">
+<div v-for="(banner, i) in banners" :key="i" 
+     class="min-w-full flex items-center justify-center relative px-4 sm:px-20 py-4 sm:py-10 shadow-lg rounded-xl">
         
         <!-- Aplica diseño de imagen a la derecha y texto a la izquierda para el banner 2 (i=1) y banner 3 (i=2) en desktop. -->
         <!-- En móvil, se usa flex-col-reverse para que la imagen (que está primero en el código) aparezca debajo del texto. -->
@@ -29,21 +30,16 @@
           class="flex flex-col items-center justify-between w-full"
         >
           
-          <img
-            :src="banner.image"
-            alt="Banner image"
-            :class="[
-              
-              i === 1 || i === 2 
-                
-                // Las clases aseguran que la imagen es grande y se alinea en la parte inferior sin margen negativo.
-                // En móvil usamos mb-0 (margen inferior 0) para que pegue al borde.
-                ? 'h-40 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-0 sm:-mb-12 relative z-10 casino-img' 
-                
-                // BANNER 1 (Rueda aleatoria) - IMAGEN MÁS GRANDE
-                : 'h-20 sm:h-60 w-auto sm:mr-8 mb-4 sm:mb-3 relative z-10 casino-img object-contain transform hover:scale-105 transition-transform duration-300'
-            ]"
-          />
+<img
+  :src="banner.image"
+  alt="Banner image"
+  :class="[
+    i === 1 || i === 2 
+      ? 'h-24 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-3 sm:-mb-12 relative z-10 casino-img' 
+      : 'h-24 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-2 sm:-mb-12 relative z-10 casino-img'
+  ]"
+/>
+
 
           
           <div 
@@ -73,7 +69,7 @@
                 {{ banner.button1 }}
               </button>
               
-              
+              <br></br>
 
             </div>
           </div>
@@ -82,7 +78,7 @@
       </div>
     </div>
     
-    <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
+    <div class="absolute bottom-1 left-0 right-0 flex justify-center gap-1 z-20">
       <button v-for="(b, i) in banners" :key="i" class="w-3 h-3 rounded-full" :class="i === currentIndex ? 'bg-yellow-400' : 'bg-white/40'" @click="goToSlide(i)"></button>
     </div>
   </div>
@@ -152,10 +148,11 @@ const purchasedTicketsCount = ref(0)
 // Banner carousel
 const currentIndex = ref(0)
 const banners = ref([
+  //banner 1
   {
     title: "¡JUEGA, GANA Y CELEBRA!",
     text: "¿Quiere probar su suerte?, nosotros escogemos una rifa por usted.",
-    image: "/ruedaaleatoria.png",
+    image: "/persona3.png",
     button1: "¡PARTICIPAR!",
     button2: "", // Eliminado el botón
   },
@@ -381,5 +378,16 @@ const randomStyle = (n) => {
   0% { transform: scale(1) rotate(0deg); }
   50% { transform: scale(1.05) rotate(5deg); }
   100% { transform: scale(1) rotate(0deg); }
+}
+@media (max-width: 640px) {
+  .casino-title {
+    font-size: 1.0rem; /* text-xl */
+  }
+  .casino-desc {
+    font-size: 0.75rem; /* text-sm */
+  }
+  .casino-banner {
+    border-radius: 1rem;
+  }
 }
 </style>
