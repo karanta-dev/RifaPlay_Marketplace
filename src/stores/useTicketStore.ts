@@ -63,6 +63,9 @@ export interface TicketForm {
   metodoPago: string
   referencia: string
   comprobante: File | null
+  pagoMovilCedula?: string
+  pagoMovilTelefono?: string
+  pagoMovilBanco?: string
 }
 
 // --- DEFINICIÓN DEL STORE ---
@@ -353,19 +356,23 @@ export const useTicketStore = defineStore('ticket', {
     this.formData.comprobante = null
   }
 },
-  clearForm() {
-      this.formData = {
-        nombre: '',
-        tipoId: '',
-        numeroId: '',
-        telefono: '',
-        correo: '',
-        tickets: 1,
-        metodoPago: '',
-        referencia: '',
-        comprobante: null,
-      }
-    },
+clearForm() {
+  this.formData = {
+    nombre: '',
+    tipoId: '',
+    numeroId: '',
+    telefono: '',
+    correo: '',
+    tickets: 1,
+    metodoPago: '',
+    referencia: '',
+    comprobante: null,
+    // Limpiar nuevos campos
+    pagoMovilCedula: '',
+    pagoMovilTelefono: '',
+    pagoMovilBanco: ''
+  }
+},
     async loadRaffles(page = 1, perPage = 16) {
       this.loading = true;
 
