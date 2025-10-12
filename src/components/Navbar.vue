@@ -145,8 +145,8 @@ const goHome = () => {
   router.push({ name: "home" });
 };
 const goProfile = () => {
-  // navegar al perfil del usuario autenticado
-  router.push({ name: "user-profile", params: { id: authStore.user?.id } });
+  // Navegar al perfil personal del usuario autenticado
+  router.push({ name: 'my-profile' });
   showDropdown.value = false;
 };
 

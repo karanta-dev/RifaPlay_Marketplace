@@ -12,7 +12,7 @@ export const useUserStore = defineStore("user", {
   state: () => ({
     users: [
       {
-        id: "1",
+        id: "2",
         name: "Juan Pérez",
         avatar: "https://randomuser.me/api/portraits/men/32.jpg", // ✅ avatar
         rating: 4,
@@ -25,7 +25,7 @@ export const useUserStore = defineStore("user", {
         ],
       },
       {
-        id: "2",
+        id: "3",
         name: "Tech Store",
         avatar: null,
         rating: 5,
@@ -39,7 +39,7 @@ export const useUserStore = defineStore("user", {
         ],
       },
       {
-        id: "3",
+        id: "4",
         name: "TravelRaffle",
         avatar: "https://randomuser.me/api/portraits/men/28.jpg",
         rating: 3,
@@ -51,7 +51,7 @@ export const useUserStore = defineStore("user", {
         ],
       },
       {
-        id: "4",
+        id: "5",
         name: "Game World",
         avatar: "https://randomuser.me/api/portraits/men/52.jpg",
         rating: 5,
@@ -63,7 +63,7 @@ export const useUserStore = defineStore("user", {
         ],
       },
       {
-        id: "5",
+        id: "6",
         name: "ElectroShop",
         avatar: null,
         rating: 4,

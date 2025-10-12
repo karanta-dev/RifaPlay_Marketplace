@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gradient-to-br from-blue-950 via-blue-900 to-yellow-900 min-h-screen py-8 px-2 flex flex-col items-center animate-casino-fade">
+  <div class="bg-gradient-to-br from-blue-950 via-blue-900 to-purple-900 min-h-screen py-8 px-2 flex flex-col items-center animate-casino-fade">
     <Banner />
     <TopProductsCarousel />
     <ProductGrid />
