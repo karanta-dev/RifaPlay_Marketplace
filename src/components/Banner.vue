@@ -36,18 +36,18 @@
 <img
   :src="banner.image"
   alt="Banner image"
-  class="h-28 sm:h-52 sm:-mr-2 sm:-mb-8 w-auto relative z-10 casino-img"
+  class="h-24 sm:h-52 sm:-mr-2 sm:-mb-8 w-auto relative z-10 casino-img"
 />
   </div>
   
   <!-- Texto a la derecha -->
   <div class="flex flex-col justify-center text-left flex-1">
-    <h1 class="text-lg font-extrabold text-yellow-400 mb-1 sm:mb-4 tracking-tight drop-shadow-lg casino-title sm:text-4xl">
+    <h1 class="text-lg font-extrabold text-yellow-400 mb-0 sm:mb-4 tracking-tight drop-shadow-lg casino-title sm:text-4xl">
       <i class="fas fa-dice text-green-400 mr-2" v-if="i === 0"></i>
       {{ banner.title }}
     </h1>
     
-    <p class="text-yellow-100 font-semibold casino-desc text-xs sm:text-base">
+    <p class="text-yellow-100 font-semibold mb-2 casino-desc text-xs sm:text-base">
       {{ banner.text }}
     </p>
   </div>
@@ -57,9 +57,15 @@
 </div>
     </div>
     
-    <div class="absolute bottom-1 left-0 right-0 flex justify-center gap-1 z-20">
-      <button v-for="(b, i) in banners" :key="i" class="w-3 h-3 rounded-full" :class="i === currentIndex ? 'bg-yellow-400' : 'bg-white/40'" @click="goToSlide(i)"></button>
-    </div>
+<div class="absolute bottom-1 left-0 right-0 flex justify-center gap-1 z-20">
+  <span 
+    v-for="(b, i) in banners" 
+    :key="i" 
+    class="inline-block cursor-pointer rounded-full slider-dot"
+    :class="i === currentIndex ? 'bg-yellow-400' : 'bg-white/40'" 
+    @click="goToSlide(i)"
+  ></span>
+</div>
   </div>
 
   <!-- MODALES COMPLETOS -->
@@ -368,6 +374,10 @@ const randomStyle = (n) => {
   }
   .casino-banner {
     border-radius: 1rem;
+  }
+    .slider-dot {
+    width: 8px;
+    height: 8px;
   }
 }
 </style>
