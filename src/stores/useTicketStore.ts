@@ -4,7 +4,7 @@ import { RaffleService } from "@/services/RaffleService";
 // Clave para la persistencia en localStorage
 const PERSIST_KEY = 'rifa_ticket_store_v1';
 
-// localStorage.removeItem('rifa_ticket_store_v1')
+localStorage.removeItem('rifa_ticket_store_v1')
 
 // Intentar leer el estado persistido
 let persisted: any = null;
@@ -63,6 +63,9 @@ export interface TicketForm {
   metodoPago: string
   referencia: string
   comprobante: File | null
+  pagoMovilCedula?: string
+  pagoMovilTelefono?: string
+  pagoMovilBanco?: string
 }
 
 // --- DEFINICIÓN DEL STORE ---
@@ -301,50 +304,50 @@ export const useTicketStore = defineStore('ticket', {
     actions: {
             // 🔴 Nuevo: conectar al WebSocket
             
-    connectToTicketWS() {
-    const ws = new WebSocket("ws://localhost:3000");
+//     connectToTicketWS() {
+//     const ws = new WebSocket("ws://localhost:3000");
 
-    ws.onopen = () => {
-      console.log("✅ Conectado al WebSocket de tickets");
-    };
+//     ws.onopen = () => {
+//       console.log("✅ Conectado al WebSocket de tickets");
+//     };
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
+//     ws.onmessage = (event) => {
+//       try {
+//         const data = JSON.parse(event.data);
 
-        if (data.type === "ticket_sold" || data.type === "ticket_reserved") {
-          const { productId, ticketNumbers, userId } = data;
+//         if (data.type === "ticket_sold" || data.type === "ticket_reserved") {
+//           const { productId, ticketNumbers, userId } = data;
 
-          ticketNumbers.forEach((n: number) => {
-            if (!this.tickets.find(t => t.ticketNumber === n && t.productId === productId)) {
-              this.tickets.push({
-                ticketNumber: n,
-                productId,
-                userId,
-                createdAt: new Date().toISOString(),
-                isWinner: false,
-              });
-            }
-          });
+//           ticketNumbers.forEach((n: number) => {
+//             if (!this.tickets.find(t => t.ticketNumber === n && t.productId === productId)) {
+//               this.tickets.push({
+//                 ticketNumber: n,
+//                 productId,
+//                 userId,
+//                 createdAt: new Date().toISOString(),
+//                 isWinner: false,
+//               });
+//             }
+//           });
 
-          const p = this.topProducts.find(p => p.title === productId);
-          if (p) p.ticketsVendidos += ticketNumbers.length;
+//           const p = this.topProducts.find(p => p.title === productId);
+//           if (p) p.ticketsVendidos += ticketNumbers.length;
 
-          this._savePersist();
-        }
+//           this._savePersist();
+//         }
 
-        if (data.type === "ticket_released") {
-          const { productId, ticketNumbers } = data;
-          this.tickets = this.tickets.filter(
-            t => !(ticketNumbers.includes(t.ticketNumber) && t.productId === productId)
-          );
-          this._savePersist();
-        }
-      } catch (err) {
-        console.error("❌ Error parsing WS message:", err);
-      }
-    };
-  },
+//         if (data.type === "ticket_released") {
+//           const { productId, ticketNumbers } = data;
+//           this.tickets = this.tickets.filter(
+//             t => !(ticketNumbers.includes(t.ticketNumber) && t.productId === productId)
+//           );
+//           this._savePersist();
+//         }
+//       } catch (err) {
+//         console.error("❌ Error parsing WS message:", err);
+//       }
+//     };
+//   },
   setComprobante(file: File | null) {
   if (file) {
     this.formData.comprobante = file
@@ -353,19 +356,23 @@ export const useTicketStore = defineStore('ticket', {
     this.formData.comprobante = null
   }
 },
-  clearForm() {
-      this.formData = {
-        nombre: '',
-        tipoId: '',
-        numeroId: '',
-        telefono: '',
-        correo: '',
-        tickets: 1,
-        metodoPago: '',
-        referencia: '',
-        comprobante: null,
-      }
-    },
+clearForm() {
+  this.formData = {
+    nombre: '',
+    tipoId: '',
+    numeroId: '',
+    telefono: '',
+    correo: '',
+    tickets: 1,
+    metodoPago: '',
+    referencia: '',
+    comprobante: null,
+    // Limpiar nuevos campos
+    pagoMovilCedula: '',
+    pagoMovilTelefono: '',
+    pagoMovilBanco: ''
+  }
+},
     async loadRaffles(page = 1, perPage = 16) {
       this.loading = true;
 

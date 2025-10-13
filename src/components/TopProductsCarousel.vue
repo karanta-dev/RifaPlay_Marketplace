@@ -1,5 +1,5 @@
 <template>
-  <h2 class="text-2xl sm:text-3xl font-extrabold text-yellow-400 text-center mb-2 sm:mb-6 drop-shadow casino-title">
+  <h2 class="text-lg sm:text-3xl font-extrabold text-yellow-400 text-center mb-0 sm:mb-6 drop-shadow casino-title">
     <i class="fas fa-dice text-green-400 mr-2"></i>
     🎟️ Productos con más tickets vendidos
   </h2>
@@ -265,7 +265,7 @@ const timeLeft = (item: any) => {
   border-radius: 1.5rem;
 }
 .casino-title {
-  text-shadow: 0 2px 8px #ffd70099;
+  text-shadow: 0 2px 8px #7700ff99;
   animation: casinoTitlePulse 2s infinite alternate;
 }
 @keyframes casinoTitlePulse {

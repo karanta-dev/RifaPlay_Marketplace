@@ -92,36 +92,110 @@
               />
             </div>
 
-            <!-- Métodos de pago -->
-            <div class="space-y-4">
-              <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
-              <select v-model="form.metodoPago" class="input-custom">
-                <option value="">Seleccionar método de pago</option>
-                <option value="tarjeta">Tarjeta crédito/débito</option>
-                <option value="pago-movil">Pago móvil</option>
-                <option value="transferencia">Transferencia bancaria</option>
-                <option value="kontigo">KONTIGO</option>
-              </select>
+<!-- Tabs Manual/Automático -->
+<div class="space-y-4">
+  <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
+  <select v-model="form.metodoPago" class="input-custom">
+    <option value="">Seleccionar método de pago</option>
+    <option value="tarjeta">Tarjeta crédito/débito</option>
+    <option value="pago-movil">Pago móvil</option>
+    <option value="transferencia">Transferencia bancaria</option>
+    <option value="kontigo">KONTIGO</option>
+  </select>
 
-              <div v-if="form.metodoPago" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
-                <p v-if="form.metodoPago === 'tarjeta'" class="flex items-center gap-2">
-                  <span class="text-cyan-400">🔒</span> Número: 4111-1111-1111-1111
-                </p>
-                <p v-if="form.metodoPago === 'pago-movil'" class="flex items-center gap-2">
-                  <span class="text-cyan-400">📱</span> Teléfono: 0412-0000000
-                </p>
-                <p v-if="form.metodoPago === 'transferencia'" class="flex items-center gap-2">
-                  <span class="text-cyan-400">🏦</span> Banco Ejemplo - Cuenta: 0102-123456789
-                </p>
-                <p v-if="form.metodoPago === 'kontigo'" class="flex items-center gap-2">
-                  <span class="text-cyan-400">⚡</span> Kontigo - usuario@ejemplo.com
-                </p>
-              </div>
-            </div>
+<!-- Tabs Manual/Automático - DISEÑO MEJORADO -->
+<div v-if="form.metodoPago === 'pago-movil'" class="mt-4">
+  <div class="flex bg-black/30 rounded-xl p-1 border border-cyan-500/30 shadow-lg">
+    <button
+      type="button"
+      @click="pagoMovilMode = 'manual'"
+      :class="{
+        'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'manual',
+        'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'manual'
+      }"
+      class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-cyan-500/30"
+    >
+      <div class="flex items-center justify-center gap-2">
+        <span class="text-lg">👤</span>
+        <span>Manual</span>
+      </div>
+    </button>
+    
+    <button
+      type="button"
+      @click="pagoMovilMode = 'automatico'"
+      :class="{
+        'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'automatico',
+        'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'automatico'
+      }"
+      class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-emerald-500/30"
+    >
+      <div class="flex items-center justify-center gap-2">
+        <span class="text-lg">⚡</span>
+        <span>Automático</span>
+      </div>
+    </button>
+  </div>
+
+    <!-- Contenido Manual (existente) -->
+    <div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
+      <p class="flex items-center gap-2">
+        <span class="text-cyan-400">📱</span> Teléfono: 0412-0000000
+      </p>
+    </div>
+
+    <!-- Contenido Automático (nuevo) -->
+    <div v-else-if="pagoMovilMode === 'automatico'" class="space-y-4">
+      <h3 class="font-semibold text-cyan-300 text-lg">Ingrese los datos de pago móvil</h3>
+      
+      <!-- Número de cédula -->
+      <input
+        v-model="form.pagoMovilCedula"
+        type="text"
+        placeholder="🔢 Número de cédula"
+        class="input-custom"
+        maxlength="8"
+      />
+
+      <!-- Número de teléfono -->
+      <input
+        v-model="form.pagoMovilTelefono"
+        type="tel"
+        placeholder="📞 Número de teléfono"
+        class="input-custom"
+      />
+
+      <!-- Select de bancos -->
+      <select v-model="form.pagoMovilBanco" class="input-custom">
+        <option value="">🏦 Seleccionar banco</option>
+        <option value="banco-de-venezuela">Banco de Venezuela</option>
+        <option value="bancaamiga">BancaAmiga</option>
+        <option value="mercantil">Mercantil</option>
+        <option value="bancaribe">Bancaribe</option>
+        <option value="banco-del-tesoro">Banco del Tesoro</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Información para otros métodos de pago -->
+  <div v-else-if="form.metodoPago" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
+    <p v-if="form.metodoPago === 'tarjeta'" class="flex items-center gap-2">
+      <span class="text-cyan-400">🔒</span> Número: 4111-1111-1111-1111
+    </p>
+    <p v-if="form.metodoPago === 'transferencia'" class="flex items-center gap-2">
+      <span class="text-cyan-400">🏦</span> Banco Ejemplo - Cuenta: 0102-123456789
+    </p>
+    <p v-if="form.metodoPago === 'kontigo'" class="flex items-center gap-2">
+      <span class="text-cyan-400">⚡</span> Kontigo - usuario@ejemplo.com
+    </p>
+  </div>
+</div>
 
             <!-- Referencia + Comprobante -->
             <div class="space-y-4">
+              <!-- Mostrar referencia solo si NO es pago móvil automático -->
               <input 
+                v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')"
                 v-model="form.referencia" 
                 type="text" 
                 placeholder="🔖 Número de referencia" 
@@ -153,13 +227,29 @@
                 </div>
               </div>
             </div>
-
             <!-- Resumen -->
-            <div class="pt-4 border-t border-white/20 mt-6">
+            <div class="pt-4 border-t border-white/20 mt-6 ">
+                  <!-- ✅ NUEVO: Precio en bolívares -->
+                <div class="flex flex-col items-end gap-1">
+                  <p class="text-lg font-bold text-white">
+                    Precio:
+                    <strong class="text-2xl text-yellow-400 ml-2">
+                      {{ loadingBcv ? 'Cargando...' : `${totalPriceBs} Bs` }}
+                    </strong>
+                  </p>
+                  
+                  <span v-if="!loadingBcv && bcvRate > 0" class="text-sm text-gray-400">
+                    (Tasa BCV: {{ bcvRate.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }} Bs/USD)
+                  </span>
+                </div>
+
               <div class="text-right space-y-2">
                 <p class="text-lg font-bold text-white">
-                  Total: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span>
+                  Precio: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span>
                 </p>
+                
+
+                
                 <p v-if="currentQty > 0" class="text-sm text-cyan-300">
                   Tickets a comprar: <strong class="text-white">{{ currentQty }}</strong>
                 </p>
@@ -256,32 +346,118 @@
                 <option value="transferencia">Transferencia bancaria</option>
                 <option value="kontigo">KONTIGO</option>
               </select>
+<!-- Tabs Manual/Automático - DISEÑO MEJORADO -->
+<div v-if="form.metodoPago === 'pago-movil'" class="mt-4">
+  <div class="flex bg-black/30 rounded-xl p-1 border border-cyan-500/30 shadow-lg">
+    <button
+      type="button"
+      @click="pagoMovilMode = 'manual'"
+      :class="{
+        'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'manual',
+        'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'manual'
+      }"
+      class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-cyan-500/30"
+    >
+      <div class="flex items-center justify-center gap-2">
+        <span class="text-lg">👤</span>
+        <span>Manual</span>
+      </div>
+    </button>
+    
+    <button
+      type="button"
+      @click="pagoMovilMode = 'automatico'"
+      :class="{
+        'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'automatico',
+        'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'automatico'
+      }"
+      class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-emerald-500/30"
+    >
+      <div class="flex items-center justify-center gap-2">
+        <span class="text-lg">⚡</span>
+        <span>Automático</span>
+      </div>
+    </button>
+  </div>
 
-              <div v-if="form.metodoPago" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
-                <p v-if="form.metodoPago === 'tarjeta'" class="flex items-center gap-2">
-                  <span class="text-cyan-400">🔒</span> Número: 4111-1111-1111-1111
-                </p>
-                <p v-if="form.metodoPago === 'pago-movil'" class="flex items-center gap-2">
-                  <span class="text-cyan-400">📱</span> Teléfono: 0412-0000000
-                </p>
-                <p v-if="form.metodoPago === 'transferencia'" class="flex items-center gap-2">
-                  <span class="text-cyan-400">🏦</span> Banco Ejemplo - Cuenta: 0102-123456789
-                </p>
-                <p v-if="form.metodoPago === 'kontigo'" class="flex items-center gap-2">
-                  <span class="text-cyan-400">⚡</span> Kontigo - usuario@ejemplo.com
-                </p>
-              </div>
-            </div>
+    <!-- Contenido Manual (existente) -->
+    <div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
+      <p class="flex items-center gap-2">
+        <span class="text-cyan-400">📱</span> Teléfono: 0412-0000000
+      </p>
+    </div>
 
-            <!-- Referencia + Comprobante para no autenticados -->
+    <!-- Contenido Automático (nuevo) -->
+    <div v-else-if="pagoMovilMode === 'automatico'" class="space-y-4">
+      <h3 class="font-semibold text-cyan-300 text-lg">Ingrese los datos de pago móvil</h3>
+      
+      <!-- Número de cédula -->
+      <input
+        v-model="form.pagoMovilCedula"
+        type="text"
+        placeholder="🔢 Número de cédula"
+        class="input-custom"
+        maxlength="8"
+      />
+
+      <!-- Número de teléfono -->
+      <input
+        v-model="form.pagoMovilTelefono"
+        type="tel"
+        placeholder="📞 Número de teléfono"
+        class="input-custom"
+      />
+
+      <!-- Select de bancos -->
+      <select v-model="form.pagoMovilBanco" class="input-custom">
+        <option value="">🏦 Seleccionar banco</option>
+        <option value="banco-de-venezuela">Banco de Venezuela</option>
+        <option value="bancaamiga">BancaAmiga</option>
+        <option value="mercantil">Mercantil</option>
+        <option value="bancaribe">Bancaribe</option>
+        <option value="banco-del-tesoro">Banco del Tesoro</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Información para otros métodos de pago -->
+  <div v-else-if="form.metodoPago" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
+    <p v-if="form.metodoPago === 'tarjeta'" class="flex items-center gap-2">
+      <span class="text-cyan-400">🔒</span> Número: 4111-1111-1111-1111
+    </p>
+    <p v-if="form.metodoPago === 'transferencia'" class="flex items-center gap-2">
+      <span class="text-cyan-400">🏦</span> Banco Ejemplo - Cuenta: 0102-123456789
+    </p>
+    <p v-if="form.metodoPago === 'kontigo'" class="flex items-center gap-2">
+      <span class="text-cyan-400">⚡</span> Kontigo - usuario@ejemplo.com
+    </p>
+  </div>
+</div>
+
+            <!-- Referencia + Comprobante -->
             <div class="space-y-4">
-              <input v-model="form.referencia" type="text" placeholder="🔖 Referencia" class="input-custom" required />
+              <!-- Mostrar referencia solo si NO es pago móvil automático -->
+              <input 
+                v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')"
+                v-model="form.referencia" 
+                type="text" 
+                placeholder="🔖 Número de referencia" 
+                class="input-custom" 
+                required 
+              />
+
               <div>
                 <label class="block font-semibold text-white mb-3 text-lg">📎 Comprobante de pago</label>
-                <input ref="fileInput" type="file" class="hidden" @change="onFileChange" />
+                <input
+                  ref="fileInput"
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="onFileChange"
+                />
                 <button
                   type="button"
-                  @click="fileInput?.click()"
+                  @click="triggerFileDialog"
                   class="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30"
                 >
                   📸 Insertar imagen del comprobante
@@ -294,12 +470,37 @@
                 </div>
               </div>
             </div>
+            <!-- Resumen -->
+            <div class="pt-4 border-t border-white/20 mt-6 ">
+                  <!-- ✅ NUEVO: Precio en bolívares -->
+                <div class="flex flex-col items-end gap-1">
+                  <p class="text-lg font-bold text-white">
+                    Precio:
+                    <strong class="text-2xl text-yellow-400 ml-2">
+                      {{ loadingBcv ? 'Cargando...' : `${totalPriceBs} Bs` }}
+                    </strong>
+                  </p>
+                  
+                  <span v-if="!loadingBcv && bcvRate > 0" class="text-sm text-gray-400">
+                    (Tasa BCV: {{ bcvRate.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }} Bs/USD)
+                  </span>
+                </div>
 
-            <!-- Resumen para no autenticados -->
-            <div class="text-right text-lg font-bold pt-4 border-t border-white/20 mt-6">
-              <p class="text-white">
-                Total: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span>
-              </p>
+              <div class="text-right space-y-2">
+                <p class="text-lg font-bold text-white">
+                  Precio: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span>
+                </p>
+                
+
+                
+                <p v-if="currentQty > 0" class="text-sm text-cyan-300">
+                  Tickets a comprar: <strong class="text-white">{{ currentQty }}</strong>
+                </p>
+              </div>
+            </div>
+
+            <div v-if="error" class="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm">
+              ⚠️ {{ error }}
             </div>
 
             <!-- Botones para no autenticados -->
@@ -340,7 +541,10 @@ const emit = defineEmits(['close', 'confirmed'])
 
 const ticketStore = useTicketStore()
 const authStore = useAuthStore()
-
+const bcvRate = ref(0)
+const loadingBcv = ref(false)
+// Agrega esto con las otras refs
+const pagoMovilMode = ref<'manual' | 'automatico'>('manual')
 // SELECCIÓN
 const selectionMode = ref<'auto' | 'manual'>('auto')
 const selectedManualTickets = ref<number[]>([])
@@ -414,7 +618,48 @@ watch(() => props.open, (open) => {
     console.log('📊 Initial tickets calculated:', initialTicketsCount.value)
   }
 })
+// ✅ NUEVO: Función para obtener la tasa BCV
+async function fetchBcvRate() {
+  loadingBcv.value = true
+  try {
+    const response = await fetch('https://bcv-api.karanta.dev/rates/')
+    const data = await response.json()
+    bcvRate.value = data.bcv || 0
+    console.log('💰 BCV Rate:', bcvRate.value)
+  } catch (error) {
+    console.error('❌ Error fetching BCV rate:', error)
+    bcvRate.value = 0
+  } finally {
+    loadingBcv.value = false
+  }
+}
 
+// ✅ NUEVO: Computed para el precio en bolívares
+const totalPriceBs = computed(() => {
+  if (!bcvRate.value) return '0,00'
+  const totalUsd = parseFloat(totalPrice.value)
+  const totalBs = totalUsd * bcvRate.value
+  return totalBs.toLocaleString('es-VE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+})
+
+// ✅ NUEVO: Cargar tasa BCV cuando se abre el modal
+watch(() => props.open, (open) => {
+  if (open) {
+    fetchBcvRate()
+    
+    // Calcular tickets iniciales ANTES de cualquier compra
+    const userId = authStore.user?.id
+    if (userId) {
+      initialTicketsCount.value = ticketStore.userTicketsCount(userId)
+    } else {
+      initialTicketsCount.value = ticketStore.tickets.filter(t => t.userId === null).length
+    }
+    console.log('📊 Initial tickets calculated:', initialTicketsCount.value)
+  }
+})
 const handleConfirm = () => {
   error.value = null
 

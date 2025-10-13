@@ -1,6 +1,6 @@
 <template>
  <nav
-    class="bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 shadow-2xl border-b border-yellow-400/30 flex items-center justify-between px-4 sm:px-8 py-3 casino-navbar relative"
+    class="bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 shadow-2xl border-b border-purple-400/30 flex items-center justify-between px-4 sm:px-8 py-1 casino-navbar relative"
   >
 
     <!-- Iconos casino flotantes -->
@@ -145,8 +145,8 @@ const goHome = () => {
   router.push({ name: "home" });
 };
 const goProfile = () => {
-  // navegar al perfil del usuario autenticado
-  router.push({ name: "user-profile", params: { id: authStore.user?.id } });
+  // Navegar al perfil personal del usuario autenticado
+  router.push({ name: 'my-profile' });
   showDropdown.value = false;
 };
 
@@ -208,25 +208,25 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 .casino-navbar {
-  box-shadow: 0 0 24px 4px #ffd70033, 0 0 8px 2px #00336699;
+  box-shadow: 0 0 24px 4px #5500ff86, 0 0 8px 2px #00336699;
 }
 .casino-title {
-  text-shadow: 0 2px 8px #ffd70099;
+  text-shadow: 0 2px 8px #001fa899;
   animation: casinoTitlePulse 2s infinite alternate;
 }
 @keyframes casinoTitlePulse {
   0% {
-    text-shadow: 0 2px 8px #ffd70099;
+    text-shadow: 0 2px 8px #7700ffca;
   }
   100% {
-    text-shadow: 0 4px 16px #00ff0099;
+    text-shadow: 0 4px 16px #2f00ff99;
   }
 }
 .casino-logo {
-  filter: drop-shadow(0 0 12px #ffd70088);
+  filter: drop-shadow(0 0 12px #a200ff88);
 }
 .casino-counter {
-  box-shadow: 0 0 14px 2px #ffd70055;
+  box-shadow: 0 0 14px 2px #2507a955;
 }
 .animate-casino-count {
   animation: casinoCountPulse 1.2s infinite alternate;
@@ -244,10 +244,10 @@ onBeforeUnmount(() => {
 }
 @keyframes casinoBtnPulse {
   0% {
-    box-shadow: 0 0 8px 2px #ffd70099;
+    box-shadow: 0 0 8px 2px #7700ff99;
   }
   100% {
-    box-shadow: 0 0 16px 4px #00ff0099;
+    box-shadow: 0 0 16px 4px #4000ff99;
   }
 }
 .casino-float {
@@ -276,7 +276,7 @@ onBeforeUnmount(() => {
   background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #1e40af 100%);
   border-radius: 12px;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid rgba(49, 0, 227, 0.3);
   box-shadow: 
     0 4px 12px rgba(0, 0, 0, 0.3),
     0 0 20px rgba(255, 215, 0, 0.2),
@@ -298,8 +298,8 @@ onBeforeUnmount(() => {
 }
 /* Brillo suave estilo casino */
 @keyframes casinoGlow {
-  0% { box-shadow: 0 0 16px 4px rgba(255,215,0,0.35), inset 0 0 8px rgba(255,255,255,0.1); }
-  100% { box-shadow: 0 0 24px 6px rgba(255,215,0,0.55), inset 0 0 12px rgba(255,255,255,0.15); }
+  0% { box-shadow: 0 0 16px 4px rgba(47, 0, 255, 0.35), inset 0 0 8px rgba(255,255,255,0.1); }
+  100% { box-shadow: 0 0 24px 6px rgba(157, 0, 255, 0.55), inset 0 0 12px rgba(255,255,255,0.15); }
 }
 /* Patrón de fondo para el navbar */
 .bg-casino-pattern {
