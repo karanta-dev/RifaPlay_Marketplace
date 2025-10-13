@@ -1,64 +1,321 @@
 <template>
-  <div class="relative bg-gradient-to-b from-green-100 to-green-200 px-4 sm:px-20 py-5 shadow mb-8 flex flex-col sm:flex-row items-center justify-center overflow-hidden">
-    <!-- Partículas -->
+  <div class="w-full max-w-7xl mx-auto relative overflow-hidden casino-banner">
+    
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-950 via-blue-900 to-yellow-900 opacity-80 pointer-events-none"></div>
+    
     <div class="absolute inset-0 pointer-events-none">
-      <i
-        v-for="n in 15"
-        :key="n"
-        class="fas fa-dice text-yellow-500 opacity-30 animate-float"
-        :style="randomStyle(n)"
-      ></i>
-      <i
-        v-for="n in 15"
-        :key="'slot'+n"
-        class="fas fa-clover text-green-500 opacity-30 animate-float"
-        :style="randomStyle(n)"
-      ></i>
-      <i
-        v-for="n in 15"
-        :key="'cards'+n"
-        class="fas fa-chess-knight text-red-500 opacity-30 animate-float"
-        :style="randomStyle(n)"
-      ></i>
+      <!-- Iconos flotantes del casino -->
+      <i v-for="n in 4" v-bind:key="`coin-${n}`" class="fas fa-coins text-yellow-400 casino-float" v-bind:style="randomStyle(n)"></i>
+      <i v-for="n in 2" v-bind:key="`dice-${n}`" class="fas fa-dice text-green-400 casino-float" v-bind:style="randomStyle(n+10)"></i>
+      <i v-for="n in 2" v-bind:key="`ticket-${n}`" class="fas fa-ticket-alt text-orange-400 casino-float" v-bind:style="randomStyle(n+20)"></i>
+      <i v-for="n in 6" v-bind:key="`star-${n}`" class="fas fa-star text-yellow-300 opacity-30 casino-float" v-bind:style="randomStyle(n+30)"></i>
     </div>
+    
+    <div 
+      class="flex transition-transform duration-700 ease-in-out relative z-10" 
+      :style="{ transform: `translateX(-${currentIndex * 100}%)` }"
+      @touchstart="handleTouchStart" 
+      @touchend="handleTouchEnd"
+    >
+<div v-for="(banner, i) in banners" :key="i" 
+     class="min-w-full flex items-center justify-center relative px-4 sm:px-20 py-4 sm:py-10 shadow-lg rounded-xl">
+        
+        <!-- Aplica diseño de imagen a la derecha y texto a la izquierda para el banner 2 (i=1) y banner 3 (i=2) en desktop. -->
+        <!-- En móvil, se usa flex-col-reverse para que la imagen (que está primero en el código) aparezca debajo del texto. -->
+        <div 
+          :class="[i === 1 || i === 2 
+            ? 'sm:flex-row-reverse text-left flex-col-reverse' // Invertir orden en móvil y usar flex-row-reverse en desktop
+            : 'sm:flex-row text-center flex-col' // Orden normal en móvil y desktop
+          ]"
+          class="flex flex-col items-center justify-between w-full"
+        >
+          
+<img
+  :src="banner.image"
+  alt="Banner image"
+  :class="[
+    i === 1 || i === 2 
+      ? 'h-24 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-3 sm:-mb-12 relative z-10 casino-img' 
+      : 'h-24 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-2 sm:-mb-12 relative z-10 casino-img'
+  ]"
+/>
 
-    <!-- Contenido principal -->
-  <img src="/slot.png" alt="Slot" class="h-32 sm:h-48 w-auto sm:mr-8 mb-4 sm:mb-0 relative z-10" />
-    <div class="flex flex-col items-center flex-1 relative z-10">
-  <h1 class="text-2xl sm:text-4xl font-extrabold text-green-900 mb-4 tracking-tight text-center">¡JUEGA, GANA Y CELEBRA!</h1>
-  <p class="text-gray-700 mb-6 max-w-xl mx-auto text-sm sm:text-lg text-center">
-        Recarga <span class="font-bold text-blue-700">(1 USD)</span> y obtén <span class="font-bold text-orange-500">(1000)</span> créditos para ganar tickets para tus juegos de Rifa.
-      </p>
-      <div class="flex justify-center items-center gap-4 mb-2">
-        <button class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl font-bold text-lg shadow-lg">¡PARTICIPAR!</button>
-        <div class="flex items-center gap-2">
-          <button class="bg-orange-500 hover:bg-orange-600 text-white px-10 py-3 rounded-xl font-bold text-lg shadow-lg flex items-center gap-2">
-            RECARGAR $
-            <span class="grid grid-cols-2 grid-rows-2 gap-1 ml-2">
-              <i class="fab fa-cc-visa text-white text-base"></i>
-              <i class="fab fa-cc-mastercard text-white text-base"></i>
-              <i class="fab fa-cc-amex text-white text-base"></i>
-              <i class="fab fa-cc-paypal text-white text-base"></i>
-            </span>
-          </button>
-          <div class="grid grid-cols-4 grid-rows-2 gap-1 w-32 h-10 items-center">
-            <i class="fab fa-cc-visa text-blue-700 text-base"></i>
-            <i class="fab fa-cc-mastercard text-red-500 text-base"></i>
-            <i class="fab fa-cc-amex text-green-500 text-base"></i>
-            <i class="fab fa-cc-paypal text-yellow-500 text-base"></i>
-            <i class="fab fa-cc-visa text-blue-700 text-base"></i>
-            <i class="fab fa-cc-mastercard text-red-500 text-base"></i>
-            <i class="fab fa-cc-amex text-green-500 text-base"></i>
-            <i class="fab fa-cc-paypal text-yellow-500 text-base"></i>
+
+          
+          <div 
+            :class="[i === 1 || i === 2 ? 'items-start sm:mr-8 mb-4 sm:mb-0' : 'items-center']"
+            class="flex flex-col justify-center flex-1 relative z-10"
+          >
+            
+            <h1 class="text-3xl font-extrabold text-yellow-400 mb-2 sm:mb-4 tracking-tight drop-shadow-lg casino-title"
+                :class="[i === 1 ? 'sm:text-5xl text-white' : 'sm:text-4xl']">
+              <i class="fas fa-dice text-green-400 mr-2" v-if="i === 0"></i>
+              {{ banner.title }}
+            </h1>
+            
+            <p class="text-yellow-100 font-semibold casino-desc"
+               :class="[i === 1 || i === 2 ? 'text-lg sm:text-2xl max-w-full' : 'text-xs sm:text-base max-w-xl mx-auto mb-3 sm:mb-4']">
+              {{ banner.text }}
+            </p>
+
+            
+            <div v-if="i !== 1 && i !== 2" class="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 mt-3">
+              
+              <button
+                v-if="i === 0"
+                @click="openRoulette"
+                class="bg-gradient-to-r from-yellow-400 via-blue-700 to-green-600 text-white px-6 sm:px-8 py-2 rounded-xl font-extrabold text-sm sm:text-base shadow-xl casino-btn transition w-full sm:w-auto">
+                <i class="fas fa-ticket-alt mr-2"></i>
+                {{ banner.button1 }}
+              </button>
+              
+              <br></br>
+
+            </div>
           </div>
         </div>
-      </div>
+        
       </div>
     </div>
+    
+    <div class="absolute bottom-1 left-0 right-0 flex justify-center gap-1 z-20">
+      <button v-for="(b, i) in banners" :key="i" class="w-3 h-3 rounded-full" :class="i === currentIndex ? 'bg-yellow-400' : 'bg-white/40'" @click="goToSlide(i)"></button>
+    </div>
+  </div>
+
+  <!-- MODALES COMPLETOS -->
+  <RouletteModal :isOpen="showRoulette" @close="showRoulette = false" @categoryPicked="handleCategoryPicked" />
+  
+  <ProductModal 
+    :isOpen="showProduct" 
+    :category="selectedCategory" 
+    @close="showProduct = false" 
+    @participar="handleProductModalParticipar" 
+  />
+  
+  <!-- FLUJO COMPLETO DE COMPRA -->
+  <ParticiparModal
+    :open="showParticipar"
+    :product="selectedProduct"
+    @close="handleParticiparClose"
+    @confirmed="handleParticiparConfirmed"
+  />
+  
+  <ConfirmacionModal
+    :open="showConfirmacion"
+    @close="showConfirmacion = false"
+    @showJackpot="handleShowJackpot"
+  />
+  
+  <JackpotAnimation
+    :show="showJackpot"
+    :initial-tickets="userInitialTickets"
+    :purchased-tickets="purchasedTicketsCount"
+    @close="handleJackpotClose"
+  />
+
+
 </template>
 
 <script setup>
-// Genera posiciones y tiempos aleatorios
+import { ref, onMounted, onUnmounted } from "vue"
+import { useTicketStore } from '@/stores/useTicketStore'
+import { useAuthStore } from '@/stores/useAuthStore'
+
+// Importar todos los modales
+import RouletteModal from "./RouletteModal.vue"
+import ProductModal from "./ProductModal.vue"
+import ParticiparModal from "./ParticipateModal.vue"
+import ConfirmacionModal from "./ConfirmationModal.vue"
+import JackpotAnimation from "./JackpotAnimation.vue"
+
+const ticketStore = useTicketStore()
+const authStore = useAuthStore()
+
+// Estados para los modales
+const showRoulette = ref(false)
+const showProduct = ref(false)
+const showParticipar = ref(false)
+const showConfirmacion = ref(false)
+const showJackpot = ref(false)
+
+// Datos para el flujo
+const selectedCategory = ref("")
+const selectedProduct = ref(null)
+const userInitialTickets = ref(0)
+const purchasedTicketsCount = ref(0)
+
+// Banner carousel
+const currentIndex = ref(0)
+const banners = ref([
+  //banner 1
+  {
+    title: "¡JUEGA, GANA Y CELEBRA!",
+    text: "¿Quiere probar su suerte?, nosotros escogemos una rifa por usted.",
+    image: "/persona3.png",
+    button1: "¡PARTICIPAR!",
+    button2: "", // Eliminado el botón
+  },
+  {
+    // Banner 2
+    title: "¡Empieza a ganar con nosotros!",
+    text: "Participa en cualquiera de nuestras rifas y gana premios increíbles.",
+    image: "/persona.png",
+    button1: "",
+    button2: "",
+  },
+  {
+    // Banner 3
+    title: "Promociones especiales en RifaPlay",
+    text: "Aprovecha ofertas, promos exclusivas y duplica tus tickets.",
+    image: "/persona2.png",
+    button1: "",
+    button2: "",
+  },
+])
+
+// --- FLUJO DE MODALES COMPLETO ---
+
+// 1. Abrir ruleta desde el banner
+function openRoulette() {
+  showRoulette.value = true
+}
+
+// 2. Categoría seleccionada desde la ruleta
+function handleCategoryPicked(category) {
+  selectedCategory.value = category
+  showRoulette.value = false
+  showProduct.value = true
+}
+
+// 3. Participar desde ProductModal
+function handleProductModalParticipar(product) {
+  console.log("Abrir modal participar desde ProductModal:", product.title)
+  showProduct.value = false
+  selectedProduct.value = product
+  showParticipar.value = true
+}
+
+// 4. Cerrar ParticiparModal
+function handleParticiparClose() {
+  showParticipar.value = false
+  // Opcional: resetear el store si es necesario
+  // ticketStore.reset()
+}
+
+// 5. Confirmación de compra desde ParticiparModal
+function handleParticiparConfirmed(data) {
+  console.log("✅ Compra confirmada:", data)
+  showParticipar.value = false
+  
+  // Calcular tickets para el jackpot
+  if (data && data.initialTickets !== undefined) {
+    // Usar datos proporcionados por ParticiparModal
+    userInitialTickets.value = data.initialTickets
+    purchasedTicketsCount.value = data.purchasedTickets
+  } else {
+    // Calcular basado en el store actual
+    userInitialTickets.value = getUserInitialTickets()
+    purchasedTicketsCount.value = getPurchasedTicketsCount()
+  }
+  
+  console.log("🎰 Datos para jackpot:", {
+    initial: userInitialTickets.value,
+    purchased: purchasedTicketsCount.value
+  })
+  
+  // Mostrar confirmación
+  showConfirmacion.value = true
+}
+
+// 6. Mostrar jackpot desde ConfirmacionModal
+function handleShowJackpot() {
+  console.log("🎯 Mostrando jackpot...")
+  showConfirmacion.value = false
+  showJackpot.value = true
+}
+
+// 7. Cerrar jackpot
+function handleJackpotClose() {
+  console.log("🎯 Cerrando jackpot...")
+  showJackpot.value = false
+  // Resetear para próxima compra
+  setTimeout(() => {
+    ticketStore.reset()
+    selectedProduct.value = null
+  }, 500)
+}
+
+// --- FUNCIONES AUXILIARES ---
+
+// Calcular tickets iniciales del usuario
+const getUserInitialTickets = () => {
+  const userId = authStore.user?.id
+  
+  if (userId) {
+    const currentCount = ticketStore.userTicketsCount(userId)
+    const justPurchased = ticketStore.lastAssignedTickets?.length || 0
+    return Math.max(0, currentCount - justPurchased)
+  }
+  
+  const currentNullTickets = ticketStore.tickets.filter(t => t.userId === null).length
+  const justPurchased = ticketStore.lastAssignedTickets?.length || 0
+  return Math.max(0, currentNullTickets - justPurchased)
+}
+
+// Calcular tickets comprados
+const getPurchasedTicketsCount = () => {
+  return ticketStore.lastAssignedTickets?.length || 
+         (ticketStore.ticketNumber ? 1 : 0) ||
+         Number(ticketStore.formData?.tickets) || 1
+}
+
+// --- Autoplay control ---
+let interval = null
+const startAutoplay = () => {
+  stopAutoplay()
+  interval = setInterval(() => {
+    currentIndex.value = (currentIndex.value + 1) % banners.value.length
+  }, 4000)
+}
+const stopAutoplay = () => {
+  if (interval) clearInterval(interval)
+}
+
+const goToSlide = (index) => {
+  currentIndex.value = index
+  startAutoplay() // Reinicia el autoplay al cambiar manualmente
+}
+
+onMounted(() => startAutoplay())
+onUnmounted(() => stopAutoplay())
+
+// --- Swipe control ---
+let touchStartX = 0
+let touchEndX = 0
+
+const handleTouchStart = (e) => {
+  touchStartX = e.changedTouches[0].screenX
+}
+const handleTouchEnd = (e) => {
+  touchEndX = e.changedTouches[0].screenX
+  handleSwipe()
+}
+const handleSwipe = () => {
+  if (touchEndX < touchStartX - 50) {
+    // Swipe left
+    currentIndex.value = (currentIndex.value + 1) % banners.value.length
+    startAutoplay()
+  }
+  if (touchEndX > touchStartX + 50) {
+    // Swipe right
+    currentIndex.value =
+      (currentIndex.value - 1 + banners.value.length) % banners.value.length
+    startAutoplay()
+  }
+}
+
+// --- Floating icons ---
 const randomStyle = (n) => {
   const top = Math.random() * 100
   const left = Math.random() * 100
@@ -77,16 +334,60 @@ const randomStyle = (n) => {
 </script>
 
 <style scoped>
-@keyframes float {
-  0% { transform: translateY(0) translateX(0); opacity: 0; }
-  20% { opacity: 0.6; }
-  50% { transform: translateY(-40px) translateX(30px); opacity: 0.4; }
-  80% { opacity: 0.6; }
-  100% { transform: translateY(-100px) translateX(-40px); opacity: 0; }
+.casino-banner {
+  box-shadow: 0 0 32px 8px #ffd70033, 0 0 8px 2px #00336699;
+  border-radius: 1.5rem;
+}
+.casino-title {
+  text-shadow: 0 2px 8px #ffd70099;
+  animation: casinoTitlePulse 2s infinite alternate;
+}
+@keyframes casinoTitlePulse {
+  0% { text-shadow: 0 2px 8px #ffd70099; }
+  100% { text-shadow: 0 4px 16px #00ff0099; }
+}
+.casino-desc {
+  text-shadow: 0 1px 4px #00336699;
+}
+.casino-btn {
+  animation: casinoBtnPulse 1.2s infinite alternate;
+}
+@keyframes casinoBtnPulse {
+  0% { box-shadow: 0 0 8px 2px #ffd70099; }
+  100% { box-shadow: 0 0 16px 4px #00ff0099; }
+}
+.casino-float {
+  position: absolute;
+  animation: floatCasino 8s linear infinite;
+}
+@keyframes floatCasino {
+  0% { transform: translateY(0) scale(1); opacity: 0.3; }
+  50% { transform: translateY(-20px) scale(1.1); opacity: 0.5; }
+  100% { transform: translateY(-40px) scale(1); opacity: 0.3; }
+}
+.casino-img {
+  filter: drop-shadow(0 0 12px #ffd70088);
 }
 
-.animate-float {
-  position: absolute;
-  animation: float linear infinite;
+/* Animación especial para la rueda aleatoria */
+.casino-img:hover {
+  animation: wheelSpin 2s ease-in-out;
+}
+
+@keyframes wheelSpin {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.05) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+@media (max-width: 640px) {
+  .casino-title {
+    font-size: 1.0rem; /* text-xl */
+  }
+  .casino-desc {
+    font-size: 0.75rem; /* text-sm */
+  }
+  .casino-banner {
+    border-radius: 1rem;
+  }
 }
 </style>
