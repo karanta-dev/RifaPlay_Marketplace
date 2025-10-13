@@ -191,42 +191,43 @@
   </div>
 </div>
 
-            <!-- Referencia + Comprobante -->
-            <div class="space-y-4">
-              <!-- Mostrar referencia solo si NO es pago móvil automático -->
-              <input 
-                v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')"
-                v-model="form.referencia" 
-                type="text" 
-                placeholder="🔖 Número de referencia" 
-                class="input-custom" 
-                required 
-              />
+         <!-- Referencia + Comprobante -->
+<div class="space-y-4">
+  <!-- Mostrar referencia solo si NO es pago móvil automático -->
+  <input 
+    v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')"
+    v-model="form.referencia" 
+    type="text" 
+    placeholder="🔖 Número de referencia" 
+    class="input-custom" 
+    required 
+  />
 
-              <div>
-                <label class="block font-semibold text-white mb-3 text-lg">📎 Comprobante de pago</label>
-                <input
-                  ref="fileInput"
-                  type="file"
-                  accept="image/*"
-                  class="hidden"
-                  @change="onFileChange"
-                />
-                <button
-                  type="button"
-                  @click="triggerFileDialog"
-                  class="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30"
-                >
-                  📸 Insertar imagen del comprobante
-                </button>
-                <p v-if="form.comprobante" class="text-sm text-green-400 mt-2 flex items-center gap-2">
-                  <span>✅</span> Archivo seleccionado: {{ form.comprobante.name }}
-                </p>
-                <div v-if="previewUrl" class="mt-3">
-                  <img :src="previewUrl" alt="preview" class="max-h-40 object-contain border-2 border-cyan-500/50 rounded-xl shadow-lg" />
-                </div>
-              </div>
-            </div>
+  <!-- Mostrar comprobante solo si NO es pago móvil automático -->
+  <div v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')">
+    <label class="block font-semibold text-white mb-3 text-lg">📎 Comprobante de pago</label>
+    <input
+      ref="fileInput"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="onFileChange"
+    />
+    <button
+      type="button"
+      @click="triggerFileDialog"
+      class="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30"
+    >
+      📸 Insertar imagen del comprobante
+    </button>
+    <p v-if="form.comprobante" class="text-sm text-green-400 mt-2 flex items-center gap-2">
+      <span>✅</span> Archivo seleccionado: {{ form.comprobante.name }}
+    </p>
+    <div v-if="previewUrl" class="mt-3">
+      <img :src="previewUrl" alt="preview" class="max-h-40 object-contain border-2 border-cyan-500/50 rounded-xl shadow-lg" />
+    </div>
+  </div>
+</div>
             <!-- Resumen -->
             <div class="pt-4 border-t border-white/20 mt-6 ">
                   <!-- ✅ NUEVO: Precio en bolívares -->
@@ -434,42 +435,43 @@
   </div>
 </div>
 
-            <!-- Referencia + Comprobante -->
-            <div class="space-y-4">
-              <!-- Mostrar referencia solo si NO es pago móvil automático -->
-              <input 
-                v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')"
-                v-model="form.referencia" 
-                type="text" 
-                placeholder="🔖 Número de referencia" 
-                class="input-custom" 
-                required 
-              />
+<!-- Referencia + Comprobante -->
+<div class="space-y-4">
+  <!-- Mostrar referencia solo si NO es pago móvil automático -->
+  <input 
+    v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')"
+    v-model="form.referencia" 
+    type="text" 
+    placeholder="🔖 Número de referencia" 
+    class="input-custom" 
+    required 
+  />
 
-              <div>
-                <label class="block font-semibold text-white mb-3 text-lg">📎 Comprobante de pago</label>
-                <input
-                  ref="fileInput"
-                  type="file"
-                  accept="image/*"
-                  class="hidden"
-                  @change="onFileChange"
-                />
-                <button
-                  type="button"
-                  @click="triggerFileDialog"
-                  class="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30"
-                >
-                  📸 Insertar imagen del comprobante
-                </button>
-                <p v-if="form.comprobante" class="text-sm text-green-400 mt-2 flex items-center gap-2">
-                  <span>✅</span> Archivo seleccionado: {{ form.comprobante.name }}
-                </p>
-                <div v-if="previewUrl" class="mt-3">
-                  <img :src="previewUrl" alt="preview" class="max-h-40 object-contain border-2 border-cyan-500/50 rounded-xl shadow-lg" />
-                </div>
-              </div>
-            </div>
+  <!-- Mostrar comprobante solo si NO es pago móvil automático -->
+  <div v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')">
+    <label class="block font-semibold text-white mb-3 text-lg">📎 Comprobante de pago</label>
+    <input
+      ref="fileInput"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="onFileChange"
+    />
+    <button
+      type="button"
+      @click="triggerFileDialog"
+      class="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30"
+    >
+      📸 Insertar imagen del comprobante
+    </button>
+    <p v-if="form.comprobante" class="text-sm text-green-400 mt-2 flex items-center gap-2">
+      <span>✅</span> Archivo seleccionado: {{ form.comprobante.name }}
+    </p>
+    <div v-if="previewUrl" class="mt-3">
+      <img :src="previewUrl" alt="preview" class="max-h-40 object-contain border-2 border-cyan-500/50 rounded-xl shadow-lg" />
+    </div>
+  </div>
+</div>
             <!-- Resumen -->
             <div class="pt-4 border-t border-white/20 mt-6 ">
                   <!-- ✅ NUEVO: Precio en bolívares -->

@@ -29,24 +29,23 @@
       class="flex flex-col items-center justify-between w-full"
     >
       
-       <div class="flex flex-row items-center justify-between w-full gap-4">
+<div class="flex flex-row items-center justify-between w-full gap-4">
   
   <!-- Imagen a la izquierda -->
   <div class="flex-shrink-0">
-<img
-  :src="banner.image"
-  alt="Banner image"
-  class="h-24 sm:h-52 sm:-mr-2 sm:-mb-8 w-auto relative z-10 casino-img"
-/>
+    <img
+      :src="banner.image"
+      alt="Banner image"
+      class="h-24 sm:h-52 sm:-mr-2 sm:-mb-8 w-auto relative z-10 casino-img"
+    />
   </div>
   
-  <!-- Texto a la derecha -->
-  <div class="flex flex-col justify-center text-left flex-1">
+  <!-- Texto fijo a la derecha -->
+  <div class="flex flex-col justify-center text-left flex-1 sm:max-w-md lg:max-w-lg xl:max-w-xl sm:ml-8">
     <h1 class="text-lg font-extrabold text-yellow-400 mb-0 sm:mb-4 tracking-tight drop-shadow-lg casino-title sm:text-4xl">
       <i class="fas fa-dice text-green-400 mr-2" v-if="i === 0"></i>
       {{ banner.title }}
     </h1>
-    
     <p class="text-yellow-100 font-semibold mb-2 casino-desc text-xs sm:text-base">
       {{ banner.text }}
     </p>
@@ -358,7 +357,10 @@ const randomStyle = (n) => {
 .casino-img:hover {
   animation: wheelSpin 2s ease-in-out;
 }
-
+.slider-dot {
+  width: 30px;
+  height: 20px;
+}
 @keyframes wheelSpin {
   0% { transform: scale(1) rotate(0deg); }
   50% { transform: scale(1.05) rotate(5deg); }

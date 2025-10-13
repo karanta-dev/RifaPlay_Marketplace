@@ -1,10 +1,10 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-purple-900 py-8 px-4">
-    <div class="max-w-4xl mx-auto">
+    <!-- Contenido para usuario autorizado -->
+    <div v-if="isAuthorized" class="max-w-4xl mx-auto">
       <!-- Header -->
       <div class="text-center mb-8">
         <h1 class="text-4xl font-bold text-yellow-400 mb-2 drop-shadow-lg">Mi Perfil</h1>
-        <p class="text-white/80 text-lg">Gestiona tu información personal y preferencias</p>
       </div>
 
       <!-- Card principal del perfil -->
@@ -199,19 +199,45 @@
         </div>
       </div>
     </div>
+    
+    <!-- Mensaje de acceso denegado -->
+    <div v-else class="max-w-4xl mx-auto text-center py-16">
+      <div class="bg-gradient-to-br from-red-900/80 to-red-800/80 rounded-3xl p-8 border border-red-700">
+        <h1 class="text-3xl font-bold text-white mb-4">Acceso Denegado</h1>
+        <p class="text-white/80 text-lg mb-6">No tienes permisos para ver este perfil.</p>
+        <button 
+          @click="$router.push('/')"
+          class="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-700 text-white font-bold rounded-xl hover:from-blue-700 hover:to-cyan-800 transition-all duration-300"
+        >
+          Volver al Inicio
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { useToast } from "vue-toastification"
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+const toast = useToast()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const openSection = ref<string | null>(null)
+
+// Verificar si el usuario está autorizado para ver este perfil
+const isAuthorized = computed(() => {
+  const routeUserId = route.params.userId
+  const currentUserId = authStore.user?.id
+  
+  // Solo puede acceder si está autenticado y el ID de la ruta coincide con su ID
+  return authStore.isAuthenticated && currentUserId?.toString() === routeUserId
+})
 
 // Datos del formulario
 const personalInfo = reactive({
@@ -233,6 +259,15 @@ const userAvatar = computed(() => user.value?.avatar || '/default-avatar.png')
 onMounted(() => {
   if (!authStore.isAuthenticated) {
     router.push('/')
+    return
+  }
+  
+  // Verificar autorización
+  if (!isAuthorized.value) {
+    console.warn('Acceso no autorizado al perfil:', {
+      routeUserId: route.params.userId,
+      currentUserId: authStore.user?.id
+    })
     return
   }
   
@@ -273,7 +308,9 @@ const toggleSection = (section: string) => {
 // Guardar información personal
 const savePersonalInfo = () => {
   if (!personalInfo.name.trim() || !personalInfo.email.trim()) {
-    alert('Por favor completa todos los campos')
+    toast.error('❌ Por favor completa todos los campos', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
     return
   }
   
@@ -286,23 +323,31 @@ const savePersonalInfo = () => {
     user.value.email = personalInfo.email
   }
   
-  alert('Información personal actualizada correctamente')
+  toast.success('✅ Información personal actualizada correctamente', {
+    toastClassName: "bg-green-900 text-white font-bold rounded-lg shadow-lg",
+  })
 }
 
 // Cambiar contraseña
 const changePassword = () => {
   if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-    alert('Por favor completa todos los campos de contraseña')
+    toast.error('❌ Por favor completa todos los campos de contraseña', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
     return
   }
   
   if (passwordData.newPassword !== passwordData.confirmPassword) {
-    alert('Las contraseñas nuevas no coinciden')
+    toast.error('❌ Las contraseñas nuevas no coinciden', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
     return
   }
   
   if (passwordData.newPassword.length < 6) {
-    alert('La contraseña debe tener al menos 6 caracteres')
+    toast.error('❌ La contraseña debe tener al menos 6 caracteres', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
     return
   }
   
@@ -314,13 +359,19 @@ const changePassword = () => {
   passwordData.newPassword = ''
   passwordData.confirmPassword = ''
   
-  alert('Contraseña cambiada correctamente')
+  toast.success('✅ Contraseña cambiada correctamente', {
+    toastClassName: "bg-green-900 text-white font-bold rounded-lg shadow-lg",
+  })
   openSection.value = null
 }
 
 const handleLogout = () => {
+  // Usar confirm nativo para la confirmación de logout
   if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
     authStore.logout()
+    toast.info('👋 Sesión cerrada correctamente', {
+      toastClassName: "bg-blue-900 text-white font-bold rounded-lg shadow-lg",
+    })
     router.push('/')
   }
 }

@@ -16,7 +16,7 @@ const routes = [
   { path: '/user/juan/:id', name: 'user-profile-juan', component: UserProfile2 },
   { path: '/user/tech/:id', name: 'user-profile-tech', component: UserProfile3 },
   { path: '/my-tickets/:userId', name: 'my-tickets', component: MyTickets },
-  { path: '/my-profile', name: 'my-profile', component: MyProfile },
+  { path: '/my-profile/:userId', name: 'my-profile', component: MyProfile },
   { path: '/support', name: 'support', component: Support },
 ];
 
