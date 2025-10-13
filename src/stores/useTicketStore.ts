@@ -126,21 +126,7 @@ export const useTicketStore = defineStore('ticket', {
                 ticketsMax: 1000,
                 drawDate: '2025-09-25T10:00:00'
             },
-            
-              {
-                title: 'Moto Honda 2025',
-                rifero: 'Juan Pérez',
-                categories: ['Motos'],
-                description: 'Una moto usada pero que se ve como nuevo, directo de agencia. Incluye audio premium.',
-                images: [
-                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg',
-                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg'
-                ],
-                ticketPrice: 10,
-                ticketsVendidos: 723,
-                ticketsMax: 1000,
-                drawDate: '2025-10-25T10:00:00'
-            },
+
             {
                 title: 'iPhone + AirPods',
                 rifero: 'Tech Store',
@@ -194,6 +180,21 @@ export const useTicketStore = defineStore('ticket', {
                 ticketsVendidos: 250,
                 ticketsMax: 400,
                 drawDate: '2025-12-02T14:00:00'
+            },
+                        
+              {
+                title: 'Moto Honda 2025',
+                rifero: 'Juan Pérez',
+                categories: ['Motos'],
+                description: 'Una moto usada pero que se ve como nuevo, directo de agencia. Incluye audio premium.',
+                images: [
+                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg',
+                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg'
+                ],
+                ticketPrice: 10,
+                ticketsVendidos: 723,
+                ticketsMax: 1000,
+                drawDate: '2025-10-25T10:00:00'
             },
             {
                 title: 'MacBook Air M2',
