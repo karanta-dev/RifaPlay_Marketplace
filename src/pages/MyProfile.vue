@@ -206,9 +206,11 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useRouter } from 'vue-router'
+import { useToast } from "vue-toastification"
 
 const authStore = useAuthStore()
 const router = useRouter()
+const toast = useToast()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const openSection = ref<string | null>(null)
@@ -273,7 +275,9 @@ const toggleSection = (section: string) => {
 // Guardar información personal
 const savePersonalInfo = () => {
   if (!personalInfo.name.trim() || !personalInfo.email.trim()) {
-    alert('Por favor completa todos los campos')
+    toast.error('❌ Por favor completa todos los campos', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
     return
   }
   
@@ -286,23 +290,31 @@ const savePersonalInfo = () => {
     user.value.email = personalInfo.email
   }
   
-  alert('Información personal actualizada correctamente')
+  toast.success('✅ Información personal actualizada correctamente', {
+    toastClassName: "bg-green-900 text-white font-bold rounded-lg shadow-lg",
+  })
 }
 
 // Cambiar contraseña
 const changePassword = () => {
   if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-    alert('Por favor completa todos los campos de contraseña')
+    toast.error('❌ Por favor completa todos los campos de contraseña', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
     return
   }
   
   if (passwordData.newPassword !== passwordData.confirmPassword) {
-    alert('Las contraseñas nuevas no coinciden')
+    toast.error('❌ Las contraseñas nuevas no coinciden', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
     return
   }
   
   if (passwordData.newPassword.length < 6) {
-    alert('La contraseña debe tener al menos 6 caracteres')
+    toast.error('❌ La contraseña debe tener al menos 6 caracteres', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
     return
   }
   
@@ -314,13 +326,19 @@ const changePassword = () => {
   passwordData.newPassword = ''
   passwordData.confirmPassword = ''
   
-  alert('Contraseña cambiada correctamente')
+  toast.success('✅ Contraseña cambiada correctamente', {
+    toastClassName: "bg-green-900 text-white font-bold rounded-lg shadow-lg",
+  })
   openSection.value = null
 }
 
 const handleLogout = () => {
+  // Usar confirm nativo para la confirmación de logout
   if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
     authStore.logout()
+    toast.info('👋 Sesión cerrada correctamente', {
+      toastClassName: "bg-blue-900 text-white font-bold rounded-lg shadow-lg",
+    })
     router.push('/')
   }
 }

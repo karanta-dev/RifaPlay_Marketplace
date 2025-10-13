@@ -41,39 +41,50 @@
 </div>
 
 
-   <!-- Contador actualizado con condicional de tiempo límite -->
-      <div class="text-center mb-3">
-        <div v-if="!isTimeUp" class="inline-flex flex-col items-center bg-gray-800/70 rounded-lg px-0 py-2 border border-gray-600/50">
-          <span class="text-xs text-gray-300 mb-1">Tiempo restante:</span>
-          <div class="flex items-center justify-center space-x-1">
-            <div class="flex flex-col items-center">
-              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.days }}</span>
-              <span class="text-xs text-gray-400 mt-0.5">Días</span>
-            </div>
-            <span class="text-yellow-300 font-bold -mt-5">:</span>
-            <div class="flex flex-col items-center">
-              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.hours }}</span>
-              <span class="text-xs text-gray-400 mt-0.5">Horas</span>
-            </div>
-            <span class="text-yellow-300 font-bold -mt-5">:</span>
-            <div class="flex flex-col items-center">
-              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.minutes }}</span>
-              <span class="text-xs text-gray-400 mt-0.5">Min</span>
-            </div>
-            <span class="text-yellow-300 font-bold -mt-5">:</span>
-            <div class="flex flex-col items-center">
-              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.seconds }}</span>
-              <span class="text-xs text-gray-400 mt-0.5">Seg</span>
-            </div>
-          </div>
-        </div>
-        <div v-else class="inline-flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-2 border border-gray-600/50">
-          <span class="text-xs text-gray-300 mb-1">Estado:</span>
-          <div class="flex items-center justify-center">
-            <span class="text-green-400 font-bold text-sm drop-shadow">🎉 ¡SORTEADO!</span>
-          </div>
-        </div>
+<!-- Contador actualizado y centrado -->
+<div class="text-center mb-2">
+  <div v-if="!isTimeUp" class="flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-2 border border-gray-600/50 w-full max-w-xs mx-auto">
+    <span class="text-xs text-gray-300 mb-1">Tiempo restante:</span>
+    <div class="flex items-center justify-center gap-0 sm:gap-1 w-30">
+      <!-- Días -->
+      <div class="flex flex-col items-center flex-1">
+        <span class="bg-gray-900 text-yellow-300 font-mono text-xs sm:text-sm px-1 py-0.5 rounded w-8 text-center">{{ timeLeft.days }}</span>
+        <span class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Días</span>
       </div>
+      
+      <span class="text-yellow-300 font-bold text-sm -mt-3">:</span>
+      
+      <!-- Horas -->
+      <div class="flex flex-col items-center flex-1">
+        <span class="bg-gray-900 text-yellow-300 font-mono text-xs sm:text-sm px-1 py-0.5 rounded w-8 text-center">{{ timeLeft.hours }}</span>
+        <span class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Horas</span>
+      </div>
+      
+      <span class="text-yellow-300 font-bold text-sm -mt-3">:</span>
+      
+      <!-- Minutos -->
+      <div class="flex flex-col items-center flex-1">
+        <span class="bg-gray-900 text-yellow-300 font-mono text-xs sm:text-sm px-1 py-0.5 rounded w-8 text-center">{{ timeLeft.minutes }}</span>
+        <span class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Min</span>
+      </div>
+      
+      <span class="text-yellow-300 font-bold text-sm -mt-3">:</span>
+      
+      <!-- Segundos -->
+      <div class="flex flex-col items-center flex-1">
+        <span class="bg-gray-900 text-yellow-300 font-mono text-xs sm:text-sm px-1 py-0.5 rounded w-8 text-center">{{ timeLeft.seconds }}</span>
+        <span class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Seg</span>
+      </div>
+    </div>
+  </div>
+  
+  <div v-else class="flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-2 border border-gray-600/50 w-full max-w-xs mx-auto">
+    <span class="text-xs text-gray-300 mb-1">Estado:</span>
+    <div class="flex items-center justify-center">
+      <span class="text-green-400 font-bold text-sm drop-shadow">🎉 ¡SORTEADO!</span>
+    </div>
+  </div>
+</div>
 
     <!-- Botón participar -->
     <button
