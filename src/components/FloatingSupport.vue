@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed bottom-6 right-6 z-40 hidden sm:block">
+  <div class="fixed bottom-6 right-6 z-50 hidden sm:block">
     <!-- Botón flotante principal -->
     <button
       @click="toggleSupport"
@@ -11,12 +11,12 @@
       <div class="absolute inset-0 rounded-full bg-yellow-400 animate-ping opacity-20"></div>
     </button>
 
-    <!-- Menú desplegable -->
-    <transition name="support-fade">
-      <div
-        v-if="isOpen"
-        class="absolute bottom-16 right-0 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-4 border border-yellow-400/30 w-64 backdrop-blur-sm"
-      >
+  <!-- Menú desplegable -->
+  <transition name="support-fade">
+    <div
+      v-if="isOpen"
+      class="absolute bottom-16 right-0 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-4 border border-yellow-400/30 w-64 backdrop-blur-sm z-50"
+    >
         <!-- Encabezado -->
         <div class="text-center mb-3">
           <h3 class="text-white font-bold text-lg">Soporte</h3>
@@ -69,13 +69,13 @@
     </transition>
 
     <!-- Overlay para cerrar al hacer clic fuera -->
-    <transition name="fade">
-      <div
-        v-if="isOpen"
-        class="fixed inset-0 z-30"
-        @click="isOpen = false"
-      ></div>
-    </transition>
+<transition name="fade">
+  <div
+    v-if="isOpen"
+    class="fixed inset-0 z-30"
+    @click="isOpen = false"
+  ></div>
+</transition>
   </div>
 </template>
 
@@ -95,7 +95,7 @@ const toggleSupport = () => {
 const goToSupport = () => {
   isOpen.value = false
   // Aquí puedes redirigir a una página de soporte cuando la crees
-  // router.push('/support')
+  router.push('/support')
   alert('Redirigiendo al Centro de Ayuda - Página en desarrollo')
 }
 
