@@ -1,5 +1,5 @@
 <template>
-  <h2 class="text-lg sm:text-3xl font-extrabold text-yellow-400 text-center mb-0 sm:mb-6 drop-shadow casino-title">
+  <h2 class="text-sm sm:text-3xl font-extrabold text-yellow-400 text-center mb-1 sm:mb-2 drop-shadow casino-title">
     <i class="fas fa-dice text-green-400 mr-2"></i>
     🎟️ Productos con más tickets vendidos
   </h2>
