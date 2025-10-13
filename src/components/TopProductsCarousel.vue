@@ -4,7 +4,7 @@
     🎟️ Productos con más tickets vendidos
   </h2>
 
-  <div class="w-full max-w-7xl bg-gradient-to-br from-[#0a0f1e] via-[#111827] to-[#0a0f1e] border rounded-2xl py-3 overflow-hidden relative shadow-2xl casino-carousel">
+  <div class="w-full max-w-7xl bg-gradient-to-br from-[#0a0f1e] via-[#111827] to-[#0a0f1e] border rounded-2xl py-2 overflow-hidden relative shadow-2xl casino-carousel">
     <!-- Iconos casino flotantes -->
     <i class="fas fa-coins text-yellow-400 absolute left-4 top-4 opacity-30 text-lg casino-float"></i>
     <i class="fas fa-dice text-green-400 absolute right-4 top-4 opacity-30 text-lg casino-float"></i>
@@ -15,7 +15,7 @@
       <div
   v-for="(item, i) in topProducts"
   :key="i"
-  class="inline-flex flex-col justify-between bg-gradient-to-b from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-xl shadow-lg border border-gray-700/50 mx-2 px-3 py-3 min-w-[160px] sm:min-w-[260px] relative transition-all cursor-pointer casino-card group"
+  class="inline-flex flex-col justify-between bg-gradient-to-b from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-xl shadow-lg border border-gray-700/50 mx-2 px-3 py-0 min-w-[120px] sm:min-w-[260px] relative transition-all cursor-pointer casino-card group"
   :class="{
     'bg-gray-700/50 pointer-events-none grayscale': isSoldOut(item),
     'animate-pulse-hot': isHot(item)
@@ -74,7 +74,7 @@
   </div>
 
   <!-- Botón siempre abajo -->
-  <button
+  <!-- <button
     class="mt-3 px-2 sm:px-6 py-1 sm:py-2 rounded-full w-full font-bold text-xs sm:text-base shadow-lg casino-btn"
     :class="{
       'bg-gray-500 text-white cursor-not-allowed': isSoldOut(item),
@@ -84,7 +84,7 @@
     @click.stop="openParticipateModal(item)"
   >
     {{ isSoldOut(item) ? '¡VENDIDO!' : 'PARTICIPAR' }}
-  </button>
+  </button> -->
 </div>
 
     </div>
@@ -261,7 +261,7 @@ const timeLeft = (item: any) => {
 
 <style scoped>
 .casino-carousel {
-  box-shadow: 0 0 32px 8px #ffd70033, 0 0 12px 4px #003366aa;
+  box-shadow: 0 0 32px 8px #30058d33, 0 0 12px 4px #003366aa;
   border-radius: 1.5rem;
 }
 .casino-title {

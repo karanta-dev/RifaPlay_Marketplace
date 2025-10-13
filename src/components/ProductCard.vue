@@ -1,6 +1,6 @@
 <template>
 <div
-  class="relative bg-gradient-to-r from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-2xl p-5 border border-gray-700/50 shadow-lg hover:shadow-yellow-500/10 transition transform hover:scale-105 overflow-hidden group cursor-pointer
+  class="relative bg-gradient-to-r from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-2xl p-1.5 border border-gray-700/50 shadow-lg hover:shadow-yellow-500/10 transition transform hover:scale-105 overflow-hidden group cursor-pointer
          flex flex-col justify-between h-full"
   :class="{ 'opacity-60 pointer-events-none': isSoldOut || isTimeUp }"
   @click="$emit('view-details')"

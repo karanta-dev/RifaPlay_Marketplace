@@ -1,6 +1,7 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-purple-900 py-8 px-4">
-    <div class="max-w-4xl mx-auto">
+    <!-- Contenido para usuario autorizado -->
+    <div v-if="isAuthorized" class="max-w-4xl mx-auto">
       <!-- Header -->
       <div class="text-center mb-8">
         <h1 class="text-4xl font-bold text-yellow-400 mb-2 drop-shadow-lg">Mi Perfil</h1>
@@ -199,21 +200,45 @@
         </div>
       </div>
     </div>
+    
+    <!-- Mensaje de acceso denegado -->
+    <div v-else class="max-w-4xl mx-auto text-center py-16">
+      <div class="bg-gradient-to-br from-red-900/80 to-red-800/80 rounded-3xl p-8 border border-red-700">
+        <h1 class="text-3xl font-bold text-white mb-4">Acceso Denegado</h1>
+        <p class="text-white/80 text-lg mb-6">No tienes permisos para ver este perfil.</p>
+        <button 
+          @click="$router.push('/')"
+          class="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-700 text-white font-bold rounded-xl hover:from-blue-700 hover:to-cyan-800 transition-all duration-300"
+        >
+          Volver al Inicio
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useToast } from "vue-toastification"
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const toast = useToast()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const openSection = ref<string | null>(null)
+
+// Verificar si el usuario está autorizado para ver este perfil
+const isAuthorized = computed(() => {
+  const routeUserId = route.params.userId
+  const currentUserId = authStore.user?.id
+  
+  // Solo puede acceder si está autenticado y el ID de la ruta coincide con su ID
+  return authStore.isAuthenticated && currentUserId?.toString() === routeUserId
+})
 
 // Datos del formulario
 const personalInfo = reactive({
@@ -235,6 +260,15 @@ const userAvatar = computed(() => user.value?.avatar || '/default-avatar.png')
 onMounted(() => {
   if (!authStore.isAuthenticated) {
     router.push('/')
+    return
+  }
+  
+  // Verificar autorización
+  if (!isAuthorized.value) {
+    console.warn('Acceso no autorizado al perfil:', {
+      routeUserId: route.params.userId,
+      currentUserId: authStore.user?.id
+    })
     return
   }
   
