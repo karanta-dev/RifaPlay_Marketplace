@@ -5,7 +5,6 @@
       <!-- Header -->
       <div class="text-center mb-8">
         <h1 class="text-4xl font-bold text-yellow-400 mb-2 drop-shadow-lg">Mi Perfil</h1>
-        <p class="text-white/80 text-lg">Gestiona tu información personal y preferencias</p>
       </div>
 
       <!-- Card principal del perfil -->
