@@ -1,14 +1,14 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-purple-900 py-8 px-4">
+  <div class="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-purple-900 py-2 px-4">
     <!-- Contenido para usuario autorizado -->
     <div v-if="isAuthorized" class="max-w-4xl mx-auto">
       <!-- Header -->
-      <div class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-yellow-400 mb-2 drop-shadow-lg">Mi Perfil</h1>
+      <div class="text-center mb-2">
+        <h1 class="text-3xl font-bold text-yellow-400 mb-2 drop-shadow-lg">Mi Perfil</h1>
       </div>
 
       <!-- Card principal del perfil -->
-      <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl p-8 border border-yellow-400/30 backdrop-blur-sm">
+      <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl p-3 border border-yellow-400/30 backdrop-blur-sm">
         <!-- Sección de foto de perfil -->
         <div class="flex flex-col items-center mb-8">
           <div class="relative group cursor-pointer mb-4" @click="triggerFileInput">

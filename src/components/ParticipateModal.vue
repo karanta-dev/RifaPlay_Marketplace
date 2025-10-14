@@ -4,14 +4,14 @@
   </transition>
 
   <transition name="scale-fade">
-    <div v-if="open" class="fixed inset-0 flex items-center justify-center z-50 p-4" @click.self="close">
+    <div v-if="open" class="fixed inset-0 flex items-center justify-center z-50 p-0" @click.self="close">
       
 <div
   :class="{
     'max-w-lg': selectionMode === 'auto',
     'max-w-2xl': selectionMode === 'manual'
   }"
-  class="bg-gradient-to-br from-blue-900 to-orange-800 rounded-2xl shadow-2xl p-8 relative transition-all duration-300 mx-4 md:mx-0 max-h-[90vh] overflow-y-auto overflow-x-hidden border border-purple-400/30"
+  class="bg-gradient-to-br from-blue-900 to-orange-800 rounded-2xl shadow-2xl p-2 relative transition-all duration-300 mx-4 md:mx-0 max-h-[90vh] overflow-y-auto overflow-x-hidden border border-purple-400/30"
 >
       <!-- Botón cerrar -->
       <button
@@ -26,15 +26,15 @@
         <div class="absolute -top-24 -right-24 w-48 h-48 bg-yellow-400/10 rounded-full blur-xl"></div>
         <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-500/10 rounded-full blur-xl"></div>
         
-        <!-- Logo -->
-        <div class="relative z-10 text-center mb-6">
-          
-        <img src="/rifaLogo.png" alt="Slot" class="h-24 sm:h-25 w-auto mb-4 block mx-auto" />
-
-          <h2 class="text-2xl font-bold bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-            Formulario de Participación
+      <!-- Logo y título lado a lado -->
+      <div class="relative z-10 mb-4">
+        <div class="flex items-center justify-left gap-10 ">
+          <img src="/rifaLogo.png" alt="Slot" class="h-12 sm:h-16 w-auto" />
+          <h2 class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+            Compra de tickets
           </h2>
         </div>
+      </div>
 
         <form @submit.prevent="handleConfirm" class="space-y-6 relative z-10">
           <!-- Opciones de Selección -->
@@ -140,7 +140,7 @@
     <!-- Contenido Manual (existente) -->
     <div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
       <p class="flex items-center gap-2">
-        <span class="text-cyan-400">📱</span> Teléfono: 0412-0000000
+        <span class="text-cyan-400">📱</span>Teléfono: 0414-1908656 <br></br> RIF-J:507080994 <br></br>Banco nacional de credito (0191) 
       </p>
     </div>
 
@@ -282,7 +282,7 @@
 
           <!-- BLOQUE: USUARIOS NO AUTENTICADOS -->
           <template v-else>
-            <div class="space-y-4 bg-black/20 p-5 rounded-xl border border-white/10">
+            <div class="space-y-4 bg-black/20 p-3 rounded-xl border border-white/10">
               <input 
                 v-model="form.nombre" 
                 type="text" 
@@ -291,13 +291,12 @@
                 required 
               />
 
-              <div class="flex gap-3">
-                <select v-model="form.tipoId" class="input-custom w-24" required>
-                  <option value="">Tipo</option>
-                  <option>V</option>
-                  <option>E</option>
-                  <option>P</option>
-                </select>
+  <div class="flex gap-2">
+    <select v-model="form.tipoId" class="select-custom" required>
+      <option value="V">V</option>
+      <option>E</option>
+      <option>P</option>
+    </select>
                 <input
                   v-model="form.numeroId"
                   type="text"
@@ -384,7 +383,7 @@
     <!-- Contenido Manual (existente) -->
     <div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
       <p class="flex items-center gap-2">
-        <span class="text-cyan-400">📱</span> Teléfono: 0412-0000000
+        <span class="text-cyan-400">📱</span> Teléfono: 0414-1908656 <br></br> RIF-J:507080994 <br></br>Banco nacional de credito (0191) 
       </p>
     </div>
 
@@ -395,19 +394,20 @@
       <!-- Número de cédula -->
       <input
         v-model="form.pagoMovilCedula"
-        type="text"
+        type="tel"
         placeholder="🔢 Número de cédula"
         class="input-custom"
         maxlength="8"
       />
 
-      <!-- Número de teléfono -->
-      <input
-        v-model="form.pagoMovilTelefono"
-        type="tel"
-        placeholder="📞 Número de teléfono"
-        class="input-custom"
-      />
+<input
+  v-model="form.pagoMovilTelefono"
+  type="tel"
+  placeholder="📞 Número de teléfono"
+  class="input-custom"
+  @input="form.pagoMovilTelefono = form.pagoMovilTelefono.replace(/[^\d]/g, '')"
+  maxlength="11"
+/>
 
       <!-- Select de bancos -->
       <select v-model="form.pagoMovilBanco" class="input-custom">
@@ -635,7 +635,11 @@ async function fetchBcvRate() {
     loadingBcv.value = false
   }
 }
-
+watch(() => form.pagoMovilTelefono, (newValue) => {
+  if (newValue) {
+    form.pagoMovilTelefono = newValue.replace(/[^\d]/g, '')
+  }
+})
 // ✅ NUEVO: Computed para el precio en bolívares
 const totalPriceBs = computed(() => {
   if (!bcvRate.value) return '0,00'
@@ -760,5 +764,35 @@ const handleConfirm = () => {
 .scale-fade-leave-to {
   opacity: 0;
   transform: scale(0.9);
+}
+
+.select-custom {
+  width: auto;
+  min-width: 80px;
+  max-width: 200px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  outline: none;
+  background: rgba(0, 0, 0, 0.3);
+  color: white;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.input-custom:focus,
+.select-custom:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.input-custom::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.select-custom option {
+  background: #1e1b4b;
+  color: white;
 }
 </style>
