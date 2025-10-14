@@ -17,7 +17,7 @@
         <img
           src="/rifaLogo.png"
           alt="Logo"
-          class="h-16 sm:h-20 w-auto drop-shadow-lg casino-logo"
+          class="h-14 sm:h-20 w-auto drop-shadow-lg casino-logo"
         />
       </span>
     </div>
@@ -84,7 +84,7 @@
           <img
             :src="authStore.user?.avatar"
             alt="avatar"
-            class="w-10 h-10 rounded-full border-2 border-yellow-400 shadow-md transition duration-300 group-hover:shadow-[0_0_16px_4px_rgba(255,215,0,0.8)]"
+            class="w-12 h-12 rounded-full border-2 border-yellow-400 shadow-md transition duration-300 group-hover:shadow-[0_0_16px_4px_rgba(255,215,0,0.8)]"
           />
         </button>
 
@@ -275,7 +275,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #1e40af 100%);
   border-radius: 12px;
-  padding: 8px 12px;
+  padding: 8px 15px;
   border: 1px solid rgba(49, 0, 227, 0.3);
   box-shadow: 
     0 4px 12px rgba(0, 0, 0, 0.3),
