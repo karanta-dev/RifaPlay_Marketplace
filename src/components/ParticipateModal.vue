@@ -405,7 +405,6 @@
   type="tel"
   placeholder="📞 Número de teléfono"
   class="input-custom"
-  @input="form.pagoMovilTelefono = form.pagoMovilTelefono.replace(/[^\d]/g, '')"
   maxlength="11"
 />
 
