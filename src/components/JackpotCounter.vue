@@ -231,9 +231,7 @@ onBeforeUnmount(() => {
   font-size: 3rem;
   padding: 0px 4px;
   border-radius: 1px;
-  height: 18px;
-  margin-right: 4px;
-  width: 83px;
+  height: 22px;
   animation: headerPulse 2s ease-in-out;
 }
 
