@@ -7,8 +7,8 @@ export const useAuthStore = defineStore("auth", () => {
     name: string;
     email: string;
     phone?: string;
-    country?: string;
     avatar?: string;
+    birthDate?: string;
   }>(JSON.parse(localStorage.getItem("user") || "null"));
 
   const isAuthenticated = computed(() => !!user.value);
@@ -30,8 +30,8 @@ export const useAuthStore = defineStore("auth", () => {
     name: string;
     email: string;
     phone: string;
-    country: string;
     idType: string;
+    birthDate: string;
     idNumber: string;
     promoCode?: string;
   }) => {
@@ -40,15 +40,33 @@ export const useAuthStore = defineStore("auth", () => {
       name: data.name,
       email: data.email,
       phone: data.phone,
-      country: data.country,
       avatar: "https://i.pravatar.cc/150?img=5",
+      birthDate: data.birthDate 
     };
     return true;
   };
 
+  
   const logout = () => {
     user.value = null;
   };
+  const userAge = computed(() => {
+    if (!user.value?.birthDate) return null;
+    
+    const birthDate = new Date(user.value.birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  });
+    const isAdult = computed(() => {
+    return userAge.value !== null && userAge.value >= 18;
+  });
 
   watch(user, (newUser) => {
     if (newUser) {
@@ -62,6 +80,8 @@ export const useAuthStore = defineStore("auth", () => {
     user,
     isAuthenticated,
     login,
+    userAge,
+    isAdult,
     register,
     logout,
   };

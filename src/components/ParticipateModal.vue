@@ -175,9 +175,6 @@
         <option value="mercantil">Mercantil</option>
         <option value="bancaribe">Bancaribe</option>
         <option value="banco-del-tesoro">Banco del Tesoro</option>
-        <option value="binance">Binance</option>
-        <option value="zelle">Zelle</option>
-          
       </select>
     </div>
   </div>

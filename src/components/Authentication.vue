@@ -49,8 +49,15 @@
                 </select>
                 <input v-model="idNumber" type="text" placeholder="Cédula de identidad" class="input flex-1" />
             </div>
-            <input v-model="country" type="text" placeholder="País" class="input" />
-            <select class="input">
+            <div>
+              <label class="block text-sm text-gray-600 mb-1">Fecha de nacimiento</label>
+              <input 
+                v-model="birthDate" 
+                type="date" 
+                class="input w-full"
+                :max="maxBirthDate"
+              />
+            </div>            <select class="input">
                 <option disabled selected>¿Cómo nos conociste?</option>
                 <option>Publicidad</option>
                 <option>Amigos</option>
@@ -71,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useToast } from "vue-toastification";
 
@@ -86,11 +93,16 @@ const email = ref("");
 const password = ref("");
 const name = ref("");
 const phone = ref("");
-const country = ref("");
 const idType = ref("V");
 const idNumber = ref("");
+const birthDate = ref("");
 const promoCode = ref("");
 
+const maxBirthDate = computed(() => {
+  const today = new Date();
+  const minAgeDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+  return minAgeDate.toISOString().split('T')[0];
+});
 // Funciones
 const handleLogin = async () => {
   const success = await authStore.login(email.value, password.value);
@@ -123,9 +135,9 @@ const handleRegister = async () => {
     name: name.value,
     email: email.value,
     phone: phone.value,
-    country: country.value,
     idType: idType.value,
     idNumber: idNumber.value,
+    birthDate: birthDate.value,
     promoCode: promoCode.value,
   });
   if (success) {
