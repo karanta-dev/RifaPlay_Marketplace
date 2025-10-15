@@ -228,10 +228,9 @@ onBeforeUnmount(() => {
   background: #ffd700; /* amarillo */
   color: #000;
   font-weight: 500;
-  font-size: 3rem;
+  font-size: 1rem;
   padding: 0px 4px;
-  border-radius: 1px;
-  height: 22px;
+
   animation: headerPulse 2s ease-in-out;
 }
 

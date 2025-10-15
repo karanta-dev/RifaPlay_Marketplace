@@ -101,6 +101,8 @@
     <option value="pago-movil">Pago móvil</option>
     <option value="transferencia">Transferencia bancaria</option>
     <option value="kontigo">KONTIGO</option>
+    <option value="binance">Binance</option>
+    <option value="zelle">Zelle</option>
   </select>
 
 <!-- Tabs Manual/Automático - DISEÑO MEJORADO -->
@@ -173,6 +175,9 @@
         <option value="mercantil">Mercantil</option>
         <option value="bancaribe">Bancaribe</option>
         <option value="banco-del-tesoro">Banco del Tesoro</option>
+        <option value="binance">Binance</option>
+        <option value="zelle">Zelle</option>
+          
       </select>
     </div>
   </div>
@@ -188,7 +193,12 @@
     <p v-if="form.metodoPago === 'kontigo'" class="flex items-center gap-2">
       <span class="text-cyan-400">⚡</span> Kontigo - usuario@ejemplo.com
     </p>
-  </div>
+        <p v-if="form.metodoPago === 'binance'" class="flex items-center gap-2">
+      <span class="text-cyan-400">⚡</span> Binance - usuario@ejemplo.com
+    </p>
+        <p v-if="form.metodoPago === 'zelle'" class="flex items-center gap-2">
+      <span class="text-cyan-400">⚡</span> Zelle - usuario@ejemplo.com
+    </p>  </div>
 </div>
 
          <!-- Referencia + Comprobante -->
@@ -345,6 +355,8 @@
                 <option value="pago-movil">Pago móvil</option>
                 <option value="transferencia">Transferencia bancaria</option>
                 <option value="kontigo">KONTIGO</option>
+                <option value="binance">Binance</option>
+                <option value="binance">Zelle</option>
               </select>
 <!-- Tabs Manual/Automático - DISEÑO MEJORADO -->
 <div v-if="form.metodoPago === 'pago-movil'" class="mt-4">
@@ -430,6 +442,12 @@
     </p>
     <p v-if="form.metodoPago === 'kontigo'" class="flex items-center gap-2">
       <span class="text-cyan-400">⚡</span> Kontigo - usuario@ejemplo.com
+    </p>
+        <p v-if="form.metodoPago === 'binance'" class="flex items-center gap-2">
+      <span class="text-cyan-400">⚡</span> Binance - usuario@ejemplo.com
+    </p>
+      <p v-if="form.metodoPago === 'zelle'" class="flex items-center gap-2">
+      <span class="text-cyan-400">⚡</span> Zelle - usuario@ejemplo.com
     </p>
   </div>
 </div>

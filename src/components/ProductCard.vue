@@ -31,15 +31,28 @@
     {{ description }}
   </p>
 
-  <div class="w-full bg-gray-700/50 rounded-full h-2 sm:h-3 mb-2 overflow-hidden">
+  <!-- Barra de progreso con texto al final -->
+  <div class="w-full bg-gray-700/50 rounded-full h-6 sm:h-7 mb-2 overflow-hidden relative">
     <div
-      class="bg-yellow-400 h-2 sm:h-3 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.6)] transition-all duration-500"
-      :style="{ width: progress + '%' }"
-    ></div>
+      class="bg-gradient-to-br from-yellow-400 to-red-500 h-6 sm:h-7 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.6)] transition-all duration-500 relative"
+      :style="{ width: progress + '%' }" 
+    >
+      <!-- Texto al final de la barra de progreso -->
+      <div class="absolute right-2 top-1/2 transform -translate-y-1/2">
+        <span class="text-xs font-bold text-white drop-shadow-md whitespace-nowrap">
+          {{ progress }}%
+        </span>
+      </div>
+    </div>
+    
+    <!-- Texto fuera de la barra (en el área gris) cuando el progreso es bajo -->
+    <div v-if="progress < 15" class="absolute right-2 top-1/2 transform -translate-y-1/2">
+      <span class="text-xs font-bold text-gray-300 drop-shadow-md whitespace-nowrap">
+        {{ progress }}%
+      </span>
+    </div>
   </div>
-  <p class="text-xs text-gray-400 text-center mb-4">{{ progress }}% vendido</p>
 </div>
-
 
 <!-- Contador actualizado y centrado -->
 <div class="text-center mb-2">
