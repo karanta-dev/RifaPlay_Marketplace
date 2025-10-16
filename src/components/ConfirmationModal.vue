@@ -34,28 +34,36 @@
 
         <div class="mt-3">
           <p class="font-semibold mb-2">Tickets seleccionados:</p>
-          <div
-            v-if="ticketStore.formData.selectionMode === 'manual' && ticketStore.formData.selectedManualTickets?.length"
-            class="flex flex-wrap gap-2"
-          >
-            <span
-              v-for="(num, i) in ticketStore.formData.selectedManualTickets"
-              :key="i"
-              class="px-3 py-1 bg-indigo-100 rounded-lg text-indigo-700 font-bold"
-            >
-              {{ num }}
-            </span>
+          <!-- Limitar altura de la lista de tickets y habilitar scroll si hay muchos -->
+          <div class="max-h-40 sm:max-h-56 overflow-auto pr-2">
+            <template v-if="ticketStore.formData.selectionMode === 'manual' && ticketStore.formData.selectedManualTickets?.length">
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="(num, i) in ticketStore.formData.selectedManualTickets"
+                  :key="i"
+                  class="px-3 py-1 bg-indigo-100 rounded-lg text-indigo-700 font-bold"
+                >
+                  {{ num }}
+                </span>
+              </div>
+            </template>
+
+            <template v-else-if="ticketStore.lastAssignedTickets?.length">
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="(num, i) in ticketStore.lastAssignedTickets"
+                  :key="i"
+                  class="px-3 py-1 bg-indigo-100 rounded-lg text-indigo-700 font-bold"
+                >
+                  {{ num }}
+                </span>
+              </div>
+            </template>
+
+            <template v-else>
+              <p class="text-gray-500 italic">—</p>
+            </template>
           </div>
-          <div v-else-if="ticketStore.lastAssignedTickets?.length" class="flex flex-wrap gap-2">
-            <span
-              v-for="(num, i) in ticketStore.lastAssignedTickets"
-              :key="i"
-              class="px-3 py-1 bg-indigo-100 rounded-lg text-indigo-700 font-bold"
-            >
-              {{ num }}
-            </span>
-          </div>
-          <p v-else class="text-gray-500 italic">—</p>
         </div>
       </div>
 
@@ -65,11 +73,11 @@
       <div class="text-sm mb-4">
         <div class="flex justify-between mb-1">
           <span class="font-semibold">Pagado en Bs:</span>
-          <span class="font-bold">{{ formatCurrency(ticketStore.formData.totalPriceBs) }}</span>
+          <span class="font-bold">{{ formatCurrency(props.totalPriceBs ?? ticketStore.formData.totalPriceBs) }}</span>
         </div>
         <div class="flex justify-between">
           <span class="font-semibold">Ref USD:</span>
-          <span>{{ formatCurrency(ticketStore.formData.totalPrice, 'USD') }}</span>
+          <span>{{ formatCurrency(props.totalPrice ?? ticketStore.formData.totalPrice, 'USD') }}</span>
         </div>
       </div>
 
@@ -105,12 +113,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useTicketStore } from '@/stores/useTicketStore'
+import { useAuthStore } from '@/stores/useAuthStore'
 
-const props = defineProps<{ open: boolean, selectedProduct?: any }>()
+const props = defineProps<{ open: boolean, selectedProduct?: any, totalPrice?: number, totalPriceBs?: number }>()
 const emit = defineEmits(['close', 'showJackpot'])
 const ticketStore = useTicketStore()
+const authStore = useAuthStore()
 
 const close = () => emit('close')
 const handleContinue = () => {
@@ -126,6 +136,40 @@ const formattedDate = computed(() => {
     month: 'long',
     day: 'numeric',
   })
+})
+
+
+// Prefill numeroId and nombre from user
+const setUserFieldsToForm = () => {
+  const user = authStore.user
+  if (!user) return
+  // Cedula
+  let docNumber = ''
+  if (user.natural_profile && user.natural_profile.document_number) {
+    docNumber = user.natural_profile.document_number
+  } else if (user.document_number) {
+    docNumber = user.document_number
+  }
+  if (docNumber) ticketStore.formData.numeroId = docNumber
+
+  // Nombre completo
+  let nombre = user.name || ''
+  let apellido = ''
+  if (user.natural_profile && user.natural_profile.last_name) {
+    apellido = user.natural_profile.last_name
+  } else if (user.last_name) {
+    apellido = user.last_name
+  }
+  const nombreCompleto = `${nombre}${nombre && apellido ? ' ' : ''}${apellido}`.trim()
+  if (nombreCompleto) ticketStore.formData.nombre = nombreCompleto
+}
+
+onMounted(() => {
+  if (authStore.isAuthenticated) setUserFieldsToForm()
+})
+
+watch(() => authStore.user, (newUser) => {
+  if (newUser) setUserFieldsToForm()
 })
 
 // 🧾 Factura simple

@@ -206,7 +206,7 @@ const handleRegister = async () => {
     });
 
     if (success) {
-      toast.success("🎉 Registro exitoso. Bienvenido!", {
+      toast.success("🎉 Registro exitoso. ¡Ya puede iniciar sesión!", {
         toastClassName: "bg-blue-900 text-white font-bold rounded-lg shadow-lg",
       });
       emit("close");
