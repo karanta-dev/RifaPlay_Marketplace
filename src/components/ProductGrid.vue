@@ -85,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue"
+import { ref, computed, onMounted } from "vue"
 import { storeToRefs } from "pinia"
 import { useTicketStore } from "@/stores/useTicketStore"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -97,6 +97,9 @@ import DetailsModal from "./ProductDetailsModal.vue"
 import ProductModal from "./ProductModal.vue"
 import JackpotAnimation from "./JackpotAnimation.vue"
 
+onMounted(() => {
+  ticketStore.loadRaffles();
+});
 const props = defineProps<{
   products?: any[] | null
 }>()

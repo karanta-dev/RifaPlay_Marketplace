@@ -84,6 +84,7 @@
               </div>
               <input v-model="form.telefono" type="tel" placeholder="📞 Teléfono" class="input-custom" required />
               <input v-model="form.correo" type="email" placeholder="📧 Correo electrónico" class="input-custom" required />
+              <input v-model="form.address" type="text" placeholder="🏠 Dirección" class="input-custom" required />
             </div>
           </template>
           
@@ -208,6 +209,13 @@
                 <span class="text-cyan-400">⚡</span> Zelle - usuario@ejemplo.com
               </p>
             </div>
+              <label class="font-semibold text-white text-lg">💱 Moneda</label>
+              <select v-model="selectedCurrencyId" :disabled="loadingCurrencies" class="select-custom">
+                <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">{{ c.name }} ({{ c.short_name }})</option>
+              </select>
+              <p v-if="!loadingCurrencies && currencies.length === 0" class="text-red-400 text-sm">
+                No hay monedas disponibles.
+              </p>
           </div>
 
           <div class="space-y-4">
@@ -221,7 +229,7 @@
             />
 
             <div v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')">
-              <label class="block font-semibold text-white mb-3 text-lg">📎 Comprobante de pago</label>
+              <label class="block font-semibold text-white mb-3 text-lg">📎 Comprobante de pago (opcional)</label>
               <input
                 ref="fileInput"
                 type="file"
@@ -285,9 +293,10 @@
             <button
               type="submit"
               class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-green-400/30"
-              :disabled="currentQty === 0"
+              :disabled="currentQty === 0 || submitting"
             >
-              🎉 {{ authStore.isAuthenticated ? 'Participar' : 'Confirmar' }}
+              <span v-if="submitting">Procesando...</span>
+              <span v-else>🎉 {{ authStore.isAuthenticated ? 'Participar' : 'Confirmar' }}</span>
             </button>
           </div>
         </form>
@@ -301,7 +310,7 @@ import { computed, ref, watch } from 'vue'
 import { useTicketStore } from '@/stores/useTicketStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import TicketSelector from './TicketSelector.vue'
-import { PaymentFlowService, type PaymentMethod } from '@/services/PaymentFlow'; // ✅ IMPORTACIÓN NECESARIA
+import { PaymentFlowService, type PaymentMethod, type Currency } from '@/services/PaymentFlow'; // ✅ IMPORTACIÓN NECESARIA
 
 const props = defineProps<{
   open: boolean
@@ -319,9 +328,12 @@ const pagoMovilMode = ref<'manual' | 'automatico'>('manual')
 const selectionMode = ref<'auto' | 'manual'>('auto')
 const selectedManualTickets = ref<number[]>([])
 
-// ✅ NUEVOS REFS PARA MÉTODOS DE PAGO
-const paymentMethods = ref<PaymentMethod[]>([]) 
+// ✅ NUEVOS REFS PARA MÉTODOS DE PAGO Y MONEDAS
+const paymentMethods = ref<PaymentMethod[]>([])
 const loadingMethods = ref(false)
+const currencies = ref<Currency[]>([])
+const loadingCurrencies = ref(false)
+const selectedCurrencyId = ref<string | undefined>(undefined)
 // ✅ NUEVO: Guardar el estado inicial ANTES de generar tickets
 const initialTicketsCount = ref(0)
 
@@ -354,6 +366,7 @@ function onFileChange(event: Event) {
 }
 
 const error = ref<string | null>(null)
+const submitting = ref(false)
 
 const close = () => {
   if (selectionMode.value === 'manual') selectedManualTickets.value = []
@@ -425,12 +438,28 @@ const totalPriceBs = computed(() => {
   })
 })
 
-// ✅ Cargar tasa BCV y métodos de pago cuando se abre el modal
-watch(() => props.open, (open) => {
+// ✅ Cargar tasa BCV, métodos de pago y monedas cuando se abre el modal
+watch(() => props.open, async (open) => {
   if (open) {
     fetchBcvRate()
-    loadPaymentMethods() // 👈 LLAMADA AL NUEVO SERVICIO
-    
+    loadPaymentMethods()
+    loadingCurrencies.value = true
+    try {
+      const result = await PaymentFlowService.fetchCurrencies()
+      const currs: Currency[] = result?.currencies ?? []
+      const defaultCurrencyId = result?.defaultCurrencyId
+  currencies.value = currs
+  // Asignación segura de moneda seleccionada: preferir defaultCurrencyId, si no existe usar la primera moneda disponible
+  let chosen: string | undefined = undefined
+  if (defaultCurrencyId) chosen = defaultCurrencyId
+  else if (currs.length > 0) chosen = currs[0]?.uuid
+  selectedCurrencyId.value = chosen
+    } catch (e) {
+      currencies.value = []
+      selectedCurrencyId.value = undefined
+    } finally {
+      loadingCurrencies.value = false
+    }
     // Calcular tickets iniciales ANTES de cualquier compra
     const userId = authStore.user?.id
     if (userId) {
@@ -442,7 +471,7 @@ watch(() => props.open, (open) => {
   }
 })
 
-const handleConfirm = () => {
+const handleConfirm = async () => {
   error.value = null
 
   let ticketsToBuy: number[] | undefined = undefined
@@ -462,7 +491,7 @@ const handleConfirm = () => {
       return
     }
   }
-  
+
   // Validar si el modo de pago es automático y los campos no están llenos
   if (form.metodoPago === 'pago-movil' && pagoMovilMode.value === 'automatico') {
     if (!form.pagoMovilCedula || !form.pagoMovilTelefono || !form.pagoMovilBanco) {
@@ -472,42 +501,139 @@ const handleConfirm = () => {
     // No se necesita referencia ni comprobante en modo automático
     form.referencia = 'AUTOMATIC'; 
     ticketStore.setComprobante(null);
-  } else if (!form.metodoPago || !form.referencia || !form.comprobante) {
-     // Validar si el modo es manual o cualquier otro método que requiere comprobante
-     error.value = 'Debes seleccionar un método de pago, ingresar la referencia y el comprobante.';
-     return;
+  } else if (!form.metodoPago || !form.referencia) {
+    // Ahora solo se requiere método de pago y referencia; comprobante es opcional
+    error.value = 'Debes seleccionar un método de pago e ingresar la referencia.';
+    return;
   }
 
-
   const userId = authStore.user?.id ?? null
-  
+
   // ✅ Guardar el estado inicial ANTES de generar tickets
   const initialTickets = initialTicketsCount.value
   const purchasedTickets = quantity
-  
-  console.log('🎫 Pre-generateTicket:', {
-    initialTickets,
-    purchasedTickets,
-    ticketsToBuy
-  })
-  
-  // Generar tickets
-  ticketStore.generateTicket(form, props.product, userId, ticketsToBuy)
-  
-  console.log('🎫 Post-generateTicket:', {
-    lastAssignedTickets: ticketStore.lastAssignedTickets,
-    ticketNumber: ticketStore.ticketNumber
-  })
-  
-  // Guardar los totales en el store ANTES de emitir el evento
-  ticketStore.formData.totalPrice = parseFloat(totalPrice.value);
-  ticketStore.formData.totalPriceBs = parseFloat(totalPriceBs.value);
 
-  // ✅ Emitir con los datos CORRECTOS del estado anterior
-  emit('confirmed', {
-    initialTickets,
-    purchasedTickets
-  })
+  // Construir payload para POST /sales
+  const idempotencyKey = `sale-${userId ?? 'guest'}-${Date.now()}`
+  // Poblar address y phone desde el usuario autenticado si existen
+  let address = ''
+  let phone = ''
+  if (authStore.isAuthenticated && authStore.user) {
+    address = authStore.user.address || ''
+    phone = authStore.user.phone || ''
+  } else {
+    address = form.address || ''
+    phone = form.telefono || ''
+  }
+
+  const payload: any = {
+    raffle_id: props.product?.uuid ?? props.product?.title,
+    user_id: userId,
+    details: [],
+    payment: {
+      payment_method_id: form.metodoPago,
+      currency_id: undefined,
+      current_currency_id: undefined,
+      exchange_rate: Number(bcvRate.value) || 1,
+      payment_date: new Date().toISOString(),
+      transaction_id: form.referencia || `TX-${Date.now()}`,
+      entity: form.metodoPago === 'pago-movil' ? form.pagoMovilBanco : undefined,
+      idempotency_key: idempotencyKey
+    },
+    invoice_data: {
+      document_id: `${form.tipoId}-${form.numeroId}`,
+      name: form.nombre || authStore.user?.name || 'Comprador',
+      address,
+      phone
+    }
+  }
+
+  if (selectionMode.value === 'manual' && ticketsToBuy) {
+    for (const n of ticketsToBuy) {
+      payload.details.push({ number: String(n).padStart(4, '0'), amount: Number(props.product?.ticketPrice ?? 0), prizes: '' })
+    }
+  } else {
+    // Para modo automático, el store puede proporcionar números disponibles
+    try {
+      const avail = ticketStore.getAvailableNumbers(props.product?.title ?? props.product, quantity)
+      for (const n of avail) {
+        payload.details.push({ number: String(n).padStart(4, '0'), amount: Number(props.product?.ticketPrice ?? 0), prizes: '' })
+      }
+    } catch (e: any) {
+      error.value = e?.message || 'No hay suficientes tickets disponibles.'
+      submitting.value = false
+      return
+    }
+  }
+
+  // Mapear metodoPago (slug) a uuid si está disponible en paymentMethods
+  const selectedMethod = paymentMethods.value.find(m => m.slug === form.metodoPago)
+  if (selectedMethod) {
+    payload.payment.payment_method_id = selectedMethod.uuid
+  }
+
+  // Asegurar currency_id usando el UUID seleccionado
+  payload.payment.currency_id = selectedCurrencyId.value
+  payload.payment.current_currency_id = selectedCurrencyId.value
+  if (!payload.payment.currency_id) {
+    error.value = 'No se ha configurado la moneda. Selecciona una moneda válida.'
+    submitting.value = false
+    return
+  }
+
+  // Formatear fecha al formato esperado por el backend (YYYY-MM-DD HH:mm:ss)
+  function formatSqlDate(d: Date) {
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  }
+  payload.payment.payment_date = formatSqlDate(new Date(payload.payment.payment_date))
+  // Llamada al servicio
+  submitting.value = true
+  try {
+    const res = await PaymentFlowService.createSale(payload, idempotencyKey)
+
+    if (res.status === 200 || res.status === 201) {
+      const data = res.data || {}
+
+      // Extraer números asignados por backend, si vienen
+      const assignedNumbers: number[] = []
+      if (data.details && Array.isArray(data.details)) {
+        for (const d of data.details) {
+          const num = Number(d.number)
+          if (!Number.isNaN(num)) assignedNumbers.push(num)
+        }
+      }
+
+      // Actualizar store usando números asignados o los locales
+      if (assignedNumbers.length > 0) {
+        ticketStore.generateTicket(form, props.product, userId, assignedNumbers)
+      } else {
+        ticketStore.generateTicket(form, props.product, userId, ticketsToBuy)
+      }
+
+      // Guardar totales
+      ticketStore.formData.totalPrice = parseFloat(totalPrice.value);
+      ticketStore.formData.totalPriceBs = parseFloat(totalPriceBs.value);
+
+      // Emitir confirmado con conteos reales
+      emit('confirmed', {
+        initialTickets,
+        purchasedTickets: assignedNumbers.length > 0 ? assignedNumbers.length : purchasedTickets
+      })
+    }
+  } catch (err: any) {
+    console.error('Error procesando venta:', err)
+    if (err && err.data && err.data.errors && err.data.errors.details) {
+      const detailsErr = err.data.errors.details
+      error.value = Array.isArray(detailsErr) ? `Los siguientes números ya no están disponibles: ${detailsErr.join(', ')}` : String(detailsErr)
+    } else if (err && err.data && err.data.message) {
+      error.value = String(err.data.message)
+    } else {
+      error.value = 'Ocurrió un error procesando la venta.'
+    }
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
