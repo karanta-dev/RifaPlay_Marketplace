@@ -115,16 +115,27 @@
 
           <div class="space-y-4">
             <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
-            <select v-model="form.metodoPago" class="input-custom" :required="!authStore.isAuthenticated">
-              <option value="">Seleccionar método de pago</option>
-              <option value="binance">Binance</option>
-              <option value="kontigo">KONTIGO</option>
-              <option value="pago-movil">Pago móvil</option>
-              <option value="transferencia">Transferencia bancaria</option>
-              <option value="tarjeta">Tarjeta crédito/débito</option>
-              <option value="zelle">Zelle</option>
+            
+            <select 
+                v-model="form.metodoPago" 
+                class="input-custom" 
+                :required="!authStore.isAuthenticated"
+                :disabled="loadingMethods"
+            >
+              <option value="" disabled :selected="!form.metodoPago">
+                {{ loadingMethods ? 'Cargando métodos...' : 'Seleccionar método de pago' }}
+              </option>
+              <option 
+                  v-for="method in paymentMethods" 
+                  :key="method.uuid" 
+                  :value="method.slug"
+              >
+                  {{ method.name }}
+              </option>
             </select>
-
+            <p v-if="!loadingMethods && paymentMethods.length === 0" class="text-red-400 text-sm">
+                No se pudieron cargar métodos de pago.
+            </p>
             <div v-if="form.metodoPago === 'pago-movil'" class="mt-4">
               <div class="flex bg-black/30 rounded-xl p-1 border border-cyan-500/30 shadow-lg">
                 <button
@@ -290,6 +301,7 @@ import { computed, ref, watch } from 'vue'
 import { useTicketStore } from '@/stores/useTicketStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import TicketSelector from './TicketSelector.vue'
+import { PaymentFlowService, type PaymentMethod } from '@/services/PaymentFlow'; // ✅ IMPORTACIÓN NECESARIA
 
 const props = defineProps<{
   open: boolean
@@ -302,12 +314,14 @@ const ticketStore = useTicketStore()
 const authStore = useAuthStore()
 const bcvRate = ref(0)
 const loadingBcv = ref(false)
-// Agrega esto con las otras refs
 const pagoMovilMode = ref<'manual' | 'automatico'>('manual')
 // SELECCIÓN
 const selectionMode = ref<'auto' | 'manual'>('auto')
 const selectedManualTickets = ref<number[]>([])
 
+// ✅ NUEVOS REFS PARA MÉTODOS DE PAGO
+const paymentMethods = ref<PaymentMethod[]>([]) 
+const loadingMethods = ref(false)
 // ✅ NUEVO: Guardar el estado inicial ANTES de generar tickets
 const initialTicketsCount = ref(0)
 
@@ -364,20 +378,23 @@ const totalPrice = computed(() => {
   return (currentQty.value * Number(price)).toFixed(2)
 })
 
-// ✅ CALCULAR ESTADO INICIAL CUANDO SE ABRE EL MODAL
-watch(() => props.open, (open) => {
-  if (open) {
-    // Calcular tickets iniciales ANTES de cualquier compra
-    const userId = authStore.user?.id
-    if (userId) {
-      initialTicketsCount.value = ticketStore.userTicketsCount(userId)
-    } else {
-      initialTicketsCount.value = ticketStore.tickets.filter(t => t.userId === null).length
-    }
-    console.log('📊 Initial tickets calculated:', initialTicketsCount.value)
+// ✅ NUEVO: Función para cargar métodos de pago
+async function loadPaymentMethods() {
+  loadingMethods.value = true;
+  try {
+    const methods = await PaymentFlowService.fetchPaymentMethods();
+    paymentMethods.value = methods;
+    console.log('💳 Métodos de pago cargados y ordenados:', paymentMethods.value);
+  } catch (error) {
+    console.error('❌ Error al cargar los métodos de pago:', error);
+    // Manejo de error simple para el select
+    paymentMethods.value = [];
+  } finally {
+    loadingMethods.value = false;
   }
-})
-// ✅ NUEVO: Función para obtener la tasa BCV
+}
+
+// ✅ Función para obtener la tasa BCV
 async function fetchBcvRate() {
   loadingBcv.value = true
   try {
@@ -397,7 +414,7 @@ watch(() => form.pagoMovilTelefono, (newValue) => {
     form.pagoMovilTelefono = newValue.replace(/[^\d]/g, '')
   }
 })
-// ✅ NUEVO: Computed para el precio en bolívares
+// ✅ Computed para el precio en bolívares
 const totalPriceBs = computed(() => {
   if (!bcvRate.value) return '0,00'
   const totalUsd = parseFloat(totalPrice.value)
@@ -408,10 +425,11 @@ const totalPriceBs = computed(() => {
   })
 })
 
-// ✅ NUEVO: Cargar tasa BCV cuando se abre el modal
+// ✅ Cargar tasa BCV y métodos de pago cuando se abre el modal
 watch(() => props.open, (open) => {
   if (open) {
     fetchBcvRate()
+    loadPaymentMethods() // 👈 LLAMADA AL NUEVO SERVICIO
     
     // Calcular tickets iniciales ANTES de cualquier compra
     const userId = authStore.user?.id
@@ -444,6 +462,22 @@ const handleConfirm = () => {
       return
     }
   }
+  
+  // Validar si el modo de pago es automático y los campos no están llenos
+  if (form.metodoPago === 'pago-movil' && pagoMovilMode.value === 'automatico') {
+    if (!form.pagoMovilCedula || !form.pagoMovilTelefono || !form.pagoMovilBanco) {
+        error.value = 'Debes completar todos los campos de Pago Móvil Automático.';
+        return;
+    }
+    // No se necesita referencia ni comprobante en modo automático
+    form.referencia = 'AUTOMATIC'; 
+    ticketStore.setComprobante(null);
+  } else if (!form.metodoPago || !form.referencia || !form.comprobante) {
+     // Validar si el modo es manual o cualquier otro método que requiere comprobante
+     error.value = 'Debes seleccionar un método de pago, ingresar la referencia y el comprobante.';
+     return;
+  }
+
 
   const userId = authStore.user?.id ?? null
   
