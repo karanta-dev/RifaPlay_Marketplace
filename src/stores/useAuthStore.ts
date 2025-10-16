@@ -24,6 +24,11 @@ export const useAuthStore = defineStore("auth", () => {
   const token = ref<string | null>(localStorage.getItem("token"));
   const isAuthenticated = computed(() => !!token.value);
 
+  // Ensure axios default header is set on startup if token exists
+  if (token.value) {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
+  }
+
   // ✅ Login mejorado con más logs
   const login = async (email: string, password: string) => {
     try {
@@ -36,36 +41,29 @@ export const useAuthStore = defineStore("auth", () => {
       // 👇 INICIO DE LA MODIFICACIÓN (REEMPLAZA EL BLOQUE ANTERIOR)
       // ----------------------------------------------------
       
-      // 1. Obtener el token, buscando en el nivel principal o anidado en 'data'
-      const responseToken = response.token        
-                          || response.access_token 
-                          || response.data?.token; // <-- ¡ESTO RESUELVE EL PROBLEMA!
+      // AuthService returns { raw, token, user }
+      const responseToken = response.token || response.raw?.token || null;
+      const responseUser = response.user || response.raw?.data || response.raw || null;
 
-      // 2. Obtener los datos del usuario, priorizando 'user' o usando 'data'
-      const responseUser = response.user || response.data;
-      
-      // 3. Verificar que se haya encontrado el token Y los datos del usuario
-      if (!responseToken || !responseUser) {
-          console.error('❌ Invalid login response structure: Missing Token or User Data.', response);
-          return false;
+      if (!responseUser) {
+        console.error('❌ Invalid login response structure: Missing User Data.', response);
+        return false;
       }
-      
-      // 4. Asignar el token y el usuario
-      token.value = responseToken;
-      user.value = responseUser;
 
-      if (token.value) {
-          localStorage.setItem("token", token.value);
-          axios.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
+      // If token exists, save it and set axios header
+      if (responseToken) {
+        token.value = responseToken;
+        localStorage.setItem("token", token.value as string);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
       }
-      
-      if (user.value) {
-          // Es crucial crear una copia y ELIMINAR el token antes de guardar el objeto de usuario,
-          // ya que ya lo manejamos por separado.
-          const userToStore = { ...user.value }; 
-          delete userToStore.token; // Limpiamos el token del objeto de usuario
-          localStorage.setItem("user", JSON.stringify(userToStore));
-      }
+
+      // Save user (strip token if present)
+  const userToStore = { ...responseUser };
+  if (userToStore.token) delete userToStore.token;
+  // Normalize id field for components expecting `id`
+  if (!userToStore.id && userToStore.uuid) userToStore.id = userToStore.uuid;
+  user.value = userToStore;
+  localStorage.setItem("user", JSON.stringify(userToStore));
       
       // ----------------------------------------------------
       // 👆 FIN DE LA MODIFICACIÓN
@@ -128,23 +126,29 @@ export const useAuthStore = defineStore("auth", () => {
 
       const response = await AuthService.register(payload);
       console.log('✅ Registration response:', response);
-      
-      // Verificar respuesta
-      if (!response || (!response.token && !response.access_token)) {
-        console.error('❌ Invalid registration response structure:', response);
-        return false;
-      }
-      
-      token.value = response.token || response.access_token;
-      user.value = response.user || response.data;
-      
-      if (token.value) {
-        localStorage.setItem("token", token.value);
+
+      const responseToken = response.token || response.raw?.token || null;
+      const responseUser = response.user || response.raw?.data || response.raw || null;
+
+      // If backend returns token, log the user in
+      if (responseToken) {
+        token.value = responseToken;
         axios.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
+        localStorage.setItem("token", token.value as string);
       }
-      
-      if (user.value) {
-        localStorage.setItem("user", JSON.stringify(user.value));
+
+      if (responseUser) {
+  const userToStore = { ...responseUser };
+  if (userToStore.token) delete userToStore.token;
+  if (!userToStore.id && userToStore.uuid) userToStore.id = userToStore.uuid;
+  user.value = userToStore;
+  localStorage.setItem("user", JSON.stringify(userToStore));
+      }
+
+      // If the backend didn't return a token but provided a user, attempt to fetch profile
+      if (!token.value && user.value) {
+        // try to get tokenless profile or prompt user to login — for now return true since user created
+        console.warn('⚠️ Registration succeeded but no token returned. User created, please login.');
       }
       
       console.log('✅ Registration successful, user:', user.value);
