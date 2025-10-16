@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://api-rifaplay.karanta.dev/api/v1";
+const API_URL = "http://192.168.1.17:8000/api/v1";
 
 export interface Raffle {
   uuid: string;
