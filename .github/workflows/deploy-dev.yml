@@ -29,8 +29,7 @@ jobs:
         run: pnpm install --force
       - name: Crear archivo .env desde secrets
         run: |
-          echo "VITE_API_URL=${{secrets.VITE_API_URL}}">>.env
-          echo "VITE_URL=${{secrets.VITE_URL}}">>.env  
+          echo "VITE_API_URL=${{secrets.VITE_API_URL_DEV}}">>.env
 
       - name: Compilar proyecto 
         run: pnpm run build -m pwa
