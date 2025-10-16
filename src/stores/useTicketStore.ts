@@ -54,18 +54,33 @@ export interface TicketStatus {
 }
 
 export interface TicketForm {
-  nombre: string
-  tipoId: string
-  numeroId: string
-  telefono: string
-  correo: string
-  tickets: number
-  metodoPago: string
-  referencia: string
-  comprobante: File | null
-  pagoMovilCedula?: string
-  pagoMovilTelefono?: string
-  pagoMovilBanco?: string
+  // 🧍 Información del comprador (usuarios no autenticados)
+  nombre: string                 // Nombre completo del comprador
+  tipoId: string                 // Tipo de documento (ej: 'V', 'E', 'J')
+  numeroId: string               // Número de identificación o cédula
+  telefono: string               // Número de teléfono del comprador
+  correo: string                 // Correo electrónico de contacto
+
+  // 🎟️ Información sobre los tickets
+  tickets: number                // Cantidad de tickets seleccionados
+  selectionMode: 'auto' | 'manual' // Modo de selección ('auto' genera aleatoriamente, 'manual' permite elegir)
+  selectedManualTickets: number[] // Lista de números de ticket seleccionados manualmente (si aplica)
+
+  // 💳 Método de pago general
+  metodoPago: string             // Tipo de pago (ej: "Pago móvil", "Transferencia", "Zelle", etc.)
+  referencia: string             // Número o código de referencia del pago
+  comprobante: File | null       // Archivo del comprobante (imagen o PDF)
+
+  // 📱 Pago móvil (si aplica)
+  pagoMovilMode: 'manual' | 'automatico' // Define si el pago móvil es ingresado manualmente o por un sistema automatizado
+  pagoMovilCedula?: string        // Cédula del titular del pago móvil
+  pagoMovilTelefono?: string      // Teléfono asociado al pago móvil
+  pagoMovilBanco?: string         // Banco del pago móvil
+
+  // 💰 Datos de monto y tasas
+  totalPrice: number              // Precio total en dólares
+  totalPriceBs: number            // Precio total en bolívares (calculado con tasa BCV)
+  bcvRate: number                 // Tasa del BCV usada para la conversión
 }
 
 // --- DEFINICIÓN DEL STORE ---
@@ -77,17 +92,35 @@ export const useTicketStore = defineStore('ticket', {
             loading: false,
         pagination: null as any,
         // Estado temporal para el proceso de compra
-        formData: {
-        nombre: '',
-        tipoId: '',
-        numeroId: '',
-        telefono: '',
-        correo: '',
-        tickets: 1,
-        metodoPago: '',
-        referencia: '',
-        comprobante: null,
-        } as TicketForm,
+         formData: {
+      // 🧍 Datos del participante (usuarios no autenticados)
+      nombre: '',
+      tipoId: 'V',
+      numeroId: '',
+      telefono: '',
+      correo: '',
+
+      // 🎟️ Tickets
+      tickets: 1,
+      selectionMode: 'auto', // 'auto' o 'manual'
+      selectedManualTickets: [] as number[],
+
+      // 💳 Método de pago general
+      metodoPago: '',
+      referencia: '',
+      comprobante: null as File | null,
+
+      // 📱 Pago móvil (modo automático)
+      pagoMovilMode: 'manual', // 'manual' o 'automatico'
+      pagoMovilCedula: '',
+      pagoMovilTelefono: '',
+      pagoMovilBanco: '',
+
+      // 💰 Información adicional (opcional)
+      totalPrice: 0,
+      totalPriceBs: 0,
+      bcvRate: 0,
+    } as TicketForm,
         ticketNumber: null as number | null,
         lastAssignedTickets: [] as number[],
 
@@ -358,21 +391,26 @@ export const useTicketStore = defineStore('ticket', {
   }
 },
 clearForm() {
-  this.formData = {
-    nombre: '',
-    tipoId: '',
-    numeroId: '',
-    telefono: '',
-    correo: '',
-    tickets: 1,
-    metodoPago: '',
-    referencia: '',
-    comprobante: null,
-    // Limpiar nuevos campos
-    pagoMovilCedula: '',
-    pagoMovilTelefono: '',
-    pagoMovilBanco: ''
-  }
+      this.formData = {
+        nombre: '',
+        tipoId: 'V',
+        numeroId: '',
+        telefono: '',
+        correo: '',
+        tickets: 1,
+        selectionMode: 'auto',
+        selectedManualTickets: [],
+        metodoPago: '',
+        referencia: '',
+        comprobante: null,
+        pagoMovilMode: 'manual',
+        pagoMovilCedula: '',
+        pagoMovilTelefono: '',
+        pagoMovilBanco: '',
+        totalPrice: 0,
+        totalPriceBs: 0,
+        bcvRate: 0,
+      }
 },
     async loadRaffles(page = 1, perPage = 16) {
       this.loading = true;
@@ -562,16 +600,25 @@ clearForm() {
         // Resetear datos temporales
         reset() {
         this.formData = {
-            nombre: '',
-            tipoId: '',
-            numeroId: '',
-            telefono: '',
-            correo: '',
-            tickets: 1,
-            metodoPago: '',
-            referencia: '',
-            comprobante: null,
-        }
+        nombre: '',
+        tipoId: 'V',
+        numeroId: '',
+        telefono: '',
+        correo: '',
+        tickets: 1,
+        selectionMode: 'auto',
+        selectedManualTickets: [],
+        metodoPago: '',
+        referencia: '',
+        comprobante: null,
+        pagoMovilMode: 'manual',
+        pagoMovilCedula: '',
+        pagoMovilTelefono: '',
+        pagoMovilBanco: '',
+        totalPrice: 0,
+        totalPriceBs: 0,
+        bcvRate: 0,
+      }
             this.ticketNumber = null;
         }
     }

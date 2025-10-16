@@ -63,11 +63,17 @@
       @participar="openParticipateModal"
     />
 
-    <ConfirmacionModal
+    <!-- <ConfirmacionModal
       :open="showConfirm"
       @close="showConfirm = false"
       @showJackpot="handleShowJackpot"
-    />
+    /> -->
+<ConfirmacionModal
+  :open="showConfirm"
+  :selectedProduct="selectedProduct"
+  @close="showConfirm = false"
+  @showJackpot="handleShowJackpot"
+/>
 
     <DetailsModal
       :open="showDetails"

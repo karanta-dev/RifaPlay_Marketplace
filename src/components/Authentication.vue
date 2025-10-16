@@ -31,8 +31,14 @@
         <div v-else key="register">
           <h2 class="text-xl font-bold text-center mb-4">Crear cuenta</h2>
             <form class="flex flex-col gap-3" @submit.prevent="handleRegister">
-            <input v-model="name" type="text" placeholder="Nombre completo" class="input" />
+            <div class="flex gap-2">
+              <input v-model="name" type="text" placeholder="Nombre" class="input flex-1" />
+              <input v-model="last_name" type="text" placeholder="Apellido" class="input flex-1" />
+            </div>
             <input v-model="email" type="email" placeholder="Correo electrónico" class="input" />
+            <input v-model="password" type="password" placeholder="Contraseña" class="input" />
+            <input v-model="confirmPassword" type="password" placeholder="Confirmar contraseña" class="input" />
+            
             <div class="flex gap-2">
                 <select class="input w-24">
                 <option value="+58">🇻🇪 +58</option>
@@ -41,28 +47,33 @@
                 </select>
                 <input v-model="phone" type="tel" placeholder="Teléfono" class="input flex-1" />
             </div>
+            
             <div class="flex gap-2">
                 <select v-model="idType" class="input w-20">
                 <option value="V">V</option>
                 <option value="J">J</option>
                 <option value="E">E</option>
                 </select>
-                <input v-model="idNumber" type="text" placeholder="Cédula de identidad" class="input flex-1" />
+                <input v-model="document_number" type="text" placeholder="Cédula de identidad" class="input flex-1" />
             </div>
+            
             <div>
               <label class="block text-sm text-gray-600 mb-1">Fecha de nacimiento</label>
               <input 
-                v-model="birthDate" 
+                v-model="birth_date" 
                 type="date" 
                 class="input w-full"
                 :max="maxBirthDate"
               />
-            </div>            <select class="input">
+            </div>
+            
+            <select class="input">
                 <option disabled selected>¿Cómo nos conociste?</option>
                 <option>Publicidad</option>
                 <option>Amigos</option>
                 <option>Redes sociales</option>
             </select>
+            
             <input v-model="promoCode" type="text" placeholder="Promo Code (opcional)" class="input" />
             <button type="submit" class="btn-primary">Registrarse</button>
             </form>
@@ -83,7 +94,6 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useToast } from "vue-toastification";
 
 const toast = useToast();
-
 const mode = ref<"login" | "register">("login");
 const authStore = useAuthStore();
 const emit = defineEmits(["close"]);
@@ -92,67 +102,128 @@ const emit = defineEmits(["close"]);
 const email = ref("");
 const password = ref("");
 const name = ref("");
+const last_name = ref(""); 
+const confirmPassword = ref(""); 
 const phone = ref("");
 const idType = ref("V");
-const idNumber = ref("");
-const birthDate = ref("");
+const document_number = ref("");
+const birth_date = ref("");
 const promoCode = ref("");
+const isLoading = ref(false);
 
 const maxBirthDate = computed(() => {
   const today = new Date();
   const minAgeDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
   return minAgeDate.toISOString().split('T')[0];
 });
-// Funciones
+
 const handleLogin = async () => {
-  const success = await authStore.login(email.value, password.value);
-  if (success) {
-    toast.success("✅ Sesión iniciada correctamente", {
-      toastClassName: "bg-blue-900 text-white font-bold rounded-lg shadow-lg",
-    });
-    emit("close");
-  } else {
-    toast.error("❌ Error al iniciar sesión", {
+  if (!email.value || !password.value) {
+    toast.error("❌ Por favor completa todos los campos", {
       toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
     });
+    return;
+  }
+
+  isLoading.value = true;
+  
+  try {
+    const success = await authStore.login(email.value, password.value);
+    
+    if (success) {
+      toast.success("✅ Sesión iniciada correctamente", {
+        toastClassName: "bg-blue-900 text-white font-bold rounded-lg shadow-lg",
+      });
+      emit("close");
+    } else {
+      toast.error("❌ Error al iniciar sesión. Verifica tus credenciales", {
+        toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+      });
+    }
+  } catch (error) {
+    toast.error("❌ Error de conexión", {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    });
+  } finally {
+    isLoading.value = false;
   }
 };
 
-// Service
-// const handleLogin = async () => {
-//   const success = await authStore.login(email.value, password.value);
-//   if (success) {
-//     await authStore.loadUserProfile(); // ✅ Carga perfil desde el backend
-//     toast.success("✅ Sesión iniciada correctamente");
-//     emit("close");
-//   } else {
-//     toast.error("❌ Error al iniciar sesión");
-//   }
-// };
-
 const handleRegister = async () => {
-  const success = await authStore.register({
-    name: name.value,
-    email: email.value,
-    phone: phone.value,
-    idType: idType.value,
-    idNumber: idNumber.value,
-    birthDate: birthDate.value,
-    promoCode: promoCode.value,
-  });
-  if (success) {
-    toast.success("🎉 Registro exitoso", {
-      toastClassName: "bg-blue-900 text-white font-bold rounded-lg shadow-lg",
-    });
-    emit("close");
-  } else {
-    toast.error("❌ Error en el registro", {
+  // Validaciones mejoradas
+  if (!name.value || !last_name.value || !email.value || !password.value || 
+      !confirmPassword.value || !phone.value || !document_number.value || !birth_date.value) {
+    toast.error("❌ Por favor completa todos los campos obligatorios", {
       toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
     });
+    return;
+  }
+
+  if (password.value !== confirmPassword.value) {
+    toast.error("❌ Las contraseñas no coinciden", {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    });
+    return;
+  }
+
+  if (password.value.length < 6) {
+    toast.error("❌ La contraseña debe tener al menos 6 caracteres", {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    });
+    return;
+  }
+
+  // Validar edad
+  const birthDate = new Date(birth_date.value);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  
+  if (age < 18) {
+    toast.error("❌ Debes ser mayor de 18 años para registrarte", {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    });
+    return;
+  }
+
+  isLoading.value = true;
+
+  try {
+    const success = await authStore.register({
+      name: name.value,
+      last_name: last_name.value,
+      email: email.value,
+      password: password.value,
+      phone: phone.value,
+      idType: idType.value,
+      document_number: document_number.value,
+      birth_date: birth_date.value,
+      promoCode: promoCode.value
+    });
+
+    if (success) {
+      toast.success("🎉 Registro exitoso. Bienvenido!", {
+        toastClassName: "bg-blue-900 text-white font-bold rounded-lg shadow-lg",
+      });
+      emit("close");
+    } else {
+      toast.error("❌ Error en el registro. Intenta nuevamente", {
+        toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+      });
+    }
+  } catch (error) {
+    toast.error("❌ Error de conexión durante el registro", {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    });
+  } finally {
+    isLoading.value = false;
   }
 };
 </script>
-
 <style scoped>
 .input {
   @apply border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none;

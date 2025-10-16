@@ -680,6 +680,7 @@ watch(() => props.open, (open) => {
     console.log('📊 Initial tickets calculated:', initialTicketsCount.value)
   }
 })
+
 const handleConfirm = () => {
   error.value = null
 

@@ -101,7 +101,7 @@
 
     <!-- Botón participar -->
     <button
-      class="px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
+      class="btn_participate px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
       :class="{
         'bg-green-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.6)]': isSoldOut || isTimeUp,
         'bg-yellow-500 text-black hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)]': !isSoldOut && !isTimeUp
@@ -208,4 +208,5 @@ const timeLeft = computed(() => {
 .bg-red-600 {
   box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
 }
+
 </style>
