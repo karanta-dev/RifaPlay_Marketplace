@@ -1,21 +1,21 @@
 <template>
   <div>
     <!-- 🧩 Grid de productos -->
-    <div
-      class="w-full max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 p-2"
-    >
-      <ProductCard
-        v-for="(item, i) in paginatedItems"
-        :key="i"
-        :image="item.images?.[0] ?? item.image"
-        :title="item.title"
-        :description="item.description"
-        :progress="productProgress(item)"
-        :drawDate="item.drawDate"
-        @participar="openParticipateModal(item)"
-        @view-details="openDetails(item)"
-      />
-    </div>
+<div
+  class="w-full max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 p-2"
+>
+  <ProductCard
+    v-for="(item, i) in sortedPaginatedItems"
+    :key="i"
+    :image="item.images?.[0] ?? item.image"
+    :title="item.title"
+    :description="item.description"
+    :progress="productProgress(item)"
+    :drawDate="item.drawDate"
+    @participar="openParticipateModal(item)"
+    @view-details="openDetails(item)"
+  />
+</div>
 
     <!-- 🧭 Controles de paginación -->
     <div class="flex justify-center items-center gap-4 mt-6">
@@ -63,11 +63,17 @@
       @participar="openParticipateModal"
     />
 
-    <ConfirmacionModal
+    <!-- <ConfirmacionModal
       :open="showConfirm"
       @close="showConfirm = false"
       @showJackpot="handleShowJackpot"
-    />
+    /> -->
+<ConfirmacionModal
+  :open="showConfirm"
+  :selectedProduct="selectedProduct"
+  @close="showConfirm = false"
+  @showJackpot="handleShowJackpot"
+/>
 
     <DetailsModal
       :open="showDetails"
@@ -79,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed,  } from "vue"
+import { ref, computed } from "vue"
 import { storeToRefs } from "pinia"
 import { useTicketStore } from "@/stores/useTicketStore"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -109,20 +115,45 @@ const items = computed(() => {
   return topProducts.value
 })
 
+// 🔹 PRODUCTOS ORDENADOS (activos primero, vendidos/sorteados después)
+const sortedItems = computed(() => {
+  const activeProducts = []
+  const soldOutProducts = []
+  
+  for (const product of items.value) {
+    const progress = productProgress(product)
+    const drawDate = product.drawDate ? new Date(product.drawDate).getTime() : 0
+    const now = Date.now()
+    
+    // Verificar si está vendido o sorteado
+    const isSoldOut = progress === 100
+    const isTimeUp = drawDate <= now
+    
+    if (isSoldOut || isTimeUp) {
+      soldOutProducts.push(product)
+    } else {
+      activeProducts.push(product)
+    }
+  }
+  
+  // Activos primero, luego vendidos/sorteados
+  return [...activeProducts, ...soldOutProducts]
+})
+
 // 🔹 PAGINACIÓN
 const itemsPerPage = 16
 const currentPage = ref(1)
 
 // Total de páginas
 const totalPages = computed(() =>
-  Math.ceil(items.value.length / itemsPerPage)
+  Math.ceil(sortedItems.value.length / itemsPerPage)
 )
 
-// Productos paginados
-const paginatedItems = computed(() => {
+// Productos paginados ORDENADOS
+const sortedPaginatedItems = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
-  return items.value.slice(start, end)
+  return sortedItems.value.slice(start, end)
 })
 
 // Cambiar página

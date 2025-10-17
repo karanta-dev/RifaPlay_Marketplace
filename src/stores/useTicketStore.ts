@@ -4,7 +4,7 @@ import { RaffleService } from "@/services/RaffleService";
 // Clave para la persistencia en localStorage
 const PERSIST_KEY = 'rifa_ticket_store_v1';
 
-// localStorage.removeItem('rifa_ticket_store_v1')
+localStorage.removeItem('rifa_ticket_store_v1')
 
 // Intentar leer el estado persistido
 let persisted: any = null;
@@ -54,15 +54,34 @@ export interface TicketStatus {
 }
 
 export interface TicketForm {
-  nombre: string
-  tipoId: string
-  numeroId: string
-  telefono: string
-  correo: string
-  tickets: number
-  metodoPago: string
-  referencia: string
-  comprobante: File | null
+  // 🧍 Información del comprador (usuarios no autenticados)
+  nombre: string                 // Nombre completo del comprador
+  tipoId: string                 // Tipo de documento (ej: 'V', 'E', 'J')
+  numeroId: string               // Número de identificación o cédula
+  telefono: string               // Número de teléfono del comprador
+    correo: string                 // Correo electrónico de contacto
+    address: string                // Dirección física del comprador
+
+  // 🎟️ Información sobre los tickets
+  tickets: number                // Cantidad de tickets seleccionados
+  selectionMode: 'auto' | 'manual' // Modo de selección ('auto' genera aleatoriamente, 'manual' permite elegir)
+  selectedManualTickets: number[] // Lista de números de ticket seleccionados manualmente (si aplica)
+
+  // 💳 Método de pago general
+  metodoPago: string             // Tipo de pago (ej: "Pago móvil", "Transferencia", "Zelle", etc.)
+  referencia: string             // Número o código de referencia del pago
+  comprobante: File | null       // Archivo del comprobante (imagen o PDF)
+
+  // 📱 Pago móvil (si aplica)
+  pagoMovilMode: 'manual' | 'automatico' // Define si el pago móvil es ingresado manualmente o por un sistema automatizado
+  pagoMovilCedula?: string        // Cédula del titular del pago móvil
+  pagoMovilTelefono?: string      // Teléfono asociado al pago móvil
+  pagoMovilBanco?: string         // Banco del pago móvil
+
+  // 💰 Datos de monto y tasas
+  totalPrice: number              // Precio total en dólares
+  totalPriceBs: number            // Precio total en bolívares (calculado con tasa BCV)
+  bcvRate: number                 // Tasa del BCV usada para la conversión
 }
 
 // --- DEFINICIÓN DEL STORE ---
@@ -74,17 +93,36 @@ export const useTicketStore = defineStore('ticket', {
             loading: false,
         pagination: null as any,
         // Estado temporal para el proceso de compra
-        formData: {
-        nombre: '',
-        tipoId: '',
-        numeroId: '',
-        telefono: '',
-        correo: '',
-        tickets: 1,
-        metodoPago: '',
-        referencia: '',
-        comprobante: null,
-        } as TicketForm,
+         formData: {
+    // 🧍 Datos del participante (usuarios no autenticados)
+    nombre: '',
+    tipoId: 'V',
+    numeroId: '',
+    telefono: '',
+    correo: '',
+    address: '',
+
+      // 🎟️ Tickets
+      tickets: 1,
+      selectionMode: 'auto', // 'auto' o 'manual'
+      selectedManualTickets: [] as number[],
+
+      // 💳 Método de pago general
+      metodoPago: '',
+      referencia: '',
+      comprobante: null as File | null,
+
+      // 📱 Pago móvil (modo automático)
+      pagoMovilMode: 'manual', // 'manual' o 'automatico'
+      pagoMovilCedula: '',
+      pagoMovilTelefono: '',
+      pagoMovilBanco: '',
+
+      // 💰 Información adicional (opcional)
+      totalPrice: 0,
+      totalPriceBs: 0,
+      bcvRate: 0,
+    } as TicketForm,
         ticketNumber: null as number | null,
         lastAssignedTickets: [] as number[],
 
@@ -123,21 +161,7 @@ export const useTicketStore = defineStore('ticket', {
                 ticketsMax: 1000,
                 drawDate: '2025-09-25T10:00:00'
             },
-            
-              {
-                title: 'Moto Honda 2025',
-                rifero: 'Juan Pérez',
-                categories: ['Motos'],
-                description: 'Una moto usada pero que se ve como nuevo, directo de agencia. Incluye audio premium.',
-                images: [
-                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg',
-                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg'
-                ],
-                ticketPrice: 10,
-                ticketsVendidos: 723,
-                ticketsMax: 1000,
-                drawDate: '2025-10-25T10:00:00'
-            },
+
             {
                 title: 'iPhone + AirPods',
                 rifero: 'Tech Store',
@@ -192,6 +216,21 @@ export const useTicketStore = defineStore('ticket', {
                 ticketsMax: 400,
                 drawDate: '2025-12-02T14:00:00'
             },
+                        
+              {
+                title: 'Moto Honda 2025',
+                rifero: 'Juan Pérez',
+                categories: ['Motos'],
+                description: 'Una moto usada pero que se ve como nuevo, directo de agencia. Incluye audio premium.',
+                images: [
+                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg',
+                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg'
+                ],
+                ticketPrice: 10,
+                ticketsVendidos: 723,
+                ticketsMax: 1000,
+                drawDate: '2025-10-25T10:00:00'
+            },
             {
                 title: 'MacBook Air M2',
                 rifero: 'Apple Lovers',
@@ -239,7 +278,7 @@ export const useTicketStore = defineStore('ticket', {
             return (product: { ticketsVendidos: number; ticketsMax: number }) =>
                 (product.ticketsVendidos / product.ticketsMax) >= 0.7;
         },
-
+        
         // Filtra productos por categoría
         productsByCategory: (state) => {
             return (category: string) =>
@@ -299,52 +338,7 @@ export const useTicketStore = defineStore('ticket', {
 
     },
     actions: {
-            // 🔴 Nuevo: conectar al WebSocket
-            
-    connectToTicketWS() {
-    const ws = new WebSocket("ws://localhost:3000");
 
-    ws.onopen = () => {
-      console.log("✅ Conectado al WebSocket de tickets");
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.type === "ticket_sold" || data.type === "ticket_reserved") {
-          const { productId, ticketNumbers, userId } = data;
-
-          ticketNumbers.forEach((n: number) => {
-            if (!this.tickets.find(t => t.ticketNumber === n && t.productId === productId)) {
-              this.tickets.push({
-                ticketNumber: n,
-                productId,
-                userId,
-                createdAt: new Date().toISOString(),
-                isWinner: false,
-              });
-            }
-          });
-
-          const p = this.topProducts.find(p => p.title === productId);
-          if (p) p.ticketsVendidos += ticketNumbers.length;
-
-          this._savePersist();
-        }
-
-        if (data.type === "ticket_released") {
-          const { productId, ticketNumbers } = data;
-          this.tickets = this.tickets.filter(
-            t => !(ticketNumbers.includes(t.ticketNumber) && t.productId === productId)
-          );
-          this._savePersist();
-        }
-      } catch (err) {
-        console.error("❌ Error parsing WS message:", err);
-      }
-    };
-  },
   setComprobante(file: File | null) {
   if (file) {
     this.formData.comprobante = file
@@ -353,19 +347,29 @@ export const useTicketStore = defineStore('ticket', {
     this.formData.comprobante = null
   }
 },
-  clearForm() {
-      this.formData = {
-        nombre: '',
-        tipoId: '',
-        numeroId: '',
-        telefono: '',
-        correo: '',
-        tickets: 1,
-        metodoPago: '',
-        referencia: '',
-        comprobante: null,
-      }
-    },
+clearForm() {
+            this.formData = {
+                nombre: '',
+                tipoId: 'V',
+                numeroId: '',
+                telefono: '',
+                correo: '',
+                address: '',
+                tickets: 1,
+                selectionMode: 'auto',
+                selectedManualTickets: [],
+                metodoPago: '',
+                referencia: '',
+                comprobante: null,
+                pagoMovilMode: 'manual',
+                pagoMovilCedula: '',
+                pagoMovilTelefono: '',
+                pagoMovilBanco: '',
+                totalPrice: 0,
+                totalPriceBs: 0,
+                bcvRate: 0,
+            }
+},
     async loadRaffles(page = 1, perPage = 16) {
       this.loading = true;
 
@@ -395,23 +399,6 @@ export const useTicketStore = defineStore('ticket', {
         this.loading = false;
       }
     },
-      // 🔵 Métodos para enviar mensajes al WS
-    reserveTicket(productId: string, ticketNumbers: number[], userId: number | string) {
-      this.ws?.send(JSON.stringify({
-        type: "ticket_reserved",
-        productId,
-        ticketNumbers,
-        userId,
-      }));
-    },
-
-     releaseTicket(productId: string, ticketNumbers: number[]) {
-      this.ws?.send(JSON.stringify({
-        type: "ticket_released",
-        productId,
-        ticketNumbers,
-      }));
-    },
 
     markTicketAsSold(productTitle: string, ticket: number) {
     if (!this.tickets.find(t => t.productId === productTitle && t.ticketNumber === ticket)) {
@@ -436,6 +423,26 @@ export const useTicketStore = defineStore('ticket', {
         userId,
       }));
     },
+    
+        // Reserva temporal de tickets (marcados con userId = 'reserved' o con el userId proporcionado)
+        reserveTicket(productId: string, ticketNumbers: number[], userId: number | string | null = 'reserved') {
+            if (!Array.isArray(ticketNumbers) || ticketNumbers.length === 0) return;
+            for (const num of ticketNumbers) {
+                const existing = this.tickets.find(t => t.productId === productId && t.ticketNumber === num);
+                if (!existing) {
+                    this.tickets.push({
+                        ticketNumber: Number(num),
+                        productId,
+                        userId: userId ?? 'reserved',
+                        createdAt: new Date().toISOString(),
+                        isWinner: false,
+                    });
+                }
+            }
+            // Persistir cambios
+            this._savePersist();
+        },
+    
         // Helper: genera un número de ticket único no usado
         _generateUnique6Digit(usedSet: Set<number>, ticketsMax: number): number {
             const MAX_ATTEMPTS = 2000;
@@ -543,6 +550,17 @@ export const useTicketStore = defineStore('ticket', {
             this.venderTickets(product, assigned.length);
             this._savePersist();
         },
+
+        // Devuelve una lista de números disponibles para un producto (elige los primeros `quantity` disponibles)
+        getAvailableNumbers(productTitle: string, quantity: number): number[] {
+            const available = this.availableTicketsForProduct(productTitle);
+            if (!Array.isArray(available)) return [];
+            if (available.length < quantity) {
+                throw new Error(`Solo quedan ${available.length} tickets disponibles`);
+            }
+            // Retornar los primeros `quantity` números disponibles
+            return available.slice(0, quantity);
+        },
         
         // Actualiza el contador de tickets vendidos
         venderTickets(product: any, cantidad: number) {
@@ -553,17 +571,27 @@ export const useTicketStore = defineStore('ticket', {
 
         // Resetear datos temporales
         reset() {
-        this.formData = {
-            nombre: '',
-            tipoId: '',
-            numeroId: '',
-            telefono: '',
-            correo: '',
-            tickets: 1,
-            metodoPago: '',
-            referencia: '',
-            comprobante: null,
-        }
+                this.formData = {
+                nombre: '',
+                tipoId: 'V',
+                numeroId: '',
+                telefono: '',
+                correo: '',
+                address: '',
+                tickets: 1,
+                selectionMode: 'auto',
+                selectedManualTickets: [],
+                metodoPago: '',
+                referencia: '',
+                comprobante: null,
+                pagoMovilMode: 'manual',
+                pagoMovilCedula: '',
+                pagoMovilTelefono: '',
+                pagoMovilBanco: '',
+                totalPrice: 0,
+                totalPriceBs: 0,
+                bcvRate: 0,
+            }
             this.ticketNumber = null;
         }
     }

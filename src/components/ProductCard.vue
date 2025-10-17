@@ -1,6 +1,6 @@
 <template>
 <div
-  class="relative bg-gradient-to-r from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-2xl p-5 border border-gray-700/50 shadow-lg hover:shadow-yellow-500/10 transition transform hover:scale-105 overflow-hidden group cursor-pointer
+  class="relative bg-gradient-to-r from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-2xl p-1.5 border border-gray-700/50 shadow-lg hover:shadow-yellow-500/10 transition transform hover:scale-105 overflow-hidden group cursor-pointer
          flex flex-col justify-between h-full"
   :class="{ 'opacity-60 pointer-events-none': isSoldOut || isTimeUp }"
   @click="$emit('view-details')"
@@ -31,53 +31,77 @@
     {{ description }}
   </p>
 
-  <div class="w-full bg-gray-700/50 rounded-full h-2 sm:h-3 mb-2 overflow-hidden">
+  <!-- Barra de progreso con texto al final -->
+  <div class="w-full bg-gray-700/50 rounded-full h-6 sm:h-5 mb-2 overflow-hidden relative">
     <div
-      class="bg-yellow-400 h-2 sm:h-3 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.6)] transition-all duration-500"
-      :style="{ width: progress + '%' }"
-    ></div>
-  </div>
-  <p class="text-xs text-gray-400 text-center mb-4">{{ progress }}% vendido</p>
-</div>
-
-
-   <!-- Contador actualizado con condicional de tiempo límite -->
-      <div class="text-center mb-3">
-        <div v-if="!isTimeUp" class="inline-flex flex-col items-center bg-gray-800/70 rounded-lg px-0 py-2 border border-gray-600/50">
-          <span class="text-xs text-gray-300 mb-1">Tiempo restante:</span>
-          <div class="flex items-center justify-center space-x-1">
-            <div class="flex flex-col items-center">
-              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.days }}</span>
-              <span class="text-xs text-gray-400 mt-0.5">Días</span>
-            </div>
-            <span class="text-yellow-300 font-bold -mt-5">:</span>
-            <div class="flex flex-col items-center">
-              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.hours }}</span>
-              <span class="text-xs text-gray-400 mt-0.5">Horas</span>
-            </div>
-            <span class="text-yellow-300 font-bold -mt-5">:</span>
-            <div class="flex flex-col items-center">
-              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.minutes }}</span>
-              <span class="text-xs text-gray-400 mt-0.5">Min</span>
-            </div>
-            <span class="text-yellow-300 font-bold -mt-5">:</span>
-            <div class="flex flex-col items-center">
-              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.seconds }}</span>
-              <span class="text-xs text-gray-400 mt-0.5">Seg</span>
-            </div>
-          </div>
-        </div>
-        <div v-else class="inline-flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-2 border border-gray-600/50">
-          <span class="text-xs text-gray-300 mb-1">Estado:</span>
-          <div class="flex items-center justify-center">
-            <span class="text-green-400 font-bold text-sm drop-shadow">🎉 ¡SORTEADO!</span>
-          </div>
-        </div>
+      class="bg-gradient-to-br from-yellow-400 to-red-500 h-6 sm:h-5 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.6)] transition-all duration-500 relative"
+      :style="{ width: progressPercentage + '%' }" 
+    >
+   <!-- Texto al final de la barra de progreso -->
+      <div class="absolute right-1 top-1/2 transform -translate-y-1/2">
+        <span class="text-xs font-bold text-white drop-shadow-md whitespace-nowrap">
+          {{ progressPercentage }}%
+        </span>
       </div>
+    </div>
+    
+    <!-- Texto fuera de la barra (en el área gris) cuando el progreso es bajo -->
+    <div v-if="progressPercentage < 15" class="absolute right-1 top-1/2 transform -translate-y-1/2">
+      <span class="text-[10px] font-bold text-gray-300 drop-shadow-md whitespace-nowrap">
+        {{ progressPercentage }}%
+      </span>
+    </div>
+  </div>
+</div>e
+
+<!-- Contador actualizado y centrado -->
+<div class="text-center mb-2">
+  <div v-if="!isTimeUp" class="flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-0 border border-gray-600/50 w-full max-w-xs mx-auto">
+    <span class="text-xs text-gray-300 mb-1">Tiempo restante:</span>
+    <div class="flex items-center justify-center gap-0 sm:gap-1 w-30">
+      <!-- Días -->
+      <div class="flex flex-col items-center flex-1">
+        <span class="bg-gray-900 text-yellow-300 font-mono text-xs sm:text-sm px-1 py-0.5 rounded w-8 text-center">{{ timeLeft.days }}</span>
+        <span class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Días</span>
+      </div>
+      
+      <span class="text-yellow-300 font-bold text-sm -mt-3">:</span>
+      
+      <!-- Horas -->
+      <div class="flex flex-col items-center flex-1">
+        <span class="bg-gray-900 text-yellow-300 font-mono text-xs sm:text-sm px-1 py-0.5 rounded w-8 text-center">{{ timeLeft.hours }}</span>
+        <span class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Horas</span>
+      </div>
+      
+      <span class="text-yellow-300 font-bold text-sm -mt-3">:</span>
+      
+      <!-- Minutos -->
+      <div class="flex flex-col items-center flex-1">
+        <span class="bg-gray-900 text-yellow-300 font-mono text-xs sm:text-sm px-1 py-0.5 rounded w-8 text-center">{{ timeLeft.minutes }}</span>
+        <span class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Min</span>
+      </div>
+      
+      <span class="text-yellow-300 font-bold text-sm -mt-3">:</span>
+      
+      <!-- Segundos -->
+      <div class="flex flex-col items-center flex-1">
+        <span class="bg-gray-900 text-yellow-300 font-mono text-xs sm:text-sm px-1 py-0.5 rounded w-8 text-center">{{ timeLeft.seconds }}</span>
+        <span class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Seg</span>
+      </div>
+    </div>
+  </div>
+  
+  <div v-else class="flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-2 border border-gray-600/50 w-full max-w-xs mx-auto">
+    <span class="text-xs text-gray-300 mb-1">Estado:</span>
+    <div class="flex items-center justify-center">
+      <span class="text-green-400 font-bold text-sm drop-shadow">🎉 ¡SORTEADO!</span>
+    </div>
+  </div>
+</div>
 
     <!-- Botón participar -->
     <button
-      class="px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
+      class="btn_participate px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
       :class="{
         'bg-green-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.6)]': isSoldOut || isTimeUp,
         'bg-yellow-500 text-black hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)]': !isSoldOut && !isTimeUp
@@ -93,18 +117,32 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 
-const props = defineProps({
-  image: String,
-  title: String,
-  description: String,
-  progress: Number,
-  drawDate: String // Nueva propiedad
+// Define las props con tipos más específicos
+interface Props {
+  image?: string
+  title?: string
+  description?: string
+  progress?: number
+  drawDate?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  image: '',
+  title: '',
+  description: '',
+  progress: 0, // Valor por defecto
+  drawDate: ''
+})
+
+// Computed para manejar el progreso de forma segura
+const progressPercentage = computed(() => {
+  return props.progress ?? 0
 })
 
 // Lógica de "Hot"
-const isHot = computed(() => props.progress! > 70 && props.progress! < 100)
+const isHot = computed(() => progressPercentage.value > 70 && progressPercentage.value < 100)
 // Lógica de "Vendido"
-const isSoldOut = computed(() => props.progress! === 100)
+const isSoldOut = computed(() => progressPercentage.value === 100)
 // Lógica de "Tiempo Agotado"
 const isTimeUp = computed(() => timeLeft.value.total <= 0)
 
@@ -122,8 +160,12 @@ onUnmounted(() => {
 })
 
 const timeLeft = computed(() => {
-  const diff = new Date(props.drawDate!).getTime() - now.value
-  if (diff < 0) return { total: 0, days: 0, hours: 0, minutes: 0, seconds: 0 }
+  if (!props.drawDate) {
+    return { total: 0, days: '00', hours: '00', minutes: '00', seconds: '00' }
+  }
+  
+  const diff = new Date(props.drawDate).getTime() - now.value
+  if (diff < 0) return { total: 0, days: '00', hours: '00', minutes: '00', seconds: '00' }
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24)
@@ -166,4 +208,5 @@ const timeLeft = computed(() => {
 .bg-red-600 {
   box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
 }
+
 </style>

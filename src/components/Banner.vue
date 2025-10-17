@@ -1,7 +1,7 @@
 <template>
   <div class="w-full max-w-7xl mx-auto relative overflow-hidden casino-banner">
     
-    <div class="absolute inset-0 bg-gradient-to-br from-blue-950 via-blue-900 to-yellow-900 opacity-80 pointer-events-none"></div>
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-950 via-blue-900 to-purple-900 opacity-80 pointer-events-none"></div>
     
     <div class="absolute inset-0 pointer-events-none">
       <!-- Iconos flotantes del casino -->
@@ -18,69 +18,53 @@
       @touchend="handleTouchEnd"
     >
 <div v-for="(banner, i) in banners" :key="i" 
-     class="min-w-full flex items-center justify-center relative px-4 sm:px-20 py-4 sm:py-10 shadow-lg rounded-xl">
-        
-        <!-- Aplica diseño de imagen a la derecha y texto a la izquierda para el banner 2 (i=1) y banner 3 (i=2) en desktop. -->
-        <!-- En móvil, se usa flex-col-reverse para que la imagen (que está primero en el código) aparezca debajo del texto. -->
-        <div 
-          :class="[i === 1 || i === 2 
-            ? 'sm:flex-row-reverse text-left flex-col-reverse' // Invertir orden en móvil y usar flex-row-reverse en desktop
-            : 'sm:flex-row text-center flex-col' // Orden normal en móvil y desktop
-          ]"
-          class="flex flex-col items-center justify-between w-full"
-        >
-          
-<img
-  :src="banner.image"
-  alt="Banner image"
-  :class="[
-    i === 1 || i === 2 
-      ? 'h-24 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-3 sm:-mb-12 relative z-10 casino-img' 
-      : 'h-24 sm:h-72 w-auto sm:-mr-2 -mr-4 -mb-2 sm:-mb-12 relative z-10 casino-img'
-  ]"
-/>
-
-
-          
-          <div 
-            :class="[i === 1 || i === 2 ? 'items-start sm:mr-8 mb-4 sm:mb-0' : 'items-center']"
-            class="flex flex-col justify-center flex-1 relative z-10"
-          >
-            
-            <h1 class="text-3xl font-extrabold text-yellow-400 mb-2 sm:mb-4 tracking-tight drop-shadow-lg casino-title"
-                :class="[i === 1 ? 'sm:text-5xl text-white' : 'sm:text-4xl']">
-              <i class="fas fa-dice text-green-400 mr-2" v-if="i === 0"></i>
-              {{ banner.title }}
-            </h1>
-            
-            <p class="text-yellow-100 font-semibold casino-desc"
-               :class="[i === 1 || i === 2 ? 'text-lg sm:text-2xl max-w-full' : 'text-xs sm:text-base max-w-xl mx-auto mb-3 sm:mb-4']">
-              {{ banner.text }}
-            </p>
-
-            
-            <div v-if="i !== 1 && i !== 2" class="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 mt-3">
-              
-              <button
-                v-if="i === 0"
-                @click="openRoulette"
-                class="bg-gradient-to-r from-yellow-400 via-blue-700 to-green-600 text-white px-6 sm:px-8 py-2 rounded-xl font-extrabold text-sm sm:text-base shadow-xl casino-btn transition w-full sm:w-auto">
-                <i class="fas fa-ticket-alt mr-2"></i>
-                {{ banner.button1 }}
-              </button>
-              
-              <br></br>
-
-            </div>
-          </div>
-        </div>
-        
-      </div>
+     class="min-w-full flex items-center justify-center relative px-2 sm:px-20 py-0 sm:py-6 shadow-lg rounded-xl"
+     @click="i === 0 ? openRoulette() : null"
+     :class="{ 'cursor-pointer': i === 0 }">
+    <div 
+      :class="[i === 1 || i === 2 
+        ? 'sm:flex-row-reverse text-left flex-col-reverse' // Invertir orden en móvil y usar flex-row-reverse en desktop
+        : 'sm:flex-row text-center flex-col' // Orden normal en móvil y desktop
+      ]"
+      class="flex flex-col items-center justify-between w-full"
+    >
+      
+<div class="flex flex-row items-center justify-between w-full gap-4">
+  
+  <!-- Imagen a la izquierda -->
+  <div class="flex-shrink-0">
+    <img
+      :src="banner.image"
+      alt="Banner image"
+      class="h-24 sm:h-52 sm:-mr-2 sm:-mb-8 w-auto relative z-10 casino-img"
+    />
+  </div>
+  
+  <!-- Texto fijo a la derecha -->
+  <div class="flex flex-col justify-center text-left flex-1 sm:max-w-md lg:max-w-lg xl:max-w-xl sm:ml-8">
+    <h1 class="text-lg font-extrabold text-yellow-400 mb-0 sm:mb-4 tracking-tight drop-shadow-lg casino-title sm:text-4xl">
+      <i class="fas fa-dice text-green-400 mr-2" v-if="i === 0"></i>
+      {{ banner.title }}
+    </h1>
+    <p class="text-yellow-100 font-semibold mb-2 casino-desc text-xs sm:text-base">
+      {{ banner.text }}
+    </p>
+  </div>
+</div>
     </div>
     
-    <div class="absolute bottom-1 left-0 right-0 flex justify-center gap-1 z-20">
-      <button v-for="(b, i) in banners" :key="i" class="w-3 h-3 rounded-full" :class="i === currentIndex ? 'bg-yellow-400' : 'bg-white/40'" @click="goToSlide(i)"></button>
+</div>
     </div>
+    
+<div class="absolute bottom-1 left-0 right-0 flex justify-center gap-1 z-20">
+  <span 
+    v-for="(b, i) in banners" 
+    :key="i" 
+    class="inline-block cursor-pointer rounded-full slider-dot"
+    :class="i === currentIndex ? 'bg-yellow-400' : 'bg-white/40'" 
+    @click="goToSlide(i)"
+  ></span>
+</div>
   </div>
 
   <!-- MODALES COMPLETOS -->
@@ -151,7 +135,7 @@ const banners = ref([
   //banner 1
   {
     title: "¡JUEGA, GANA Y CELEBRA!",
-    text: "¿Quiere probar su suerte?, nosotros escogemos una rifa por usted.",
+    text: "¿Quiere probar su suerte?, nosotros escogemos una rifa por usted, clickee aqui.",
     image: "/persona3.png",
     button1: "¡PARTICIPAR!",
     button2: "", // Eliminado el botón
@@ -335,7 +319,7 @@ const randomStyle = (n) => {
 
 <style scoped>
 .casino-banner {
-  box-shadow: 0 0 32px 8px #ffd70033, 0 0 8px 2px #00336699;
+  box-shadow: 0 0 32px 8px #31049a33, 0 0 8px 2px #00336699;
   border-radius: 1.5rem;
 }
 .casino-title {
@@ -344,7 +328,7 @@ const randomStyle = (n) => {
 }
 @keyframes casinoTitlePulse {
   0% { text-shadow: 0 2px 8px #ffd70099; }
-  100% { text-shadow: 0 4px 16px #00ff0099; }
+  100% { text-shadow: 0 4px 16px #5d00ff99; }
 }
 .casino-desc {
   text-shadow: 0 1px 4px #00336699;
@@ -373,7 +357,10 @@ const randomStyle = (n) => {
 .casino-img:hover {
   animation: wheelSpin 2s ease-in-out;
 }
-
+.slider-dot {
+  width: 30px;
+  height: 20px;
+}
 @keyframes wheelSpin {
   0% { transform: scale(1) rotate(0deg); }
   50% { transform: scale(1.05) rotate(5deg); }
@@ -381,13 +368,18 @@ const randomStyle = (n) => {
 }
 @media (max-width: 640px) {
   .casino-title {
-    font-size: 1.0rem; /* text-xl */
+    font-size: 0.775rem; /* Equivalent to Tailwind's text-sm */
+    line-height: 1.25rem; /* Equivalent to Tailwind's leading-5 */
   }
   .casino-desc {
     font-size: 0.75rem; /* text-sm */
   }
   .casino-banner {
     border-radius: 1rem;
+  }
+    .slider-dot {
+    width: 8px;
+    height: 8px;
   }
 }
 </style>
