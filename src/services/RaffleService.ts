@@ -56,7 +56,7 @@ export const RaffleService = {
       const token = localStorage.getItem("token");
 
       const response = await axios.get(`${API_URL}/raffles`, {
-        params: { page, per_page: perPage },
+        params: { page, perPage: perPage, paginated: true }, 
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
