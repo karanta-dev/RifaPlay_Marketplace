@@ -57,7 +57,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             sudo rm -rf /var/www/rifaplay/store-demo/*
-            sudo cp -r /tmp/rifaplay-dev_temp/* /var/www/rifaplay/store-demo
+            sudo cp -r /tmp/rifaplay-dev-demo_temp/* /var/www/rifaplay/store-demo
             sudo chown -R www-data:www-data /var/www/rifaplay/store-demo
             sudo chmod -R 755 /var/www/rifaplay/store-demo
             rm -rf /tmp/rifaplay-dev-demo_temp
