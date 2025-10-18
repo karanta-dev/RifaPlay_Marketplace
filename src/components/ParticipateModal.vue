@@ -155,31 +155,55 @@
                 </button>
               </div>
 
-              <div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
-                <p class="flex items-center gap-2">
-                  <span class="text-cyan-400">📱</span>Teléfono: 0414-1908656 <br></br> RIF-J:507080994 <br></br>Banco nacional de credito (0191) 
-                </p>
-              </div>
+<div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30 relative">
+  <div class="flex justify-between items-start mb-2">
+    <p class="flex items-center gap-2 text-cyan-400 font-semibold">
+      <span>📱</span> Datos para Pago Móvil
+    </p>
+<button
+  type="button"
+  @click="copyPagoMovilData($event)"
+  class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all duration-200 text-xs border border-cyan-400/30"
+  title="Copiar datos al portapapeles"
+>
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+  </svg>
+  Copiar
+</button>
+  </div>
+  <div class="space-y-1">
+    <p class="flex items-center gap-2">
+      <span class="text-cyan-400">🏦</span> Banco: <strong>(0191) Banco Nacional de Crédito</strong>
+    </p>
+    <p class="flex items-center gap-2">
+      <span class="text-cyan-400">📋</span> RIF-J: <strong>507080994</strong>
+    </p>
+    <p class="flex items-center gap-2">
+      <span class="text-cyan-400">📞</span> Teléfono: <strong>0414-1908656</strong>
+    </p>
+  </div>
+</div>
 
               <div v-else-if="pagoMovilMode === 'automatico'" class="space-y-4">
                 <h3 class="font-semibold text-cyan-300 text-lg">Ingrese los datos de pago móvil</h3>
                 
                 <input v-model="form.pagoMovilCedula" type="text" placeholder="🔢 Número de cédula" class="input-custom" maxlength="8" />
                 <input v-model="form.pagoMovilTelefono" type="tel" placeholder="📞 Número de teléfono" class="input-custom" maxlength="11" />
-<select 
-  v-model="form.pagoMovilBanco" 
-  class="input-custom"
-  :disabled="loadingBanks"
->
-  <option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
-  <option 
-    v-for="bank in banks" 
-    :key="bank.uuid" 
-    :value="bank.uuid"
-  >
-    {{ bank.name }} <!-- ← Esto ahora mostrará "0191 - BANCO NACIONAL DE CREDITO" -->
-  </option>
-</select>
+              <select 
+                v-model="form.pagoMovilBanco" 
+                class="input-custom"
+                :disabled="loadingBanks"
+              >
+                <option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
+                <option 
+                  v-for="bank in banks" 
+                  :key="bank.uuid" 
+                  :value="bank.uuid"
+                >
+                  {{ bank.name }} <!-- ← Esto ahora mostrará "0191 - BANCO NACIONAL DE CREDITO" -->
+                </option>
+              </select>
                 <p v-if="!loadingBanks && banks.length === 0" class="text-red-400 text-sm mt-1">
                   No se pudieron cargar los bancos.
                 </p>
@@ -328,23 +352,23 @@
                   <div class="space-y-3">
                     <input v-model="reverifyForm.referencia" type="text" placeholder="🔖 Número de referencia" class="input-custom" />
                     <input v-model="reverifyForm.fecha" type="date" placeholder="Fecha del pago" class="input-custom" />
-<select 
-  v-model="reverifyForm.banco" 
-  class="input-custom"
-  :disabled="loadingBanks"
->
-  <option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
-  <option 
-    v-for="bank in banks" 
-    :key="bank.uuid" 
-    :value="bank.uuid"
-  >
-    {{ bank.name }} 
-  </option>
-</select>
-<p v-if="!loadingBanks && banks.length === 0" class="text-red-400 text-sm mt-1">
-  No se pudieron cargar los bancos.
-</p>
+                  <select 
+                    v-model="reverifyForm.banco" 
+                    class="input-custom"
+                    :disabled="loadingBanks"
+                  >
+                    <option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
+                    <option 
+                      v-for="bank in banks" 
+                      :key="bank.uuid" 
+                      :value="bank.uuid"
+                    >
+                      {{ bank.name }} 
+                    </option>
+                  </select>
+                  <p v-if="!loadingBanks && banks.length === 0" class="text-red-400 text-sm mt-1">
+                    No se pudieron cargar los bancos.
+                  </p>
                     <div class="flex gap-3 items-center">
                       <select v-model="reverifyForm.prefix" class="select-prefix flex-shrink-0">
                         <option value="0412">0412</option>
@@ -544,7 +568,61 @@ async function handleVerifyPagoMovil() {
   }
 }
 
-
+// Función para copiar datos de pago móvil al portapapeles - CORREGIDA
+const copyPagoMovilData = async (event: Event) => {
+  const pagoMovilData = `0191
+507080994
+04141908656`;
+  
+  try {
+    await navigator.clipboard.writeText(pagoMovilData);
+    
+    // Mostrar feedback visual
+    const button = event?.currentTarget as HTMLElement;
+    if (button) {
+      // const originalText = button.innerHTML;
+      button.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        ¡Copiado!
+      `;
+      button.classList.add('bg-green-600', 'hover:bg-green-700');
+      button.classList.remove('bg-cyan-600', 'hover:bg-cyan-700');
+      
+      setTimeout(() => {
+        button.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          Copiar
+        `;
+        button.classList.remove('bg-green-600', 'hover:bg-green-700');
+        button.classList.add('bg-cyan-600', 'hover:bg-cyan-700');
+      }, 2000);
+    }
+    
+  } catch (err) {
+    console.error('Error al copiar al portapapeles:', err);
+    // Fallback para navegadores más antiguos
+    const textArea = document.createElement('textarea');
+    textArea.value = pagoMovilData;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    
+    // Feedback para fallback
+    const button = event?.currentTarget as HTMLElement;
+    if (button) {
+      const originalText = button.innerHTML;
+      button.innerHTML = '✅ Copiado!';
+      setTimeout(() => {
+        button.innerHTML = originalText;
+      }, 2000);
+    }
+  }
+};
 // ParticipateModal.vue - <script setup lang="ts">
 
 async function handleSubmitReverify() {
