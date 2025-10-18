@@ -7,6 +7,8 @@ import UserProfile2 from '@/pages/UserProfile2.vue';
 import UserProfile3 from '@/pages/UserProfile3.vue';
 import MyProfile from '@/pages/MyProfile.vue';
 import Support from '@/pages/Support.vue'; 
+import TandC from '@/pages/TermsAndConditions.vue';
+import Privacy from '@/pages/Privacity.vue';
 
 const routes = [
   { path: '/', redirect: '/catalog' },
@@ -18,6 +20,8 @@ const routes = [
   { path: '/my-tickets/:userId', name: 'my-tickets', component: MyTickets },
   { path: '/my-profile/:userId', name: 'my-profile', component: MyProfile },
   { path: '/support', name: 'support', component: Support },
+  { path: '/terms-and-conditions', name: 'terms-and-conditions', component: TandC },
+  { path: '/privacy', name: 'privacy', component: Privacy },
 ];
 
 export const router = createRouter({

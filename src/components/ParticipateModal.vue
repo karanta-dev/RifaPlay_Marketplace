@@ -7,13 +7,14 @@
     <div v-if="open" class="fixed inset-0 flex items-center justify-center z-50 p-0" @click.self="close">
 
       <div
-        :class="{
-          'max-w-lg': selectionMode === 'auto',
-          'max-w-2xl': selectionMode === 'manual'
-        }"
-        class="bg-gradient-to-br from-blue-900 to-orange-800 rounded-2xl shadow-2xl p-2 relative transition-all duration-300 mx-4 md:mx-0 max-h-[90vh] overflow-y-auto overflow-x-hidden border border-purple-400/30"
+        :class="[
+          selectionMode === 'auto' ? 'max-w-lg' : 'max-w-2xl',
+          'bg-gradient-to-br from-blue-900 to-purple-800 rounded-2xl shadow-2xl p-2 relative transition-all duration-300 mx-4 md:mx-0 max-h-[90vh] border border-purple-400/30',
+          !authStore.isAuthenticated ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'
+        ]"
       >
         <button
+          v-if="authStore.isAuthenticated"
           class="absolute top-4 right-4 z-30 bg-black/40 hover:bg-black/60 text-white/80 hover:text-white p-2 rounded-full transition-all duration-300 border border-white/20 backdrop-blur-sm"
           @click="emit('close')"
         >
@@ -34,61 +35,45 @@
         </div>
 
         <form @submit.prevent="handleConfirm" class="space-y-6 relative z-10">
-          <div class="flex justify-center gap-4 p-4 bg-black/30 rounded-xl border border-white/10">
-            <label class="flex items-center space-x-3 cursor-pointer group">
-              <div class="relative">
-                <input 
-                  type="radio" 
-                  v-model="selectionMode" 
-                  value="auto" 
-                  class="h-5 w-5 text-cyan-500 border-gray-300 focus:ring-cyan-500 bg-transparent"
-                />
-              </div>
-              <span class="font-semibold text-white group-hover:text-cyan-300 transition-colors">Selección Automática</span>
-            </label>
-            <label class="flex items-center space-x-3 cursor-pointer group">
-              <div class="relative">
-                <input 
-                  type="radio" 
-                  v-model="selectionMode" 
-                  value="manual" 
-                  class="h-5 w-5 text-cyan-500 border-gray-300 focus:ring-cyan-500 bg-transparent"
-                />
-              </div>
-              <span class="font-semibold text-white group-hover:text-cyan-300 transition-colors">Selección Manual</span>
-            </label>
-          </div>
-
           <template v-if="!authStore.isAuthenticated">
-            <div class="space-y-4 bg-black/20 p-3 rounded-xl border border-white/10">
-              <input 
-                v-model="form.nombre" 
-                type="text" 
-                placeholder="👤 Nombre completo" 
-                class="input-custom" 
-                required 
-              />
-              <div class="flex gap-2">
-                <select v-model="form.tipoId" class="select-custom" required>
-                  <option value="V">V</option>
-                  <option>E</option>
-                  <option>P</option>
-                </select>
-                <input
-                  v-model="form.numeroId"
-                  type="text"
-                  placeholder="🆔 Número de identificación"
-                  class="input-custom flex-grow"
-                  required
-                />
+            <div class="p-6 bg-black/20 rounded-xl border border-white/10 text-center">
+              <p class="text-white text-lg font-semibold mb-2">Necesitas iniciar sesión</p>
+              <p class="text-gray-300 mb-4">Debes estar autenticado para comprar tickets. Inicia sesión o regístrate para continuar y guardar tus tickets en tu cuenta (Solo mayores de 18).</p>
+              <div class="flex justify-center gap-3">
+                <button type="button" @click="triggerAuth" class="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-500">Iniciar sesión / Registrarse</button>
+                <button type="button" @click="close" class="px-5 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-500">Cerrar</button>
               </div>
-              <input v-model="form.telefono" type="tel" placeholder="📞 Teléfono" class="input-custom" required />
-              <input v-model="form.correo" type="email" placeholder="📧 Correo electrónico" class="input-custom" required />
-              <input v-model="form.address" type="text" placeholder="🏠 Dirección" class="input-custom" required />
             </div>
           </template>
-          
-          <div v-if="selectionMode === 'auto'" class="p-5 bg-black/30 rounded-xl border border-cyan-500/30">
+
+          <template v-else>
+
+            <div class="flex justify-center gap-4 p-4 bg-black/30 rounded-xl border border-white/10">
+              <label class="flex items-center space-x-3 cursor-pointer group">
+                <div class="relative">
+                  <input 
+                    type="radio" 
+                    v-model="selectionMode" 
+                    value="auto" 
+                    class="h-5 w-5 text-cyan-500 border-gray-300 focus:ring-cyan-500 bg-transparent"
+                  />
+                </div>
+                <span class="font-semibold text-white group-hover:text-cyan-300 transition-colors">Selección Automática</span>
+              </label>
+              <label class="flex items-center space-x-3 cursor-pointer group">
+                <div class="relative">
+                  <input 
+                    type="radio" 
+                    v-model="selectionMode" 
+                    value="manual" 
+                    class="h-5 w-5 text-cyan-500 border-gray-300 focus:ring-cyan-500 bg-transparent"
+                  />
+                </div>
+                <span class="font-semibold text-white group-hover:text-cyan-300 transition-colors">Selección Manual</span>
+              </label>
+            </div>
+
+            <div v-if="selectionMode === 'auto'" class="p-5 bg-black/30 rounded-xl border border-cyan-500/30">
             <label class="font-semibold text-cyan-300 mb-3 block text-lg">🎲 Cantidad de tickets (Automático)</label>
             <div class="flex items-center gap-3">
               <input
@@ -106,13 +91,13 @@
             </div>
           </div>
 
-          <div v-else-if="selectionMode === 'manual' && product" class="bg-black/20 rounded-xl border border-white/10 p-4">
-            <TicketSelector
-              :product="product"
-              @update:selected="selectedManualTickets = $event"
-              :maxTickets="maxAvailable"
-            />
-          </div>
+            <div v-else-if="selectionMode === 'manual' && product" class="bg-black/20 rounded-xl border border-white/10 p-4">
+              <TicketSelector
+                :product="product"
+                @update:selected="selectedManualTickets = $event"
+                :maxTickets="maxAvailable"
+              />
+            </div>
 
           <div class="space-y-4">
             <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
@@ -219,14 +204,32 @@
           </div>
 
           <div class="space-y-4">
-            <input 
+
+            <!-- <input 
               v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')"
               v-model="form.referencia" 
               type="text" 
               placeholder="🔖 Número de referencia" 
               class="input-custom" 
               required 
-            />
+            /> -->
+
+            <!-- Botón de verificación pago móvil -->
+            <div v-if="form.metodoPago === 'pago-movil' && pagoMovilMode === 'manual'" class="mt-2">
+              <button
+                type="button"
+                class="w-full py-2 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30 font-semibold"
+                @click="pagoMovilNeedsReverify ? (showReverifyModal = true) : handleVerifyPagoMovil()"
+                :disabled="verifyingPagoMovil || reverifySubmitting"
+              >
+                <span v-if="verifyingPagoMovil">Verificando...</span>
+                <span v-else-if="pagoMovilNeedsReverify">Volver a verificar</span>
+                <span v-else>Ya pagué</span>
+              </button>
+              <p v-if="pagoMovilVerifyResult" :class="{'text-green-400': pagoMovilVerifyResult.success, 'text-red-400': !pagoMovilVerifyResult.success}" class="mt-2 text-sm">
+                {{ pagoMovilVerifyResult.message }}
+              </p>
+            </div>
 
             <div v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')">
               <label class="block font-semibold text-white mb-3 text-lg">📎 Comprobante de pago (opcional)</label>
@@ -299,7 +302,59 @@
               <span v-else>🎉 {{ authStore.isAuthenticated ? 'Participar' : 'Confirmar' }}</span>
             </button>
           </div>
+          </template>
         </form>
+
+        <!-- Teleported Re-verify modal (overlay) so it sits on top of everything -->
+        <teleport to="body">
+          <transition name="fade">
+            <div v-if="showReverifyModal" class="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+              <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showReverifyModal = false"></div>
+              <div class="relative z-[10000] w-full max-w-xl mx-auto">
+                <div class="bg-gradient-to-br from-blue-900 to-purple-800 rounded-2xl shadow-2xl p-6 border border-purple-400/30">
+                  <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-white">Verificación de Pago - Manual</h3>
+                    <button @click="showReverifyModal = false" class="text-white/70 hover:text-white bg-purple-500">✖</button>
+                  </div>
+                  <div class="space-y-3">
+                    <input v-model="reverifyForm.referencia" type="text" placeholder="🔖 Número de referencia" class="input-custom" />
+                    <input v-model="reverifyForm.fecha" type="date" placeholder="Fecha del pago" class="input-custom" />
+                    <select v-model="reverifyForm.banco" class="input-custom">
+                      <option value="">🏦 Seleccionar banco</option>
+                      <option value="banco-de-venezuela">Banco de Venezuela</option>
+                      <option value="bancaamiga">BancaAmiga</option>
+                      <option value="mercantil">Mercantil</option>
+                      <option value="bancaribe">Bancaribe</option>
+                      <option value="banco-del-tesoro">Banco del Tesoro</option>
+                    </select>
+                    <div class="flex gap-3 items-center">
+                      <select v-model="reverifyForm.prefix" class="select-prefix flex-shrink-0">
+                        <option value="0412">0412</option>
+                        <option value="0414">0414</option>
+                        <option value="0424">0424</option>
+                        <option value="0416">0416</option>
+                        <option value="0422">0422</option>
+                      </select>
+                      <input v-model="reverifyForm.telefono" type="tel" placeholder="📞 Teléfono" class="input-custom flex-1" />
+                    </div>
+                    <input v-model="reverifyForm.cedula" type="tel" placeholder="🔢 Cédula" class="input-custom" />
+                    <input v-model="reverifyForm.monto" type="tel" placeholder="💰 Monto (ej: 123.45)" class="input-custom" />
+                  </div>
+                  <div class="flex justify-end gap-3 mt-4">
+                    <button @click="showReverifyModal = false" type="button" class="px-4 py-2 bg-gray-600 text-white rounded-xl">Cancelar</button>
+                    <button @click="handleSubmitReverify" :disabled="reverifySubmitting" type="button" class="px-4 py-2 bg-emerald-600 text-white rounded-xl">
+                      <span v-if="reverifySubmitting">Enviando...</span>
+                      <span v-else>Enviar y verificar</span>
+                    </button>
+                  </div>
+                  <p v-if="pagoMovilVerifyResult" :class="{'text-green-400': pagoMovilVerifyResult.success, 'text-red-400': !pagoMovilVerifyResult.success}" class="mt-3 text-sm">
+                    {{ pagoMovilVerifyResult.message }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </transition>
+        </teleport>
       </div>
     </div>
   </transition>
@@ -310,7 +365,200 @@ import { computed, ref, watch } from 'vue'
 import { useTicketStore } from '@/stores/useTicketStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import TicketSelector from './TicketSelector.vue'
-import { PaymentFlowService, type PaymentMethod, type Currency } from '@/services/PaymentFlow'; // ✅ IMPORTACIÓN NECESARIA
+import { PaymentFlowService, type Currency, type PaymentMethod } from '@/services/PaymentFlow';
+const verifyingPagoMovil = ref(false);
+const pagoMovilVerifyResult = ref<{ success: boolean; message: string } | null>(null);
+const pagoMovilNeedsReverify = ref(false)
+const showReverifyModal = ref(false)
+const reverifySubmitting = ref(false)
+const reverifyForm = ref({ fecha: '', referencia: '', banco: '', prefix: '0414', telefono: '', cedula: '', monto: '' })
+
+// Helper: detect prefix and local part from various phone formats
+function detectPrefixFromPhone(rawPhone: string | undefined | null) {
+  const prefixes = ['0412', '0414', '0424', '0416', '0422']
+  let detectedPrefix = '0414'
+  let localPart = ''
+  if (!rawPhone) return { prefix: detectedPrefix, localPart }
+  const normalized = (rawPhone + '').replace(/[^\d]/g, '')
+  let candidate = normalized
+  if (candidate.startsWith('0058')) candidate = candidate.slice(4)
+  else if (candidate.startsWith('58')) candidate = candidate.slice(2)
+
+  for (const p of prefixes) {
+    if (candidate.startsWith(p)) {
+      detectedPrefix = p
+      localPart = candidate.slice(p.length)
+      break
+    }
+  }
+
+  if (!localPart) {
+    for (const p of prefixes) {
+      const idx = candidate.indexOf(p)
+      if (idx === 0 || idx === 1) {
+        detectedPrefix = p
+        localPart = candidate.slice(idx + p.length)
+        break
+      }
+    }
+  }
+
+  if (!localPart) {
+    localPart = candidate.slice(-7)
+  }
+
+  return { prefix: detectedPrefix, localPart }
+}
+
+// When the reverify modal is opened directly (e.g., user clicked "Volver a verificar"),
+// prefill prefix and telefono based on available payload (user profile or form)
+watch(() => showReverifyModal.value, (open) => {
+  if (!open) return
+  // Determine source phone: prefer authenticated user's phone
+  let sourcePhone = ''
+  if (authStore.isAuthenticated && authStore.user) {
+    sourcePhone = authStore.user.phone || ''
+  } else {
+    sourcePhone = form.telefono || form.pagoMovilTelefono || ''
+  }
+  const { prefix, localPart } = detectPrefixFromPhone(sourcePhone)
+  reverifyForm.value.prefix = prefix
+  reverifyForm.value.telefono = (localPart || '').replace(/[^\d]/g, '')
+
+  // Prefill monto if empty using the same logic as handleVerifyPagoMovil
+  if (!reverifyForm.value.monto) {
+    let monto = 0
+    if (selectedCurrencyId.value) {
+      const curr = currencies.value.find((c: Currency) => c.uuid === selectedCurrencyId.value)
+      if (curr && (curr.short_name.toLowerCase() === 'ves' || curr.name.toLowerCase().includes('bolívar'))) {
+        monto = parseFloat(totalPriceBs.value.replace(/[^\d.,]/g, '').replace(',', '.'))
+      } else {
+        monto = parseFloat(totalPrice.value)
+      }
+    }
+    reverifyForm.value.monto = monto ? Number(monto).toFixed(2) : ''
+  }
+})
+
+async function handleVerifyPagoMovil() {
+  pagoMovilVerifyResult.value = null;
+  verifyingPagoMovil.value = true;
+  
+  // ✅ CORREGIDO: Lógica mejorada para obtener el teléfono
+  let phone = '';
+  
+  // Si está autenticado, usar el teléfono del usuario
+  if (authStore.isAuthenticated && authStore.user) {
+    phone = authStore.user.phone || '';
+  }
+  
+  // Si no hay teléfono del usuario autenticado o no está autenticado, usar el del formulario
+  if (!phone) {
+    phone = form.pagoMovilTelefono || form.telefono || '';
+  }
+
+  // ✅ CORREGIDO: Lógica mejorada para obtener el monto
+  let monto = 0;
+  if (selectedCurrencyId.value) {
+    const curr = currencies.value.find((c: Currency) => c.uuid === selectedCurrencyId.value);
+    if (curr && (curr.short_name.toLowerCase() === 'ves' || curr.name.toLowerCase().includes('bolívar'))) {
+      // Convertir totalPriceBs a número (eliminar separadores de miles)
+      const totalBsClean = totalPriceBs.value.replace(/[^\d,]/g, '').replace(',', '.');
+      monto = parseFloat(totalBsClean);
+    } else {
+      monto = parseFloat(totalPrice.value);
+    }
+  }
+
+  console.log('🔍 Debug - Verificación Pago Móvil:', { phone, monto, totalPriceBs: totalPriceBs.value });
+
+  // ✅ CORREGIDO: Validación más robusta
+  if (!phone || phone.trim() === '') {
+    pagoMovilVerifyResult.value = { success: false, message: 'Debes ingresar un número de teléfono válido.' };
+    verifyingPagoMovil.value = false;
+    return;
+  }
+
+  if (!monto || isNaN(monto) || monto <= 0) {
+    pagoMovilVerifyResult.value = { success: false, message: 'El monto debe ser mayor a cero.' };
+    verifyingPagoMovil.value = false;
+    return;
+  }
+
+  try {
+    const res = await PaymentFlowService.verifyPagoMovil(phone, monto);
+    
+    // ✅ CORREGIDO: Manejo mejorado de la respuesta
+    if (res && (res.success === false || res.success === 'false')) {
+      const msg = typeof res.message === 'string' ? res.message : String(res.message || 'Pago no verificado');
+      pagoMovilVerifyResult.value = { success: false, message: msg };
+      
+      if (msg.toLowerCase().includes('pago no verificado')) {
+        pagoMovilNeedsReverify.value = true;
+        
+        // Prefill del formulario de reverificación
+        const { prefix, localPart } = detectPrefixFromPhone(phone);
+        reverifyForm.value.prefix = prefix;
+        reverifyForm.value.telefono = (localPart || '').replace(/[^\d]/g, '');
+        reverifyForm.value.monto = monto.toFixed(2);
+        reverifyForm.value.referencia = form.referencia || '';
+        reverifyForm.value.banco = form.pagoMovilBanco || '';
+        reverifyForm.value.cedula = form.pagoMovilCedula || '';
+        
+        showReverifyModal.value = true;
+        verifyingPagoMovil.value = false;
+        return;
+      }
+    } else {
+      pagoMovilVerifyResult.value = { 
+        success: true, 
+        message: res?.message || '✅ Pago móvil verificado correctamente.' 
+      };
+    }
+  } catch (err: any) {
+    pagoMovilVerifyResult.value = { 
+      success: false, 
+      message: err?.message || '❌ Error al verificar el pago móvil.' 
+    };
+  } finally {
+    verifyingPagoMovil.value = false;
+  }
+}
+
+async function handleSubmitReverify() {
+  reverifySubmitting.value = true
+  pagoMovilVerifyResult.value = null
+  // Normalizar telefono y monto
+  // Build full phone using prefix + local telefono
+  const phoneLocal = (reverifyForm.value.telefono || '').replace(/[^\d]/g, '')
+  const prefix = (reverifyForm.value.prefix || '').replace(/[^\d]/g, '')
+  const phone = prefix + phoneLocal
+  const montoRaw = String(reverifyForm.value.monto || '').replace(/[^\\d.,]/g, '').replace(',', '.')
+  const monto = parseFloat(montoRaw)
+  if (!phone || !monto || isNaN(monto)) {
+    pagoMovilVerifyResult.value = { success: false, message: 'Debes ingresar teléfono y monto válido.' }
+    reverifySubmitting.value = false
+    return
+  }
+
+  try {
+    // Llamamos al mismo endpoint de verificación con teléfono y monto.
+    const res = await PaymentFlowService.verifyPagoMovil(phone, monto)
+    if (res && (res.success === false || res.success === 'false')) {
+      pagoMovilVerifyResult.value = { success: false, message: res.message || 'Pago no verificado.' }
+      // Mantener el modal abierto para que el usuario corrija datos
+      pagoMovilNeedsReverify.value = true
+    } else {
+      pagoMovilVerifyResult.value = { success: true, message: res.message || 'Pago verificado correctamente.' }
+      pagoMovilNeedsReverify.value = false
+      showReverifyModal.value = false
+    }
+  } catch (err: any) {
+    pagoMovilVerifyResult.value = { success: false, message: err.message || 'Error verificando el pago.' }
+  } finally {
+    reverifySubmitting.value = false
+  }
+}
 
 const props = defineProps<{
   open: boolean
@@ -344,6 +592,12 @@ function triggerFileDialog() {
 }
 
 const form = ticketStore.formData
+
+function triggerAuth() {
+  // Emitir un evento personalizado para que el padre abra el modal de autenticación
+  emit('close')
+  window.dispatchEvent(new CustomEvent('open-auth'))
+}
 
 // preview management
 const previewUrl = ref<string | null>(null)
@@ -516,13 +770,10 @@ const handleConfirm = async () => {
   // Construir payload para POST /sales
   const idempotencyKey = `sale-${userId ?? 'guest'}-${Date.now()}`
   // Poblar address y phone desde el usuario autenticado si existen
-  let address = ''
   let phone = ''
   if (authStore.isAuthenticated && authStore.user) {
-    address = authStore.user.address || ''
     phone = authStore.user.phone || ''
   } else {
-    address = form.address || ''
     phone = form.telefono || ''
   }
 
@@ -543,7 +794,6 @@ const handleConfirm = async () => {
     invoice_data: {
       document_id: `${form.tipoId}-${form.numeroId}`,
       name: form.nombre || authStore.user?.name || 'Comprador',
-      address,
       phone
     }
   }
@@ -716,5 +966,22 @@ const handleConfirm = async () => {
 .select-custom option {
   background: #1e1b4b;
   color: white;
+}
+
+/* Compact prefix select used next to phone input */
+.select-prefix {
+  width: 5.25rem; /* approx space for 4 digits */
+  min-width: 5.25rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.5rem;
+  outline: none;
+  background: rgba(0,0,0,0.3);
+  color: white;
+  text-align: center;
+}
+.select-prefix:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6,182,212,0.08);
 }
 </style>
