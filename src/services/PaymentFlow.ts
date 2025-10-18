@@ -32,6 +32,15 @@ export interface PaymentMethod {
   bank_name?: string;
   [key: string]: any;
 }
+
+// Interfaz para bancos
+export interface Bank {
+  uuid: string;
+  name: string;
+  code?: string;
+  originalName?: string; // Opcional: para mantener el nombre sin código
+  [key: string]: any;
+}
 export const PaymentFlowService = {
   /**
    * Obtiene la lista de monedas desde el endpoint /currencies
@@ -125,5 +134,46 @@ export const PaymentFlowService = {
       }
       return Promise.reject({ status: 500, data: { message: String(error) } });
     }
+  },
+
+  async verifyPagoMovilManual(payload: { [key: string]: any }): Promise<any> {
+    try {
+      // Usamos la URL completa que especificaste
+      const response = await apiClient.post('/payments-movil', payload);
+      return response.data;
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response) {
+        return Promise.reject(error.response.data);
+      }
+      return Promise.reject({ message: String(error) });
+    }
+  },
+
+fetchBanks: async (): Promise<Bank[]> => {
+  try {
+    const response = await apiClient.get('/banks');
+    const data = response.data;
+    
+    console.log('🔍 Respuesta completa de /banks:', data);
+    
+    if (data.success !== true || !Array.isArray(data.data)) {
+      console.error('❌ Formato de respuesta inválido:', data);
+      throw new Error('Formato de respuesta de bancos inválido.');
+    }
+    
+    // MODIFICACIÓN: Agregar el código como prefijo al nombre
+    const banks: Bank[] = data.data.map((bankData: any) => ({
+      uuid: bankData.code,
+      name: `${bankData.code} - ${bankData.bank}`, // ← AQUÍ EL CAMBIO
+      code: bankData.code,
+      originalName: bankData.bank // Mantener el nombre original por si acaso
+    })).sort((a: Bank, b: Bank) => a.name.localeCompare(b.name));
+    
+    console.log('🏦 Bancos mapeados con código como prefijo:', banks);
+    return banks;
+  } catch (error) {
+    console.error('❌ Error al obtener bancos:', error);
+    throw new Error('No se pudieron cargar los bancos.');
   }
+},
 };

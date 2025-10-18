@@ -166,14 +166,23 @@
                 
                 <input v-model="form.pagoMovilCedula" type="text" placeholder="🔢 Número de cédula" class="input-custom" maxlength="8" />
                 <input v-model="form.pagoMovilTelefono" type="tel" placeholder="📞 Número de teléfono" class="input-custom" maxlength="11" />
-                <select v-model="form.pagoMovilBanco" class="input-custom">
-                  <option value="">🏦 Seleccionar banco</option>
-                  <option value="banco-de-venezuela">Banco de Venezuela</option>
-                  <option value="bancaamiga">BancaAmiga</option>
-                  <option value="mercantil">Mercantil</option>
-                  <option value="bancaribe">Bancaribe</option>
-                  <option value="banco-del-tesoro">Banco del Tesoro</option>
-                </select>
+<select 
+  v-model="form.pagoMovilBanco" 
+  class="input-custom"
+  :disabled="loadingBanks"
+>
+  <option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
+  <option 
+    v-for="bank in banks" 
+    :key="bank.uuid" 
+    :value="bank.uuid"
+  >
+    {{ bank.name }} <!-- ← Esto ahora mostrará "0191 - BANCO NACIONAL DE CREDITO" -->
+  </option>
+</select>
+                <p v-if="!loadingBanks && banks.length === 0" class="text-red-400 text-sm mt-1">
+                  No se pudieron cargar los bancos.
+                </p>
               </div>
             </div>
 
@@ -319,14 +328,23 @@
                   <div class="space-y-3">
                     <input v-model="reverifyForm.referencia" type="text" placeholder="🔖 Número de referencia" class="input-custom" />
                     <input v-model="reverifyForm.fecha" type="date" placeholder="Fecha del pago" class="input-custom" />
-                    <select v-model="reverifyForm.banco" class="input-custom">
-                      <option value="">🏦 Seleccionar banco</option>
-                      <option value="banco-de-venezuela">Banco de Venezuela</option>
-                      <option value="bancaamiga">BancaAmiga</option>
-                      <option value="mercantil">Mercantil</option>
-                      <option value="bancaribe">Bancaribe</option>
-                      <option value="banco-del-tesoro">Banco del Tesoro</option>
-                    </select>
+<select 
+  v-model="reverifyForm.banco" 
+  class="input-custom"
+  :disabled="loadingBanks"
+>
+  <option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
+  <option 
+    v-for="bank in banks" 
+    :key="bank.uuid" 
+    :value="bank.uuid"
+  >
+    {{ bank.name }} 
+  </option>
+</select>
+<p v-if="!loadingBanks && banks.length === 0" class="text-red-400 text-sm mt-1">
+  No se pudieron cargar los bancos.
+</p>
                     <div class="flex gap-3 items-center">
                       <select v-model="reverifyForm.prefix" class="select-prefix flex-shrink-0">
                         <option value="0412">0412</option>
@@ -365,14 +383,15 @@ import { computed, ref, watch } from 'vue'
 import { useTicketStore } from '@/stores/useTicketStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import TicketSelector from './TicketSelector.vue'
-import { PaymentFlowService, type Currency, type PaymentMethod } from '@/services/PaymentFlow';
+import { PaymentFlowService, type Currency, type PaymentMethod, type Bank } from '@/services/PaymentFlow';
 const verifyingPagoMovil = ref(false);
 const pagoMovilVerifyResult = ref<{ success: boolean; message: string } | null>(null);
 const pagoMovilNeedsReverify = ref(false)
 const showReverifyModal = ref(false)
 const reverifySubmitting = ref(false)
 const reverifyForm = ref({ fecha: '', referencia: '', banco: '', prefix: '0414', telefono: '', cedula: '', monto: '' })
-
+const banks = ref<Bank[]>([])
+const loadingBanks = ref(false)
 // Helper: detect prefix and local part from various phone formats
 function detectPrefixFromPhone(rawPhone: string | undefined | null) {
   const prefixes = ['0412', '0414', '0424', '0416', '0422']
@@ -525,25 +544,69 @@ async function handleVerifyPagoMovil() {
   }
 }
 
+
+// ParticipateModal.vue - <script setup lang="ts">
+
 async function handleSubmitReverify() {
   reverifySubmitting.value = true
   pagoMovilVerifyResult.value = null
-  // Normalizar telefono y monto
-  // Build full phone using prefix + local telefono
-  const phoneLocal = (reverifyForm.value.telefono || '').replace(/[^\d]/g, '')
-  const prefix = (reverifyForm.value.prefix || '').replace(/[^\d]/g, '')
-  const phone = prefix + phoneLocal
-  const montoRaw = String(reverifyForm.value.monto || '').replace(/[^\\d.,]/g, '').replace(',', '.')
-  const monto = parseFloat(montoRaw)
-  if (!phone || !monto || isNaN(monto)) {
-    pagoMovilVerifyResult.value = { success: false, message: 'Debes ingresar teléfono y monto válido.' }
+
+  // --- 1. Validación Mejorada ---
+  const { fecha, referencia, banco, prefix, telefono, cedula, monto: montoStr } = reverifyForm.value
+  
+  const phoneLocal = (telefono || '').replace(/[^\d]/g, '')
+  const phone = (prefix || '') + phoneLocal
+
+  // --- CORRECCIÓN DEL BUG DE MONTO ---
+  const montoRaw = String(montoStr || '').replace(/[^\d.]/g, '');
+  const monto = parseFloat(montoRaw);
+  // --- FIN DE LA CORRECCIÓN ---
+
+  // Verificar todos los campos requeridos
+  const missing = []
+  if (!fecha) missing.push('Fecha')
+  if (!referencia) missing.push('Referencia')
+  if (!banco) missing.push('Banco')
+  if (!phone || phone.length < 11) missing.push('Teléfono')
+  if (!cedula) missing.push('Cédula')
+  
+  // Esta validación ahora funcionará correctamente
+  if (!monto || isNaN(monto) || monto <= 0) missing.push('Monto válido')
+
+  if (missing.length > 0) {
+    pagoMovilVerifyResult.value = { 
+      success: false, 
+      message: `Todos los campos son requeridos. Por favor, verifica: ${missing.join(', ')}.`
+    }
     reverifySubmitting.value = false
     return
   }
 
+  // --- 2. Construir Payload ---
+  
+  // ✅ Obtenemos el ID del usuario (será null si no está autenticado)
+  const userId = authStore.user?.id ?? null;
+
+  // Este es el objeto que se enviará al backend
+  const payload = {
+    user_id: userId, // ✅ ID DE USUARIO AÑADIDO AL INICIO
+    fecha,
+    referencia,
+    banco,
+    phone, // Teléfono combinado (ej: 04141234567)
+    cedula,
+    exchange_rate: Number(bcvRate.value) || 1,
+    monto // Monto como número (ej: 2037.42)
+  }
+
+  // --- DEBUG SOLICITADO ---
+  // Aquí puedes ver en la consola del navegador exactamente lo que se envía
+  console.log('🔍 Debug: Enviando payload a /api/v1/payments-movil', payload);
+
   try {
-    // Llamamos al mismo endpoint de verificación con teléfono y monto.
-    const res = await PaymentFlowService.verifyPagoMovil(phone, monto)
+    // --- 3. Llamar al nuevo servicio ---
+    const res = await PaymentFlowService.verifyPagoMovilManual(payload)
+
     if (res && (res.success === false || res.success === 'false')) {
       pagoMovilVerifyResult.value = { success: false, message: res.message || 'Pago no verificado.' }
       // Mantener el modal abierto para que el usuario corrija datos
@@ -554,9 +617,27 @@ async function handleSubmitReverify() {
       showReverifyModal.value = false
     }
   } catch (err: any) {
-    pagoMovilVerifyResult.value = { success: false, message: err.message || 'Error verificando el pago.' }
+    // Manejar errores de la API (ej: 404, 500, o errores de red)
+    pagoMovilVerifyResult.value = { success: false, message: err?.message || 'Error al conectar con el servicio de verificación.' }
   } finally {
     reverifySubmitting.value = false
+  }
+}
+
+// ✅ Función para cargar bancos
+async function loadBanks() {
+  loadingBanks.value = true;
+  try {
+    const banksList = await PaymentFlowService.fetchBanks();
+    banks.value = banksList;
+    console.log('🏦 Bancos cargados exitosamente:', banks.value);
+  } catch (error: any) {
+    console.error('❌ Error al cargar los bancos:', error);
+    console.error('❌ Mensaje de error:', error.message);
+    console.error('❌ Stack:', error.stack);
+    banks.value = [];
+  } finally {
+    loadingBanks.value = false;
   }
 }
 
@@ -697,6 +778,7 @@ watch(() => props.open, async (open) => {
   if (open) {
     fetchBcvRate()
     loadPaymentMethods()
+    loadBanks()
     loadingCurrencies.value = true
     try {
       const result = await PaymentFlowService.fetchCurrencies()
