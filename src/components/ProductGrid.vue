@@ -1,10 +1,11 @@
 <template>
   <div>
+    <!-- 🧩 Grid de productos -->
 <div
   class="w-full max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 p-2"
 >
   <ProductCard
-    v-for="(item, i) in sortedItems"
+    v-for="(item, i) in sortedPaginatedItems"
     :key="i"
     :image="item.images?.[0] ?? item.image"
     :title="item.title"
@@ -84,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue"
+import { ref, computed } from "vue"
 import { storeToRefs } from "pinia"
 import { useTicketStore } from "@/stores/useTicketStore"
 import { useAuthStore } from "@/stores/useAuthStore"
@@ -96,45 +97,35 @@ import DetailsModal from "./ProductDetailsModal.vue"
 import ProductModal from "./ProductModal.vue"
 import JackpotAnimation from "./JackpotAnimation.vue"
 
+// onMounted(() => {
+//   ticketStore.loadRaffles();
+// });
 const props = defineProps<{
   products?: any[] | null
 }>()
 
 const ticketStore = useTicketStore()
 const authStore = useAuthStore()
-
-// ✅ OBTENER METADATOS: Traemos 'pagination' del store (así se llama en tu store)
-const { topProducts, pagination } = storeToRefs(ticketStore)
+const { topProducts } = storeToRefs(ticketStore)
 const { productProgress } = ticketStore
-
-// 🔹 PAGINACIÓN (Ahora controlada por el backend)
-const itemsPerPage = 16 // Debe coincidir con el 'perPage' del store/backend
-
-onMounted(() => {
-  // ✅ Cargar la página 1 cuando el componente se monta
-  ticketStore.loadRaffles(1, itemsPerPage);
-});
 
 // ✅ Productos a mostrar (del prop o del store)
 const items = computed(() => {
   if (props.products?.length) return props.products
-  // 'topProducts' ahora son solo los 16 productos de la página actual
   return topProducts.value
 })
 
-// 🔹 PRODUCTOS ORDENADOS (Esta lógica es correcta, solo ordenará la página actual)
+// 🔹 PRODUCTOS ORDENADOS (activos primero, vendidos/sorteados después)
 const sortedItems = computed(() => {
   const activeProducts = []
   const soldOutProducts = []
   
   for (const product of items.value) {
-    // Tu store ya no tiene 'productProgress' como getter, lo tienes en el componente
-    // Asegúrate de que 'product' tenga 'ticketsVendidos' y 'ticketsMax'
-    // Tu store SÍ los mapea (línea 363), así que esto está bien.
-    const progress = productProgress(product) 
+    const progress = productProgress(product)
     const drawDate = product.drawDate ? new Date(product.drawDate).getTime() : 0
     const now = Date.now()
     
+    // Verificar si está vendido o sorteado
     const isSoldOut = progress === 100
     const isTimeUp = drawDate <= now
     
@@ -145,28 +136,36 @@ const sortedItems = computed(() => {
     }
   }
   
+  // Activos primero, luego vendidos/sorteados
   return [...activeProducts, ...soldOutProducts]
 })
 
-// 🔹 LÓGICA DE PAGINACIÓN (Ahora lee del store)
+// 🔹 PAGINACIÓN
+const itemsPerPage = 16
+const currentPage = ref(1)
 
-const currentPage = computed(() => pagination.value?.current_page || 1)
+// Total de páginas
+const totalPages = computed(() =>
+  Math.ceil(sortedItems.value.length / itemsPerPage)
+)
 
-const totalPages = computed(() => pagination.value?.last_page || 1)
+// Productos paginados ORDENADOS
+const sortedPaginatedItems = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return sortedItems.value.slice(start, end)
+})
 
-
+// Cambiar página
 function nextPage() {
   if (currentPage.value < totalPages.value) {
-    // Llama al store para cargar los productos de la SIGUIENTE página
-    ticketStore.loadRaffles(currentPage.value + 1, itemsPerPage)
+    currentPage.value++
   }
 }
 
-// ✅ MODIFICADO: 'prevPage' ahora llama al store
 function prevPage() {
   if (currentPage.value > 1) {
-    // Llama al store para cargar los productos de la página ANTERIOR
-    ticketStore.loadRaffles(currentPage.value - 1, itemsPerPage)
+    currentPage.value--
   }
 }
 
