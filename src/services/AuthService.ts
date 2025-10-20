@@ -1,14 +1,4 @@
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL;
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  },
-});
+import apiClient from "./api";
 
 export const AuthService = {
   async login(email: string, password: string) {
@@ -28,6 +18,11 @@ export const AuthService = {
     // user puede estar en data.data o data.data.user o data (si ya trae el objeto)
     const user = data?.data || data?.user || (typeof data === 'object' ? data : null);
 
+// ✅ CRÍTICO: Guardar el token para que el Interceptor pueda leerlo
+    if (token) {
+        localStorage.setItem('auth_token', token);
+    }
+    
     return { raw, token, user };
   },
 
@@ -46,25 +41,43 @@ export const AuthService = {
     const token = data?.token || data?.data?.token || data?.access_token || null;
     const user = data?.data || data?.user || (typeof data === 'object' ? data : null);
 
+// ✅ CRÍTICO: Guardar el token al registrarse
+    if (token) {
+        localStorage.setItem('auth_token', token);
+    }
+    
     return { raw, token, user };
   },
 
-  async getUserProfile(token: string) {
-    const { data } = await apiClient.get('/auth/me', {
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    // Normalizar para devolver siempre el objeto user
-    return data?.data || data;
+  async getUserProfile() {
+    // ✅ Ahora el Interceptor se encarga de adjuntar el token
+    const { data } = await apiClient.get('/auth/me');
+    return data;
   },
 
-  async logout(token: string) {
-    await apiClient.post('/auth/logout', {}, {
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-      }
-    });
-  },
+  // ✅ Añadir una función para limpiar al cerrar sesión
+  logout() {
+    localStorage.removeItem('auth_token');
+    // Opcional: Llamar al endpoint de logout del backend
+    // apiClient.post('/auth/logout'); 
+  }
+
+  // async getUserProfile(token: string) {
+  //   const { data } = await apiClient.get('/auth/me', {
+  //     headers: { 
+  //       'Authorization': `Bearer ${token}`,
+  //     },
+  //   });
+
+  //   // Normalizar para devolver siempre el objeto user
+  //   return data?.data || data;
+  // },
+
+  // async logout(token: string) {
+  //   await apiClient.post('/auth/logout', {}, {
+  //     headers: { 
+  //       'Authorization': `Bearer ${token}`,
+  //     }
+  //   });
+  // },
 };

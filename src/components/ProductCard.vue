@@ -19,7 +19,7 @@
     <!-- Imagen -->
     <div class="flex-1 flex flex-col justify-start">
   <img
-    :src="image"
+    :src="image || '/default.png'"
     alt="Premio"
     class="w-full h-40 sm:h-56 object-cover rounded-xl border border-gray-600 shadow-md mb-4 relative z-5"
   />

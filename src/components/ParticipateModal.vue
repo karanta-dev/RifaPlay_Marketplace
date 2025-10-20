@@ -155,35 +155,38 @@
                 </button>
               </div>
 
-<div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30 relative">
-  <div class="flex justify-between items-start mb-2">
-    <p class="flex items-center gap-2 text-cyan-400 font-semibold">
-      <span>📱</span> Datos para Pago Móvil
-    </p>
-<button
-  type="button"
-  @click="copyPagoMovilData($event)"
-  class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all duration-200 text-xs border border-cyan-400/30"
-  title="Copiar datos al portapapeles"
->
-  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-  </svg>
-  Copiar
-</button>
-  </div>
-  <div class="space-y-1">
-    <p class="flex items-center gap-2">
-      <span class="text-cyan-400">🏦</span> Banco: <strong>(0191) Banco Nacional de Crédito</strong>
-    </p>
-    <p class="flex items-center gap-2">
-      <span class="text-cyan-400">📋</span> RIF-J: <strong>507080994</strong>
-    </p>
-    <p class="flex items-center gap-2">
-      <span class="text-cyan-400">📞</span> Teléfono: <strong>0414-1908656</strong>
-    </p>
-  </div>
-</div>
+              <div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30 relative">
+                <div class="flex justify-between items-start mb-2">
+                  <p class="flex items-center gap-2 text-cyan-400 font-semibold">
+                    <span>📱</span> Datos para Pago Móvil
+                  </p>
+              <button
+                type="button"
+                @click="copyPagoMovilData($event)"
+                class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all duration-200 text-xs border border-cyan-400/30"
+                title="Copiar datos al portapapeles"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copiar
+              </button>
+                </div>
+                <div class="space-y-1">
+                  <p class="flex items-center gap-2">
+                    <span class="text-cyan-400">🏦</span> Banco: <strong>(0191) Banco Nacional de Crédito</strong>
+                  </p>
+                  <p class="flex items-center gap-2">
+                    <span class="text-cyan-400">📋</span> C.I: 
+                    <strong>
+                      {{ authStore.user?.natural_profile?.document_number || 'N/A' }}
+                    </strong>
+                  </p>
+                  <p class="flex items-center gap-2">
+                    <span class="text-cyan-400">📞</span> Teléfono: <strong>0414-1908656</strong>
+                  </p>
+                </div>
+              </div>
 
               <div v-else-if="pagoMovilMode === 'automatico'" class="space-y-4">
                 <h3 class="font-semibold text-cyan-300 text-lg">Ingrese los datos de pago móvil</h3>
@@ -259,9 +262,15 @@
                 <span v-else-if="pagoMovilNeedsReverify">Volver a verificar</span>
                 <span v-else>Ya pagué</span>
               </button>
-              <p v-if="pagoMovilVerifyResult" :class="{'text-green-400': pagoMovilVerifyResult.success, 'text-red-400': !pagoMovilVerifyResult.success}" class="mt-2 text-sm">
-                {{ pagoMovilVerifyResult.message }}
-              </p>
+                  <p v-if="pagoMovilVerifyResult" 
+                    :class="{
+                      'text-green-400': pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente',
+                      'text-yellow-400': pagoMovilVerifyResult.status === 'pendiente',
+                      'text-red-400': !pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente'
+                    }" 
+                    class="mt-2 text-sm">
+                    {{ pagoMovilVerifyResult.message }}
+                  </p>
             </div>
 
             <div v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')">
@@ -389,7 +398,14 @@
                       <span v-else>Enviar y verificar</span>
                     </button>
                   </div>
-                  <p v-if="pagoMovilVerifyResult" :class="{'text-green-400': pagoMovilVerifyResult.success, 'text-red-400': !pagoMovilVerifyResult.success}" class="mt-3 text-sm">
+                  <!-- Y reemplázala por esto: -->
+                  <p v-if="pagoMovilVerifyResult" 
+                    :class="{
+                      'text-green-400': pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente',
+                      'text-yellow-400': pagoMovilVerifyResult.status === 'pendiente',
+                      'text-red-400': !pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente'
+                    }" 
+                    class="mt-2 text-sm">
                     {{ pagoMovilVerifyResult.message }}
                   </p>
                 </div>
@@ -409,12 +425,13 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import TicketSelector from './TicketSelector.vue'
 import { PaymentFlowService, type Currency, type PaymentMethod, type Bank } from '@/services/PaymentFlow';
 const verifyingPagoMovil = ref(false);
-const pagoMovilVerifyResult = ref<{ success: boolean; message: string } | null>(null);
-const pagoMovilNeedsReverify = ref(false)
+// En la definición de pagoMovilVerifyResult, cambia el tipo:
+const pagoMovilVerifyResult = ref<{ success: boolean; message: string; status?: string } | null>(null);const pagoMovilNeedsReverify = ref(false)
 const showReverifyModal = ref(false)
 const reverifySubmitting = ref(false)
 const reverifyForm = ref({ fecha: '', referencia: '', banco: '', prefix: '0414', telefono: '', cedula: '', monto: '' })
 const banks = ref<Bank[]>([])
+
 const loadingBanks = ref(false)
 // Helper: detect prefix and local part from various phone formats
 function detectPrefixFromPhone(rawPhone: string | undefined | null) {
@@ -552,12 +569,22 @@ async function handleVerifyPagoMovil() {
         verifyingPagoMovil.value = false;
         return;
       }
-    } else {
-      pagoMovilVerifyResult.value = { 
-        success: true, 
-        message: res?.message || '✅ Pago móvil verificado correctamente.' 
-      };
-    }
+} else {
+  // ✅ NUEVO: Manejar estado pendiente
+  if (res?.status === 'pendiente') {
+    pagoMovilVerifyResult.value = {
+      success: true,
+      message: '🟡 Su pago se encuentra en estado pendiente. Será verificado próximamente.',
+      status: 'pendiente'
+    };
+  } else {
+    pagoMovilVerifyResult.value = { 
+      success: true, 
+      message: res?.message || '✅ Pago móvil verificado correctamente.',
+      status: res?.status || 'aprobado'
+    };
+  }
+}
   } catch (err: any) {
     pagoMovilVerifyResult.value = { 
       success: false, 
@@ -668,7 +695,7 @@ async function handleSubmitReverify() {
     fecha,
     referencia,
     banco,
-    phone, // Teléfono combinado (ej: 04141234567)
+    phone, 
     cedula,
     exchange_rate: Number(bcvRate.value) || 1,
     monto // Monto como número (ej: 2037.42)
@@ -686,11 +713,26 @@ async function handleSubmitReverify() {
       pagoMovilVerifyResult.value = { success: false, message: res.message || 'Pago no verificado.' }
       // Mantener el modal abierto para que el usuario corrija datos
       pagoMovilNeedsReverify.value = true
-    } else {
-      pagoMovilVerifyResult.value = { success: true, message: res.message || 'Pago verificado correctamente.' }
-      pagoMovilNeedsReverify.value = false
-      showReverifyModal.value = false
-    }
+} else {
+  // ✅ NUEVO: Manejar estado pendiente
+  if (res?.status === 'pendiente') {
+    pagoMovilVerifyResult.value = {
+      success: true,
+      message: '🟡 Su pago se encuentra en estado pendiente. Será verificado próximamente.',
+      status: 'pendiente'
+    };
+    pagoMovilNeedsReverify.value = false;
+    showReverifyModal.value = false;
+  } else {
+    pagoMovilVerifyResult.value = { 
+      success: true, 
+      message: res.message || 'Pago verificado correctamente.',
+      status: res?.status || 'aprobado'
+    };
+    pagoMovilNeedsReverify.value = false;
+    showReverifyModal.value = false;
+  }
+}
   } catch (err: any) {
     // Manejar errores de la API (ej: 404, 500, o errores de red)
     pagoMovilVerifyResult.value = { success: false, message: err?.message || 'Error al conectar con el servicio de verificación.' }
@@ -912,10 +954,23 @@ const handleConfirm = async () => {
     // No se necesita referencia ni comprobante en modo automático
     form.referencia = 'AUTOMATIC'; 
     ticketStore.setComprobante(null);
-  } else if (!form.metodoPago || !form.referencia) {
-    // Ahora solo se requiere método de pago y referencia; comprobante es opcional
+  } 
+  
+  // ✅ MODIFICACIÓN CLAVE
+  // 1. Si el método de pago no es Pago Móvil (es decir, es una transferencia, etc.)
+  // 2. Y el método de pago no está seleccionado O la referencia está vacía
+  else if (form.metodoPago !== 'pago-movil' && (!form.metodoPago || !form.referencia)) {
+    // Si no es Pago Móvil, la referencia es OBLIGATORIA (o al menos así lo indica tu mensaje de error)
     error.value = 'Debes seleccionar un método de pago e ingresar la referencia.';
     return;
+  } 
+  
+  // ✅ NUEVA VALIDACIÓN: Si es Pago Móvil Manual, la referencia NO es requerida aquí.
+  // La validación se moverá al servicio o se centrará en la verificación previa.
+  else if (!form.metodoPago) {
+      // Caso de que no se haya seleccionado NINGÚN método de pago
+      error.value = 'Debes seleccionar un método de pago.';
+      return;
   }
 
   const userId = authStore.user?.id ?? null
@@ -949,9 +1004,10 @@ const handleConfirm = async () => {
       idempotency_key: idempotencyKey
     },
     invoice_data: {
-      document_id: `${form.tipoId}-${form.numeroId}`,
+      document_id: authStore.user?.natural_profile?.document_number,
       name: form.nombre || authStore.user?.name || 'Comprador',
-      phone
+      phone,
+      address: authStore.user?.natural_profile?.address || 'Direccion',
     }
   }
 
@@ -998,6 +1054,20 @@ const handleConfirm = async () => {
   submitting.value = true
   try {
     const res = await PaymentFlowService.createSale(payload, idempotencyKey)
+    // ✅ NUEVO: Manejar estado pendiente ANTES de procesar la respuesta exitosa
+    if (res.data?.status === 'pendiente') {
+      // Mostrar mensaje de pendiente en amarillo
+      pagoMovilVerifyResult.value = {
+        success: true,
+        message: '🟡 Su pago se encuentra en estado pendiente. Será verificado próximamente.',
+        status: 'pendiente'
+      };
+      
+      // NO generamos tickets ni actualizamos el store porque el pago está pendiente
+      // Solo mostramos el mensaje y mantenemos el modal abierto
+      submitting.value = false;
+      return; // Salimos de la función sin emitir 'confirmed'
+    }
 
     if (res.status === 200 || res.status === 201) {
       const data = res.data || {}
