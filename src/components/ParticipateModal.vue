@@ -623,7 +623,6 @@ const copyPagoMovilData = async (event: Event) => {
     }
   }
 };
-// ParticipateModal.vue - <script setup lang="ts">
 
 async function handleSubmitReverify() {
   reverifySubmitting.value = true
@@ -659,8 +658,6 @@ async function handleSubmitReverify() {
     reverifySubmitting.value = false
     return
   }
-
-  // --- 2. Construir Payload ---
   
   // ✅ Obtenemos el ID del usuario (será null si no está autenticado)
   const userId = authStore.user?.id ?? null;
