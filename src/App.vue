@@ -4,6 +4,7 @@
     <RouterView />
     <MobileNav />
     <FloatingSupport />
+    <SiteFooter />
   </div>
 </template>
 
@@ -11,4 +12,5 @@
 import Navbar from './components/Navbar.vue'
 import MobileNav from './components/MobileNav.vue'
 import FloatingSupport from './components/FloatingSupport.vue' 
+import SiteFooter from './components/SiteFooter.vue'
 </script>

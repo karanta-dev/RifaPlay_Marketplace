@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import apiClient from "./api";
 
 export interface Raffle {
   uuid: string;
@@ -55,8 +53,7 @@ export const RaffleService = {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await axios.get(`${API_URL}/raffles`, {
-        params: { page, per_page: perPage },
+const response = await apiClient.get('/raffles', {        params: { page, perPage: perPage, paginated: true },
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
@@ -91,19 +88,15 @@ export const RaffleService = {
    */
   async getPrizeDetails(prizeUuid: string): Promise<Prize> {
     try {
-      const token = localStorage.getItem("token");
 
-      const response = await axios.get(`${API_URL}/prizes/${prizeUuid}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error("❌ Error al obtener detalles del premio:", error);
-      throw error;
-    }
-  },
-};
+    const response = await apiClient.get(`/prizes/${prizeUuid}`);
+          return response.data.data || response.data;
+        } catch (error) {
+          console.error("❌ Error al obtener detalles del premio:", error);
+          throw error;
+        }
+      },
+    };
 
 export const PrizeService = {
   /**
@@ -111,11 +104,8 @@ export const PrizeService = {
    */
   async getRafflePrizes(raffleUuid: string): Promise<Prize[]> {
     try {
-      const token = localStorage.getItem("token");
 
-      const response = await axios.get(`${API_URL}/raffles/${raffleUuid}/prizes`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const response = await apiClient.get(`/raffles/${raffleUuid}/prizes`);
 
       const responseData = response.data as PrizeResponse;
       
@@ -138,9 +128,9 @@ export const PrizeService = {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await axios.get(`${API_URL}/prizes/${prizeUuid}`, {
+      const response = await apiClient.get(`/prizes/${prizeUuid}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+        });
 
       return response.data.data || response.data;
     } catch (error) {

@@ -116,7 +116,7 @@ const goToSupport = () => {
 const openWhatsApp = () => {
   isOpen.value = false
   const message = 'Hola, necesito ayuda con RifaPlay'
-  const phoneNumber = '1234567890' // Reemplaza con tu número
+  const phoneNumber = '+584121234567' // Reemplaza con tu número
   window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank')
 }
 
