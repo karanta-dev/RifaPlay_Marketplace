@@ -50,11 +50,23 @@ export const AuthService = {
   },
 
   async getUserProfile() {
-    // ✅ Ahora el Interceptor se encarga de adjuntar el token
-    const { data } = await apiClient.get('/auth/me');
+    const { data } = await apiClient.get('/admin/me');
     return data;
   },
 
+  // ✅ Nuevo método para subir avatar
+  async uploadAvatar(userId: string | number, avatarFile: File) {
+    const formData = new FormData();
+    formData.append('photo', avatarFile);
+
+    const { data } = await apiClient.post(`/admin/upload-avatar/${userId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return data;
+  },
   // ✅ Añadir una función para limpiar al cerrar sesión
   logout() {
     localStorage.removeItem('auth_token');

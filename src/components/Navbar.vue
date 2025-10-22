@@ -76,17 +76,17 @@
       </button>
 
       <!-- 🔹 Si ya está logueado -->
-      <div v-else class="relative" ref="dropdownRef">
-        <button
-          @click="toggleDropdown"
-          class="focus:outline-none bg-transparent p-0 border-none shadow-none group"
-        >
-          <img
-            :src="authStore.user?.avatar"
-            alt="avatar"
-            class="w-12 h-12 rounded-full border-2 border-yellow-400 shadow-md transition duration-300 group-hover:shadow-[0_0_16px_4px_rgba(255,215,0,0.8)]"
-          />
-        </button>
+     <div v-else class="relative" ref="dropdownRef">
+    <button
+      @click="toggleDropdown"
+      class="focus:outline-none bg-transparent p-0 border-none shadow-none group"
+    >
+      <img
+        :src="userAvatar" 
+        alt="avatar"
+        class="w-12 h-12 rounded-full border-2 border-yellow-400 shadow-md transition duration-300 group-hover:shadow-[0_0_16px_4px_rgba(255,215,0,0.8)]"
+      />
+    </button>
 
         <!-- Menú desplegable -->
         <transition name="fade">
@@ -123,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useTicketStore } from "@/stores/useTicketStore";
 import { useAuthStore } from "@/stores/useAuthStore"; 
@@ -145,15 +145,19 @@ const goHome = () => {
   router.push({ name: "home" });
 };
 const goProfile = () => {
-  // Navegar al perfil personal del usuario autenticado
-  router.push({ name: 'my-profile', params: { userId: authStore.user?.id } });
-  showDropdown.value = false;
+  // ✅ Usar user.value.id que ahora está normalizado
+  if (authStore.user?.id) {
+    router.push({ name: 'my-profile', params: { userId: authStore.user.id } });
+    showDropdown.value = false;
+  }
 };
 
 const goMyTickets = () => {
-  // navegar a la página de mis tickets usando el id del usuario
-  router.push({ name: 'my-tickets', params: { userId: authStore.user?.id } });
-  showDropdown.value = false;
+  // ✅ Usar user.value.id que ahora está normalizado
+  if (authStore.user?.id) {
+    router.push({ name: 'my-tickets', params: { userId: authStore.user.id } });
+    showDropdown.value = false;
+  }
 };
 
 const toggleDropdown = () => {
@@ -169,6 +173,9 @@ const handleClickOutside = (event: MouseEvent) => {
     showDropdown.value = false;
   }
 };
+const userAvatar = computed(() => {
+  return authStore.userPhoto || '/default-avatar.png';
+});
 
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);

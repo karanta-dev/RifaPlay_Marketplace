@@ -52,7 +52,7 @@
       </span>
     </div>
   </div>
-</div>e
+</div>
 
 <!-- Contador actualizado y centrado -->
 <div class="text-center mb-2">

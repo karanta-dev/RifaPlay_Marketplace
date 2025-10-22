@@ -63,17 +63,17 @@ export const PaymentFlowService = {
    * @param monto - Monto a verificar
    * @returns {Promise<any>} Respuesta del backend
    */
-  async verifyPagoMovil(phone: string, monto: number): Promise<any> {
-    try {
-      const response = await apiClient.post('/R4pago-movil-verify', { phone, monto });
-      return response.data;
-    } catch (error: any) {
-      if (axios.isAxiosError(error) && error.response) {
-        return Promise.reject(error.response.data);
-      }
-      return Promise.reject({ message: String(error) });
+async verifyPagoMovil(payload: { phone: string; monto: number; exchange_rate?: number }): Promise<any> {
+  try {
+    const response = await apiClient.post('/R4pago-movil-verify', payload);
+    return response.data;
+  } catch (error: any) {
+    if (axios.isAxiosError(error) && error.response) {
+      return Promise.reject(error.response.data);
     }
-  },
+    return Promise.reject({ message: String(error) });
+  }
+},
 
   /**
    * Obtiene la lista de métodos de pago, la ordena alfabéticamente por 'name' y maneja errores.
