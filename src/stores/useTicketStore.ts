@@ -370,35 +370,36 @@ clearForm() {
                 bcvRate: 0,
             }
 },
-    async loadRaffles(page = 1, perPage = 16) {
-      this.loading = true;
+async loadRaffles(page = 1, perPage = 16) {
+  this.loading = true;
 
-      try {
-        const { data, meta } = await RaffleService.getAll(page, perPage);
+  try {
+    const { data, meta } = await RaffleService.getAll(page, perPage);
 
-        // 🔹 Guardamos los productos (mapeo a tu estructura actual)
-        this.topProducts = data.map((r) => ({
-          uuid: r.uuid,
-          title: r.name,
-          rifero: r.created_by?.name ?? "Desconocido",
-          categories: r.categories?.map((c) => c.name) ?? [],
-          description: r.description,
-          images: r.images?.map((i) => i.url) ?? [],
-          ticketPrice: r.ticket_price,
-          status: r.status,
-          ticketsVendidos: r.tickets_sold,
-          ticketsMax: r.end_range,
-          drawDate: r.raffle_date,
-        }));
+    // 🔹 Guardamos los productos (mapeo a tu estructura actual)
+    this.topProducts = data.map((r) => ({
+      uuid: r.uuid,
+      title: r.name,
+      // ✅ CORREGIDO: Usar seller.name + seller.last_name en lugar de created_by
+      rifero: r.seller ? `${r.seller.name} ${r.seller.last_name}`.trim() : "Desconocido",
+      categories: r.categories?.map((c) => c.name) ?? [],
+      description: r.description,
+      images: r.images?.map((i) => i.url) ?? [],
+      ticketPrice: r.ticket_price,
+      status: r.status,
+      ticketsVendidos: r.tickets_sold,
+      ticketsMax: r.end_range,
+      drawDate: r.raffle_date,
+    }));
 
-        // 🔹 Guardamos la metadata (paginación)
-        this.pagination = meta || null;
-      } catch (error) {
-        console.error("❌ No se pudieron cargar las rifas:", error);
-      } finally {
-        this.loading = false;
-      }
-    },
+    // 🔹 Guardamos la metadata (paginación)
+    this.pagination = meta || null;
+  } catch (error) {
+    console.error("❌ No se pudieron cargar las rifas:", error);
+  } finally {
+    this.loading = false;
+  }
+},
 
     markTicketAsSold(productTitle: string, ticket: number) {
     if (!this.tickets.find(t => t.productId === productTitle && t.ticketNumber === ticket)) {

@@ -165,12 +165,29 @@ export const useAuthStore = defineStore("auth", () => {
   };
 
   // Resto del código permanece igual...
-  const loadUserProfile = async () => {
+const loadUserProfile = async () => {
     if (!token.value) return;
     try {
-      const profile = await AuthService.getUserProfile();
-      user.value = profile;
-      localStorage.setItem("user", JSON.stringify(user.value));
+      // 1. Renombrar 'profile' a 'response' para más claridad
+      const response = await AuthService.getUserProfile(); 
+      
+      // 2. Asignar solo la data del usuario (como en tu JSON)
+      const userProfile = response.data; 
+
+      if (userProfile) {
+        // 3. (Opcional pero recomendado) Normalizar el ID como haces en login/register
+        if (!userProfile.id && userProfile.uuid) {
+            userProfile.id = userProfile.uuid;
+        }
+        
+        user.value = userProfile;
+        localStorage.setItem("user", JSON.stringify(user.value));
+      } else {
+        console.error("❌ Estructura de respuesta inesperada al cargar perfil:", response);
+        // Opcionalmente, puedes llamar a logout() si la respuesta es inválida
+        // logout(); 
+      }
+      
     } catch (err) {
       console.error("⚠️ Error al cargar perfil:", err);
       logout();
@@ -211,6 +228,24 @@ export const useAuthStore = defineStore("auth", () => {
   const isAdult = computed(() => {
     return userAge.value !== null && userAge.value >= 18;
   });
+const userPhoto = computed(() => {
+  const photoPath = user.value?.natural_profile?.photo; //
+
+  if (photoPath) {
+    
+    // 1. Esta es tu URL de API (ej: http://192.168.1.17:8000/api/v1)
+    const apiUrl = import.meta.env.VITE_API_URL;
+    
+    // 2. ✅ LE QUITAMOS EL PREFIJO DE LA API
+    // Asumimos que la URL base es la API_URL sin el '/api/v1'
+    const baseUrl = apiUrl.replace('/api/v1', ''); // Queda: http://192.168.1.17:8000
+    
+    // 3. Construimos la URL correcta al storage
+    return `${baseUrl}/storage/${photoPath}`; // Queda: http://.../storage/users/avatars/...
+  }
+  
+  return null;
+});
 
   watch(token, (val) => {
     if (val) localStorage.setItem("token", val);
@@ -231,6 +266,7 @@ export const useAuthStore = defineStore("auth", () => {
     isAuthenticated, 
     userAge,
     isAdult,
+    userPhoto,
     login, 
     register, 
     logout, 

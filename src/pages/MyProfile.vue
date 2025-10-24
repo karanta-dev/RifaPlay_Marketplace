@@ -39,8 +39,15 @@
           <!-- Nombre del usuario -->
           <h2 class="text-3xl font-bold text-white mb-2 drop-shadow-lg">{{ user?.name || 'Usuario' }}</h2>
           <p class="text-gray-300 text-lg">{{ user?.email || 'usuario@ejemplo.com' }}</p>
+          
+          <!-- Indicador de carga -->
+          <div v-if="uploadingAvatar" class="mt-2">
+            <div class="flex items-center gap-2 text-yellow-400">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span class="text-sm">Subiendo imagen...</span>
+            </div>
+          </div>
         </div>
-
         <!-- Opciones de configuración -->
         <div class="space-y-4">
           <h3 class="text-2xl font-bold text-white mb-6 text-center drop-shadow-lg">Configuración de la cuenta</h3>
@@ -221,6 +228,7 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useRouter, useRoute } from 'vue-router'
 import { useToast } from "vue-toastification"
+import { AuthService } from '@/services/AuthService'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -229,6 +237,8 @@ const toast = useToast()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const openSection = ref<string | null>(null)
+const uploadingAvatar = ref(false)
+const loadingProfile = ref(false)
 
 // Verificar si el usuario está autorizado para ver este perfil
 const isAuthorized = computed(() => {
@@ -253,10 +263,35 @@ const passwordData = reactive({
 
 // Computed properties para los datos del usuario
 const user = computed(() => authStore.user)
-const userAvatar = computed(() => user.value?.avatar || '/default-avatar.png')
+const userAvatar = computed(() => authStore.userPhoto || '/default-avatar.png')
+// ✅ NUEVO: Cargar datos del perfil desde el backend
+const loadUserProfile = async () => {
+  if (!authStore.isAuthenticated) return;
+  
+  loadingProfile.value = true;
+  try {
+    console.log('📥 Cargando perfil del usuario desde el backend...');
+    await authStore.loadUserProfile();
+    
+    // ✅ ACTUALIZAR el formulario con los nuevos datos
+    if (authStore.user) {
+      personalInfo.name = authStore.user.name || '';
+      personalInfo.email = authStore.user.email || '';
+    }
+    
+    console.log('✅ Perfil cargado y formulario actualizado:', authStore.user);
+  } catch (error: any) {
+    console.error('❌ Error al cargar el perfil:', error);
+    toast.error('❌ Error al cargar los datos del perfil', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    });
+  } finally {
+    loadingProfile.value = false;
+  }
+};
 
 // Inicializar datos del usuario
-onMounted(() => {
+onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/')
     return
@@ -271,6 +306,9 @@ onMounted(() => {
     return
   }
   
+  // ✅ Cargar datos actualizados del backend
+  await loadUserProfile();
+  
   // Cargar datos del usuario en el formulario
   if (user.value) {
     personalInfo.name = user.value.name || ''
@@ -283,20 +321,57 @@ const triggerFileInput = () => {
   fileInput.value?.click()
 }
 
-const handleAvatarChange = (event: Event) => {
+const handleAvatarChange = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   
-  if (file) {
-    console.log('Nueva imagen seleccionada:', file.name)
+  if (!file) return
+  
+  // Validar tipo de archivo
+  if (!file.type.startsWith('image/')) {
+    toast.error('❌ Por favor selecciona una imagen válida', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
+    return
+  }
+  
+  // Validar tamaño (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    toast.error('❌ La imagen debe ser menor a 5MB', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
+    return
+  }
+  
+  try {
+    uploadingAvatar.value = true
     
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      if (user.value) {
-        user.value.avatar = e.target?.result as string
-      }
+    console.log('📤 Subiendo avatar para usuario:', user.value?.id)
+    
+    // Subir avatar al backend
+    const response = await AuthService.uploadAvatar(user.value?.id, file)
+    console.log('✅ Avatar subido correctamente:', response)
+    
+    // ✅ ACTUALIZACIÓN: Recargar el perfil completo para obtener todos los datos actualizados
+    await loadUserProfile();
+    
+    toast.success('✅ Foto de perfil actualizada correctamente', {
+      toastClassName: "bg-green-900 text-white font-bold rounded-lg shadow-lg",
+    })
+    
+  } catch (error: any) {
+    console.error('❌ Error al subir avatar:', error)
+    
+    const errorMessage = error.response?.data?.message || error.message || 'Error al subir la imagen'
+    toast.error(`❌ ${errorMessage}`, {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
+  } finally {
+    uploadingAvatar.value = false
+    // Limpiar input file
+    if (fileInput.value) {
+      fileInput.value.value = ''
     }
-    reader.readAsDataURL(file)
   }
 }
 
@@ -306,7 +381,7 @@ const toggleSection = (section: string) => {
 }
 
 // Guardar información personal
-const savePersonalInfo = () => {
+const savePersonalInfo = async () => {
   if (!personalInfo.name.trim() || !personalInfo.email.trim()) {
     toast.error('❌ Por favor completa todos los campos', {
       toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
@@ -314,18 +389,28 @@ const savePersonalInfo = () => {
     return
   }
   
-  // Aquí iría la lógica para guardar en el backend
-  console.log('Guardando información personal:', personalInfo)
-  
-  // Actualizar en el store
-  if (user.value) {
-    user.value.name = personalInfo.name
-    user.value.email = personalInfo.email
+  try {
+    // Aquí iría la lógica para guardar en el backend
+    console.log('Guardando información personal:', personalInfo)
+    
+    // Actualizar en el store localmente
+    if (user.value) {
+      user.value.name = personalInfo.name
+      user.value.email = personalInfo.email
+    }
+    
+    // ✅ Recargar perfil para asegurar que los datos están sincronizados
+    await loadUserProfile();
+    
+    toast.success('✅ Información personal actualizada correctamente', {
+      toastClassName: "bg-green-900 text-white font-bold rounded-lg shadow-lg",
+    })
+  } catch (error: any) {
+    console.error('❌ Error al guardar información personal:', error)
+    toast.error('❌ Error al guardar los cambios', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
   }
-  
-  toast.success('✅ Información personal actualizada correctamente', {
-    toastClassName: "bg-green-900 text-white font-bold rounded-lg shadow-lg",
-  })
 }
 
 // Cambiar contraseña

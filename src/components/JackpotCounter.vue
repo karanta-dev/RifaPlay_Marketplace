@@ -2,11 +2,11 @@
 <template>
   <div class="jackpot-container">
     <!-- Encabezado -->
-    <div class="jackpot-header">ACUMULADO</div>
+    <div class="jackpot-header">TICKETS COMPRADOS</div>
     <div class="cant_container">
       <div ref="wrapperRef" class="jackpot-wrapper" role="img" aria-label="jackpot counter">
         <!-- Símbolo de dólar fijo -->
-        <div class="symbol">$</div>
+        <!-- <div class="symbol">$</div> -->
 
         <!-- Columnas con dígitos -->
         <div
@@ -257,8 +257,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border-radius: 2px;
   background: #1c1c1c;
-  margin-left: -6px;
-  box-shadow: inset 0 -2px 4px rgb(15, 2, 157), inset 0 2px 4px rgba(0,0,0,0.6);
+  margin-left: 0px;
 }
 
 .digit-stack {

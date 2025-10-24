@@ -15,8 +15,14 @@ export interface Raffle {
   images?: { url: string }[];
   categories?: { name: string }[];
   created_by?: { name: string };
+  // ✅ AÑADIR: Información del seller
+  seller?: {
+    uuid: string;
+    name: string;
+    last_name: string;
+    photo: string | null;
+  };
 }
-
 export interface PaginationMeta {
   current_page: number;
   last_page: number;
@@ -53,7 +59,8 @@ export const RaffleService = {
     try {
       const token = localStorage.getItem("token");
 
-const response = await apiClient.get('/raffles', {        params: { page, perPage: perPage, paginated: true },
+      const response = await apiClient.get('/raffles', {
+        params: { page, perPage: perPage, paginated: true },
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
@@ -75,6 +82,13 @@ const response = await apiClient.get('/raffles', {        params: { page, perPag
         images: r.images ?? [],
         categories: r.categories ?? [],
         created_by: r.created_by ?? {},
+        // ✅ AÑADIR: Información del seller
+        seller: r.seller ? {
+          uuid: r.seller.uuid,
+          name: r.seller.name,
+          last_name: r.seller.last_name,
+          photo: r.seller.photo
+        } : undefined
       }));
 
       return { data: formattedRaffles, meta };
@@ -83,6 +97,7 @@ const response = await apiClient.get('/raffles', {        params: { page, perPag
       throw error;
     }
   },
+
     /**
    * Obtiene los detalles de un premio específico
    */
