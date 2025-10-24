@@ -1,0 +1,62 @@
+name: Implementación automatizada
+
+on:
+  pull_request:
+    types:
+      - closed
+  push:
+    branches:
+      - main-demo
+
+jobs:
+  build-and-deploy:
+    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true) || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v2
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.16.0'
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8           
+      - name: Instalar dependencias
+        run: pnpm install --force
+      - name: Crear archivo .env desde secrets
+        run: |
+          echo "VITE_API_URL=${{secrets.VITE_API_URL_DEMO}}">>.env
+
+      - name: Compilar proyecto 
+        run: pnpm run build -m pwa
+
+      - name: Verificar archivos generados
+        run: ls -R dist
+
+      - name: Subir archivos al servidor (directorio temporal)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST_DEMO }}
+          username: ${{ secrets.SSH_USERNAME_DEMO }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_DEMO }}
+          source: "dist/*"
+          target: "/tmp/rifaplaymarket-demo_temp"
+          strip_components: 1
+          rm: true
+
+      - name: Mover archivos y establecer permisos en el VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST_DEMO }}
+          username: ${{ secrets.SSH_USERNAME_DEMO }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_DEMO }}
+          script: |
+            sudo rm -rf /var/www/rifaplay_demo/market/*
+            sudo cp -r /tmp/rifaplaymarket-demo_temp/* /var/www/rifaplay_demo/market
+            sudo chown -R www-data:www-data /var/www/rifaplay_demo/market
+            sudo chmod -R 755 /var/www/rifaplay_demo/market
+            rm -rf /tmp/rifaplaymarket-demo_temp

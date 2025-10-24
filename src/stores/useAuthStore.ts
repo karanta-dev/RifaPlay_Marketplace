@@ -168,7 +168,7 @@ export const useAuthStore = defineStore("auth", () => {
   const loadUserProfile = async () => {
     if (!token.value) return;
     try {
-      const profile = await AuthService.getUserProfile(token.value);
+      const profile = await AuthService.getUserProfile();
       user.value = profile;
       localStorage.setItem("user", JSON.stringify(user.value));
     } catch (err) {
@@ -180,7 +180,7 @@ export const useAuthStore = defineStore("auth", () => {
   const logout = async () => {
     if (token.value) {
       try {
-        await AuthService.logout(token.value);
+        await AuthService.logout();
       } catch {
         console.warn("⚠️ Error cerrando sesión en el servidor");
       }
