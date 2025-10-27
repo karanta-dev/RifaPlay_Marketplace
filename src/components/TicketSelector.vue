@@ -23,9 +23,32 @@
       />
     </div>
 
+    <!-- ✅ CORREGIDO: Indicador de carga de tickets vendidos -->
+    <div v-if="loadingTicketsLocal" class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <div class="flex items-center gap-2 text-yellow-700">
+        <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-sm font-medium">Cargando información de tickets vendidos...</span>
+      </div>
+    </div>
+
     <p v-if="allTickets.length === 0" class="text-center text-red-600 font-extrabold p-5 bg-red-100 border border-red-300 rounded-lg">
       ¡Vaya! Todos los tickets disponibles en esta rifa se han <b>agotado</b>.
     </p>
+
+    <!-- ✅ CORREGIDO: Información de tickets vendidos con verificación de seguridad -->
+    <div v-if="soldTicketsLocal.length > 0 && !loadingTicketsLocal" class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+      <div class="flex justify-between items-center text-sm">
+        <span class="text-blue-700 font-medium">
+          🎫 Tickets vendidos: <span class="font-bold">{{ soldTicketsLocal.length }}</span>
+        </span>
+        <span class="text-green-700 font-medium">
+          ✅ Disponibles: <span class="font-bold">{{ availableTicketsCount }}</span>
+        </span>
+      </div>
+    </div>
 
     <div v-if="filteredTickets.length > 0" class="flex flex-col sm:flex-row justify-between items-center mb-3 p-2 bg-white rounded-lg border border-gray-100 shadow-inner">
       <!-- Información de Paginación más clara -->
@@ -33,7 +56,7 @@
         Página <span class="font-bold text-blue-600">{{ currentPage }}</span> de <span class="font-bold text-blue-600">{{ totalPages }}</span>
         ({{ filteredTickets.length }} tickets encontrados)
       </div>
-      
+
       <!-- Botones de Paginación -->
       <div class="flex items-center space-x-2">
         <button @click="prevPage" type="button" :disabled="currentPage === 1"
@@ -50,19 +73,20 @@
     </div>
 
     <!-- Grilla de Tickets -->
-    <div v-if="filteredTickets.length > 0"
+    <div v-if="paginatedTickets.length > 0"
       class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 
              gap-1 p-1 border-2 border-blue-400 rounded-xl bg-white shadow-inner">
       <div v-for="ticket in paginatedTickets" :key="ticket.number"
-        @click="!ticket.isSold && toggleTicket(ticket.number)"
-        class="text-xs font-mono p-1 rounded-md text-center transition-all duration-150 border select-none leading-none"
+        @click="onTicketClick(ticket)"
+        class="text-xs font-mono p-1 rounded-md text-center transition-all duration-150 border select-none leading-none ticket-hover"
         :class="{
           'bg-green-600 text-white border-green-800 font-semibold transform scale-105 shadow-md': isSelected(ticket.number),
           'bg-white text-gray-700 hover:bg-blue-100 border-gray-200': !ticket.isSold && !isSelected(ticket.number),
-          'bg-red-600 text-white border-gray-600 cursor-not-allowed opacity-70': ticket.isSold
+          'bg-red-600 text-white border-gray-600 cursor-not-allowed opacity-70': ticket.isSold,
+          'pulse-animation': loadingTicketsLocal && ticket.isSold
         }"
-        :title="ticket.isSold ? `Ticket #${ticket.number} (Vendido)` : `Ticket #${ticket.number}`">
-        {{ ticket.number }}
+        :title="getTicketTooltip(ticket.number)">
+        {{ ticket.number.toString().padStart(4, '0') }}
       </div>
     </div>
 
@@ -72,21 +96,38 @@
     </p>
 
     <p v-else-if="maxTickets > 0" class="text-xs text-center text-gray-500 mt-2">
-      Puedes seleccionar hasta <b>{{ maxTickets - selectedTickets.length }}</b> tickets adicionales.
+      Puedes seleccionar hasta <b>{{ Math.max(0, maxTickets - selectedTickets.length) }}</b> tickets adicionales.
     </p>
-  </div>
 
-  <p class="font-semibold mt-3 text-white">Vendido: 🔴 Pendiente: 🔘 Seleccionados: 🟢</p>
+    <!-- ✅ NUEVO: Leyenda actualizada -->
+    <div class="flex flex-wrap gap-4 mt-4 text-xs justify-center">
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 bg-white border border-gray-300 rounded"></div>
+        <span class="text-gray-700">Disponible</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 bg-green-600 rounded"></div>
+        <span class="text-gray-700">Seleccionado</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 bg-red-600 rounded"></div>
+        <span class="text-gray-700">Vendido</span>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, defineEmits, defineProps } from 'vue'
+import { ref, computed, watch, defineEmits, defineProps, onMounted } from 'vue'
 import { useTicketStore, type TicketStatus } from '@/stores/useTicketStore'
+import { RaffleService } from '@/services/RaffleService';
 
-// Props
+// Props actualizadas
 const props = defineProps<{
-  product: { title: string } | null
+  product: { title: string; uuid?: string } | null
   maxTickets: number
+  soldTickets?: number[] // tickets vendidos proveniente del backend (opcional)
+  loadingTickets?: boolean // estado de carga proveniente del padre (opcional)
 }>()
 
 // Emits
@@ -95,11 +136,53 @@ const emit = defineEmits(['update:selected'])
 // Store
 const ticketStore = useTicketStore()
 
-// Tickets disponibles
+// Local reactive copies (sincronizadas con props)
+const soldTicketsLocal = ref<number[]>(props.soldTickets ? [...props.soldTickets] : [])
+const loadingTicketsLocal = ref<boolean>(props.loadingTickets ?? false)
+
+// Sincronizar props.soldTickets -> soldTicketsLocal (ya tienes un watcher, lo mantenemos y mejoramos)
+watch(() => props.soldTickets, (newVal) => {
+  soldTicketsLocal.value = newVal ? [...newVal] : []
+}, { immediate: true })
+
+// Sincronizar props.loadingTickets -> loadingTicketsLocal
+watch(() => props.loadingTickets, (nv) => {
+  loadingTicketsLocal.value = !!nv
+}, { immediate: true })
+
+// ✅ NUEVO: Tickets disponibles combinando datos locales y del backend
 const allTickets = computed<TicketStatus[]>(() => {
   if (!props.product || !props.product.title) return []
-  return ticketStore.allTicketsForProduct(props.product.title)
+
+  // Obtener tickets del store local
+  const localTickets = ticketStore.allTicketsForProduct(props.product.title)
+
+  // Si tenemos datos del backend, actualizar el estado "isSold"
+  if (soldTicketsLocal.value && soldTicketsLocal.value.length > 0) {
+    const soldSet = new Set(soldTicketsLocal.value)
+    return localTickets.map(ticket => ({
+      ...ticket,
+      isSold: soldSet.has(ticket.number) || ticket.isSold
+    }))
+  }
+
+  return localTickets
 })
+
+// ✅ NUEVO: Contador de tickets disponibles real
+const availableTicketsCount = computed(() => {
+  return allTickets.value.filter(ticket => !ticket.isSold).length
+})
+
+// ✅ NUEVO: Tooltip mejorado
+const getTicketTooltip = (ticketNumber: number) => {
+  const ticket = allTickets.value.find(t => t.number === ticketNumber)
+  if (!ticket) return `Ticket #${ticketNumber}`
+
+  if (ticket.isSold) return `Ticket #${ticketNumber} - VENDIDO 🔴`
+  if (isSelected(ticketNumber)) return `Ticket #${ticketNumber} - SELECCIONADO 🟢`
+  return `Ticket #${ticketNumber} - DISPONIBLE`
+}
 
 // 🔍 Búsqueda
 const searchQuery = ref("")
@@ -136,22 +219,69 @@ const nextPage = () => {
 const selectedTickets = ref<number[]>([])
 const isSelected = (ticket: number) => selectedTickets.value.includes(ticket)
 
-const toggleTicket = (ticket: number) => {
-  const index = selectedTickets.value.indexOf(ticket)
-  if (index > -1) {
-    selectedTickets.value.splice(index, 1)
-  } else {
-    if (selectedTickets.value.length < props.maxTickets) {
-      selectedTickets.value.push(ticket)
-      ticketStore.reserveTicket(props.product?.title ?? "", [ticket], 1)
-    }
+// Manejar clic en ticket (usa checkTicketsAvailability para validar antes de seleccionar)
+const onTicketClick = async (ticket: TicketStatus) => {
+  // Si está vendido, nada que hacer
+  if (ticket.isSold) return
+
+  const ticketNumber = ticket.number
+
+  // Si estaba seleccionado, deseleccionarlo
+  const idx = selectedTickets.value.indexOf(ticketNumber)
+  if (idx >= 0) {
+    selectedTickets.value.splice(idx, 1)
+    return
   }
-  emit('update:selected', selectedTickets.value)
+
+  // Validar límite
+  if (props.maxTickets > 0 && selectedTickets.value.length >= props.maxTickets) {
+    // opcional: mostrar mensaje o toast
+    console.warn(`[TicketSelector] Límite alcanzado (${props.maxTickets})`)
+    return
+  }
+
+  // Verificar en backend si el ticket fue vendido en el intertanto
+  try {
+    // Si no hay uuid del producto, asumimos disponible pero protegemos
+    const raffleUuid = props.product?.uuid
+    if (!raffleUuid) {
+      // agregar directamente
+      selectedTickets.value.push(ticketNumber)
+      return
+    }
+
+    // marcar loading mientras consultamos (solo si no estaba ya cargando)
+    const prevLoading = loadingTicketsLocal.value
+    loadingTicketsLocal.value = true
+
+const sold = await RaffleService.searchSoldTickets(raffleUuid, [ticketNumber])
+    // sold contiene los números ya vendidos (en formato number)
+    if (sold.includes(ticketNumber)) {
+      // actualizar sold local y notificar
+      if (!soldTicketsLocal.value.includes(ticketNumber)) {
+        soldTicketsLocal.value.push(ticketNumber)
+      }
+      // opcional: mostrar alerta
+      console.warn(`[TicketSelector] El ticket ${ticketNumber} fue vendido recientemente.`)
+    } else {
+      // puedo seleccionar
+      selectedTickets.value.push(ticketNumber)
+    }
+
+    // restaurar loading anterior
+    loadingTicketsLocal.value = prevLoading
+  } catch (err) {
+    console.error('[TicketSelector] Error verificando disponibilidad:', err)
+    // En caso de error de red: permitir selección local (o bloquear según política)
+    // Aquí elegimos permitir la selección pero podrías bloquearla
+    selectedTickets.value.push(ticketNumber)
+    loadingTicketsLocal.value = false
+  }
 }
 
 // Watches
 watch(allTickets, (newAvailable) => {
-  const availableNumbers = newAvailable.map(t => t.number)
+  const availableNumbers = newAvailable.filter(t => !t.isSold).map(t => t.number)
   selectedTickets.value = selectedTickets.value.filter(ticket =>
     availableNumbers.includes(ticket)
   )
@@ -169,4 +299,62 @@ watch(paginatedTickets, (newVal) => {
     currentPage.value--
   }
 })
+
+// Watch para soldTicketsLocal con logs detallados
+watch(soldTicketsLocal, (newSoldTickets, oldSoldTickets) => {
+  console.log(`🔄 [TicketSelector] soldTicketsLocal cambiado: anterior=${oldSoldTickets?.length ?? 0}, nuevo=${newSoldTickets?.length ?? 0}`);
+  if (newSoldTickets && newSoldTickets.length > 0) {
+    // Filtrar selecciones que ahora están vendidas
+    const soldSet = new Set(newSoldTickets)
+    const prevSelections = [...selectedTickets.value]
+    selectedTickets.value = selectedTickets.value.filter(ticket => !soldSet.has(ticket))
+
+    if (prevSelections.length !== selectedTickets.value.length) {
+      const removidos = prevSelections.filter(t => !selectedTickets.value.includes(t))
+      console.log(`🗑️ [TicketSelector] Removidos ${removidos.length} tickets de selección (vendidos):`, removidos)
+    }
+    emit('update:selected', selectedTickets.value)
+  }
+}, { immediate: true })
+
+// Emit cuando cambie selectedTickets
+watch(selectedTickets, (nv) => {
+  emit('update:selected', nv)
+}, { deep: true })
+
+// DIAGNÓSTICO: Verificar props al montar
+onMounted(() => {
+  console.log('🏗️ [TicketSelector] Componente montado con props:', {
+    product: props.product?.title,
+    uuid: props.product?.uuid,
+    maxTickets: props.maxTickets,
+    soldTicketsFromParent: props.soldTickets?.length ?? 0,
+    loadingTicketsProp: props.loadingTickets
+  })
+})
 </script>
+
+<style scoped>
+/* ✅ NUEVO: Animación para tickets durante carga */
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0.7;
+  }
+}
+
+/* Mejoras de hover */
+.ticket-hover:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+</style>

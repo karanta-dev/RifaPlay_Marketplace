@@ -91,13 +91,14 @@
             </div>
           </div>
 
-            <div v-else-if="selectionMode === 'manual' && product" class="bg-black/20 rounded-xl border border-white/10 p-4">
-              <TicketSelector
-                :product="product"
-                @update:selected="selectedManualTickets = $event"
-                :maxTickets="maxAvailable"
-              />
-            </div>
+  <div v-else-if="selectionMode === 'manual' && product" class="bg-black/20 rounded-xl border border-white/10 p-4">
+    <TicketSelector
+      :product="product"
+      @update:selected="selectedManualTickets = $event"
+      :maxTickets="maxAvailable"
+      :soldTickets="soldTicketNumbers" 
+      :loadingTickets="loadingSoldTickets" />
+  </div>
 
           <div class="space-y-4">
             <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
@@ -422,6 +423,8 @@
 import { computed, ref, watch } from 'vue'
 import { useTicketStore } from '@/stores/useTicketStore'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { RaffleService } from '@/services/RaffleService'; // ✅ AÑADE ESTA IMPORTACIÓN
+
 import TicketSelector from './TicketSelector.vue'
 import { PaymentFlowService, type Currency, type PaymentMethod, type Bank } from '@/services/PaymentFlow';
 const verifyingPagoMovil = ref(false);
@@ -431,7 +434,9 @@ const showReverifyModal = ref(false)
 const reverifySubmitting = ref(false)
 const reverifyForm = ref({ fecha: '', referencia: '', banco: '', prefix: '0414', telefono: '', cedula: '', monto: '' })
 const banks = ref<Bank[]>([])
-
+const showForm = ref(false) // ← AÑADE ESTA LÍNEA
+const soldTicketNumbers = ref<number[]>([])
+const loadingSoldTickets = ref(false)
 const loadingBanks = ref(false)
 // Helper: detect prefix and local part from various phone formats
 function detectPrefixFromPhone(rawPhone: string | undefined | null) {
@@ -499,30 +504,115 @@ watch(() => showReverifyModal.value, (open) => {
     reverifyForm.value.monto = monto ? Number(monto).toFixed(2) : ''
   }
 })
+// ✅ NUEVA FUNCIÓN: Ejecutar venta automáticamente después de verificación exitosa
+const executeAutomaticSale = async (verificationData: any) => {
+  submitting.value = true;
+  
+  try {
+    // Construir payload con los datos de verificación
+    const { payload, idempotencyKey, quantity, ticketsToBuy } = buildSalePayload(verificationData);
+    
+    console.log('🔄 Payload para createSale:', payload);
 
+    // Llamar al servicio createSale
+    const res = await PaymentFlowService.createSale(payload, idempotencyKey);
+    
+    // ✅ Manejar estado pendiente
+    if (res.data?.status === 'pendiente') {
+      pagoMovilVerifyResult.value = {
+        success: true,
+        message: '🟡 Su pago se encuentra en estado pendiente. Será verificado próximamente.',
+        status: 'pendiente'
+      };
+      submitting.value = false;
+      return;
+    }
+
+    // ✅ VENTA EXITOSA
+    if (res.status === 200 || res.status === 201) {
+      const data = res.data || {};
+
+      // Extraer números asignados por backend
+      const assignedNumbers: number[] = []
+      if (data.details && Array.isArray(data.details)) {
+        for (const d of data.details) {
+          const num = Number(d.number)
+          if (!Number.isNaN(num)) assignedNumbers.push(num)
+        }
+      }
+
+      // Actualizar store
+      if (assignedNumbers.length > 0) {
+        ticketStore.generateTicket(form, props.product, authStore.user?.id ?? null, assignedNumbers)
+      } else {
+        ticketStore.generateTicket(form, props.product, authStore.user?.id ?? null, ticketsToBuy)
+      }
+
+      // Guardar totales
+      ticketStore.formData.totalPrice = parseFloat(totalPrice.value);
+      ticketStore.formData.totalPriceBs = parseFloat(totalPriceBs.value);
+
+      // ✅ CERRAR MODAL Y ABRIR CONFIRMACIÓN
+      console.log('✅ Venta automática completada, abriendo confirmación...');
+      
+      // Calcular conteos para la confirmación
+      const userId = authStore.user?.id
+      let initialTickets = 0
+      if (userId) {
+        initialTickets = initialTicketsCount.value
+      } else {
+        initialTickets = ticketStore.tickets.filter(t => t.userId === null).length - quantity
+      }
+
+      // Cerrar modal actual
+      emit('close')
+      
+      // Abrir modal de confirmación
+      emit('confirmed', {
+        initialTickets: Math.max(0, initialTickets),
+        purchasedTickets: assignedNumbers.length > 0 ? assignedNumbers.length : quantity
+      });
+
+    }
+  } catch (err: any) {
+    console.error('❌ Error en venta automática:', err)
+    
+    // Mostrar error específico
+    if (err && err.data && err.data.errors && err.data.errors.details) {
+      const detailsErr = err.data.errors.details
+      pagoMovilVerifyResult.value = { 
+        success: false, 
+        message: Array.isArray(detailsErr) 
+          ? `Los siguientes números ya no están disponibles: ${detailsErr.join(', ')}` 
+          : String(detailsErr)
+      };
+    } else if (err && err.data && err.data.message) {
+      pagoMovilVerifyResult.value = { success: false, message: String(err.data.message) };
+    } else {
+      pagoMovilVerifyResult.value = { success: false, message: 'Ocurrió un error procesando la venta automática.' };
+    }
+  } finally {
+    submitting.value = false;
+  }
+}
 async function handleVerifyPagoMovil() {
   pagoMovilVerifyResult.value = null;
   verifyingPagoMovil.value = true;
   
-  // ✅ CORREGIDO: Lógica mejorada para obtener el teléfono
+  // ✅ Lógica para obtener teléfono
   let phone = '';
-  
-  // Si está autenticado, usar el teléfono del usuario
   if (authStore.isAuthenticated && authStore.user) {
     phone = authStore.user.phone || '';
   }
-  
-  // Si no hay teléfono del usuario autenticado o no está autenticado, usar el del formulario
   if (!phone) {
     phone = form.pagoMovilTelefono || form.telefono || '';
   }
 
-  // ✅ CORREGIDO: Lógica mejorada para obtener el monto
+  // ✅ Lógica para obtener monto
   let monto = 0;
   if (selectedCurrencyId.value) {
     const curr = currencies.value.find((c: Currency) => c.uuid === selectedCurrencyId.value);
     if (curr && (curr.short_name.toLowerCase() === 'ves' || curr.name.toLowerCase().includes('bolívar'))) {
-      // Convertir totalPriceBs a número (eliminar separadores de miles)
       const totalBsClean = totalPriceBs.value.replace(/[^\d,]/g, '').replace(',', '.');
       monto = parseFloat(totalBsClean);
     } else {
@@ -532,7 +622,7 @@ async function handleVerifyPagoMovil() {
 
   console.log('🔍 Debug - Verificación Pago Móvil:', { phone, monto, totalPriceBs: totalPriceBs.value });
 
-  // ✅ CORREGIDO: Validación más robusta
+  // ✅ Validaciones
   if (!phone || phone.trim() === '') {
     pagoMovilVerifyResult.value = { success: false, message: 'Debes ingresar un número de teléfono válido.' };
     verifyingPagoMovil.value = false;
@@ -546,17 +636,36 @@ async function handleVerifyPagoMovil() {
   }
 
   try {
-    const res = await PaymentFlowService.verifyPagoMovil(phone, monto);
+    const payload = {
+      phone,
+      monto,
+      exchange_rate: Number(bcvRate.value) || 1
+    };
+
+    const res = await PaymentFlowService.verifyPagoMovil(payload);
     
-    // ✅ CORREGIDO: Manejo mejorado de la respuesta
-    if (res && (res.success === false || res.success === 'false')) {
+    // ✅ VERIFICACIÓN EXITOSA - Ejecutar createSale automáticamente
+    if (res && res.success === true) {
+      pagoMovilVerifyResult.value = { 
+        success: true, 
+        message: res?.message || '✅ Pago móvil verificado correctamente. Procesando compra...',
+        status: res?.status || 'aprobado'
+      };
+
+      // ✅ EJECUCIÓN AUTOMÁTICA DE createSale
+      console.log('🔄 Ejecutando createSale automáticamente...');
+      await executeAutomaticSale(res.data);
+      
+    } else if (res && (res.success === false || res.success === 'false')) {
       const msg = typeof res.message === 'string' ? res.message : String(res.message || 'Pago no verificado');
       pagoMovilVerifyResult.value = { success: false, message: msg };
       
-      if (msg.toLowerCase().includes('pago no verificado')) {
-        pagoMovilNeedsReverify.value = true;
+      // ✅ NUEVO: Abrir modal de reverify cuando el mensaje sea "No se encontró el pago móvil."
+      if (msg.toLowerCase().includes('no se encontró el pago móvil') || 
+          msg.toLowerCase().includes('pago no verificado') ||
+          msg.toLowerCase().includes('no encontrado')) {
         
-        // Prefill del formulario de reverificación
+        pagoMovilNeedsReverify.value = true;
         const { prefix, localPart } = detectPrefixFromPhone(phone);
         reverifyForm.value.prefix = prefix;
         reverifyForm.value.telefono = (localPart || '').replace(/[^\d]/g, '');
@@ -565,36 +674,120 @@ async function handleVerifyPagoMovil() {
         reverifyForm.value.banco = form.pagoMovilBanco || '';
         reverifyForm.value.cedula = form.pagoMovilCedula || '';
         
+        // ✅ ABRIR MODAL AUTOMÁTICAMENTE
         showReverifyModal.value = true;
-        verifyingPagoMovil.value = false;
-        return;
+        console.log('🔄 Modal de reverify abierto automáticamente por pago no encontrado');
       }
-} else {
-  // ✅ NUEVO: Manejar estado pendiente
-  if (res?.status === 'pendiente') {
-    pagoMovilVerifyResult.value = {
-      success: true,
-      message: '🟡 Su pago se encuentra en estado pendiente. Será verificado próximamente.',
-      status: 'pendiente'
-    };
-  } else {
-    pagoMovilVerifyResult.value = { 
-      success: true, 
-      message: res?.message || '✅ Pago móvil verificado correctamente.',
-      status: res?.status || 'aprobado'
-    };
-  }
-}
+    }
   } catch (err: any) {
     pagoMovilVerifyResult.value = { 
       success: false, 
       message: err?.message || '❌ Error al verificar el pago móvil.' 
     };
+    
+    // ✅ También abrir modal en caso de error genérico
+    pagoMovilNeedsReverify.value = true;
+    const { prefix, localPart } = detectPrefixFromPhone(phone);
+    reverifyForm.value.prefix = prefix;
+    reverifyForm.value.telefono = (localPart || '').replace(/[^\d]/g, '');
+    reverifyForm.value.monto = monto.toFixed(2);
+    showReverifyModal.value = true;
   } finally {
     verifyingPagoMovil.value = false;
   }
 }
+// Función auxiliar para construir el payload de venta
+const buildSalePayload = (verificationData: any = null) => {
+  const userId = authStore.user?.id ?? null
+  
+  // Determinar teléfono: priorizar el de la verificación, luego usuario, luego formulario
+  let phone = ''
+  if (verificationData?.telefono_emisor) {
+    phone = verificationData.telefono_emisor
+  } else if (authStore.isAuthenticated && authStore.user) {
+    phone = authStore.user.phone || ''
+  } else {
+    phone = form.pagoMovilTelefono || form.telefono || ''
+  }
 
+  // Determinar tickets a comprar
+  let ticketsToBuy: number[] | undefined = undefined
+  let quantity = 0
+
+  if (selectionMode.value === 'manual') {
+    ticketsToBuy = selectedManualTickets.value
+    quantity = ticketsToBuy.length
+  } else {
+    quantity = Math.max(1, Number(form.tickets ?? 1))
+    try {
+      ticketsToBuy = ticketStore.getAvailableNumbers(props.product?.title ?? props.product, quantity)
+    } catch (e) {
+      console.error('Error obteniendo números disponibles:', e)
+      ticketsToBuy = Array.from({length: quantity}, (_, i) => i + 1) // Fallback
+    }
+  }
+
+  // Construir detalles de tickets
+  const details = []
+  if (ticketsToBuy) {
+    for (const n of ticketsToBuy) {
+      details.push({ 
+        number: String(n).padStart(4, '0'), 
+        amount: Number(props.product?.ticketPrice ?? 0), 
+        prizes: '' 
+      })
+    }
+  }
+
+  // Mapear método de pago
+  const selectedMethod = paymentMethods.value.find(m => m.slug === form.metodoPago)
+  const paymentMethodId = selectedMethod ? selectedMethod.uuid : form.metodoPago
+
+  // Usar referencia de la verificación si está disponible
+  const referencia = verificationData?.referencia || form.referencia || `TX-${Date.now()}`
+
+  const idempotencyKey = `sale-${userId ?? 'guest'}-${Date.now()}`
+
+  const payload: any = {
+    raffle_id: props.product?.uuid ?? props.product?.title,
+    user_id: userId,
+    details: details,
+    payment: {
+      payment_method_id: paymentMethodId,
+      currency_id: selectedCurrencyId.value,
+      current_currency_id: selectedCurrencyId.value,
+      exchange_rate: Number(bcvRate.value) || 1,
+      payment_date: new Date().toISOString(),
+      transaction_id: referencia,
+      entity: form.metodoPago === 'pago-movil' ? (verificationData?.banco_emisor || form.pagoMovilBanco) : undefined,
+      idempotency_key: idempotencyKey,
+      // ✅ NUEVO: Incluir datos específicos de Pago Móvil verificados
+      pago_movil_data: verificationData ? {
+        uuid: verificationData.uuid,
+        banco_emisor: verificationData.banco_emisor,
+        telefono_emisor: verificationData.telefono_emisor,
+        monto_verificado: verificationData.monto,
+        referencia_verificada: verificationData.referencia,
+        status: verificationData.status
+      } : undefined
+    },
+    invoice_data: {
+      document_id: authStore.user?.natural_profile?.document_number,
+      name: form.nombre || authStore.user?.name || 'Comprador',
+      phone: phone,
+      address: authStore.user?.natural_profile?.address || 'Direccion',
+    }
+  }
+
+  // Formatear fecha para el backend
+  function formatSqlDate(d: Date) {
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  }
+  payload.payment.payment_date = formatSqlDate(new Date(payload.payment.payment_date))
+
+  return { payload, idempotencyKey, quantity, ticketsToBuy }
+}
 // Función para copiar datos de pago móvil al portapapeles - CORREGIDA
 const copyPagoMovilData = async (event: Event) => {
   const pagoMovilData = `0191
@@ -709,11 +902,23 @@ async function handleSubmitReverify() {
     // --- 3. Llamar al nuevo servicio ---
     const res = await PaymentFlowService.verifyPagoMovilManual(payload)
 
+// ✅ MEJORADO: Manejar específicamente el caso "No se encontró el pago móvil"
     if (res && (res.success === false || res.success === 'false')) {
-      pagoMovilVerifyResult.value = { success: false, message: res.message || 'Pago no verificado.' }
-      // Mantener el modal abierto para que el usuario corrija datos
-      pagoMovilNeedsReverify.value = true
-} else {
+      const errorMessage = res.message || 'Pago no verificado.'
+      pagoMovilVerifyResult.value = { 
+        success: false, 
+        message: errorMessage 
+      }
+      
+      // Si el mensaje es específicamente "No se encontró el pago móvil", mantener el modal abierto
+      if (errorMessage.toLowerCase().includes('no se encontró el pago móvil')) {
+        pagoMovilNeedsReverify.value = true
+        // El modal permanece abierto para que el usuario corrija los datos
+      } else {
+        // Para otros errores, también mantener el modal abierto
+        pagoMovilNeedsReverify.value = true
+      }
+    } else {
   // ✅ NUEVO: Manejar estado pendiente
   if (res?.status === 'pendiente') {
     pagoMovilVerifyResult.value = {
@@ -729,13 +934,19 @@ async function handleSubmitReverify() {
       message: res.message || 'Pago verificado correctamente.',
       status: res?.status || 'aprobado'
     };
+          console.log('🔄 Ejecutando createSale desde reverificación...');
+      await executeAutomaticSale(res.data);
     pagoMovilNeedsReverify.value = false;
     showReverifyModal.value = false;
   }
 }
-  } catch (err: any) {
-    // Manejar errores de la API (ej: 404, 500, o errores de red)
-    pagoMovilVerifyResult.value = { success: false, message: err?.message || 'Error al conectar con el servicio de verificación.' }
+} catch (err: any) {
+    pagoMovilVerifyResult.value = { 
+      success: false, 
+      message: err?.message || 'Error al conectar con el servicio de verificación.' 
+    }
+    // En caso de error de conexión, mantener el modal abierto
+    pagoMovilNeedsReverify.value = true
   } finally {
     reverifySubmitting.value = false
   }
@@ -822,6 +1033,7 @@ const submitting = ref(false)
 
 const close = () => {
   if (selectionMode.value === 'manual') selectedManualTickets.value = []
+  showForm.value = false
   emit('close')
 }
 
@@ -889,30 +1101,68 @@ const totalPriceBs = computed(() => {
     maximumFractionDigits: 2
   })
 })
+const loadSoldTickets = async () => { 
+  console.log('🔍 [DIAGNÓSTICO] loadSoldTickets INICIADA');
+  console.log('📋 [DIAGNÓSTICO] Estado actual:', {
+    product: props.product,
+    tieneUUID: props.product?.uuid,
+    modalAbierto: props.open
+  });
 
+  if (!props.product?.uuid) {
+    console.warn('❌ [DIAGNÓSTICO] No hay UUID de producto para cargar tickets vendidos');
+    soldTicketNumbers.value = [];
+    return;
+  }
+
+  loadingSoldTickets.value = true;
+  
+  try {
+    console.log(`🚀 [DIAGNÓSTICO] Llamando a RaffleService.getSoldTickets con UUID: ${props.product.uuid}`);
+    const soldTickets = await RaffleService.getSoldTickets(props.product.uuid);
+
+    console.log(`✅ [DIAGNÓSTICO] Respuesta recibida de getSoldTickets:`, {
+      cantidad: soldTickets.length,
+      primeros10: soldTickets.slice(0, 10)
+    });
+
+    soldTicketNumbers.value = soldTickets;
+    console.log(`📊 [DIAGNÓSTICO] Estado actualizado - soldTicketNumbers:`, soldTicketNumbers.value.length);
+  } catch (error) {
+    console.error('❌ [DIAGNÓSTICO] Error en loadSoldTickets:', error);
+    soldTicketNumbers.value = [];
+  } finally {
+    loadingSoldTickets.value = false;
+    console.log('🏁 [DIAGNÓSTICO] loadSoldTickets COMPLETADA');
+  }
+};
 // ✅ Cargar tasa BCV, métodos de pago y monedas cuando se abre el modal
 watch(() => props.open, async (open) => {
   if (open) {
+    showForm.value = true
     fetchBcvRate()
     loadPaymentMethods()
     loadBanks()
+
     loadingCurrencies.value = true
     try {
       const result = await PaymentFlowService.fetchCurrencies()
       const currs: Currency[] = result?.currencies ?? []
       const defaultCurrencyId = result?.defaultCurrencyId
-  currencies.value = currs
-  // Asignación segura de moneda seleccionada: preferir defaultCurrencyId, si no existe usar la primera moneda disponible
-  let chosen: string | undefined = undefined
-  if (defaultCurrencyId) chosen = defaultCurrencyId
-  else if (currs.length > 0) chosen = currs[0]?.uuid
-  selectedCurrencyId.value = chosen
+
+      currencies.value = currs
+      // Asignación segura de moneda seleccionada
+      let chosen: string | undefined = undefined
+      if (defaultCurrencyId) chosen = defaultCurrencyId
+      else if (currs.length > 0) chosen = currs[0]?.uuid
+      selectedCurrencyId.value = chosen
     } catch (e) {
       currencies.value = []
       selectedCurrencyId.value = undefined
     } finally {
       loadingCurrencies.value = false
     }
+
     // Calcular tickets iniciales ANTES de cualquier compra
     const userId = authStore.user?.id
     if (userId) {
@@ -921,8 +1171,21 @@ watch(() => props.open, async (open) => {
       initialTicketsCount.value = ticketStore.tickets.filter(t => t.userId === null).length
     }
     console.log('📊 Initial tickets calculated:', initialTicketsCount.value)
+
+    // 🟦 NUEVO BLOQUE: cargar tickets vendidos
+    if (props.product?.uuid) {
+      console.log('🎟 Ejecutando loadSoldTickets desde watcher...')
+      try {
+        await loadSoldTickets()
+      } catch (err) {
+        console.error('❌ Error al cargar tickets vendidos desde watcher:', err)
+      }
+    } else {
+      console.warn('⚠️ No se ejecuta loadSoldTickets: no hay product.uuid disponible aún')
+    }
   }
 })
+
 
 const handleConfirm = async () => {
   error.value = null
@@ -1029,6 +1292,29 @@ const handleConfirm = async () => {
     }
   }
 
+// ✅ REEMPLAZA EL WATCH DE selectionMode (Línea 1430) CON ESTO:
+watch(() => selectionMode.value, async (newMode) => {
+  console.log(`🔄 [ParticipateModal] selectionMode cambiado: ${newMode}`);
+  
+  if (newMode === 'manual' && props.product?.uuid) {
+    console.log('🎯 [ParticipateModal] Modo manual activado, cargando tickets vendidos...');
+    
+    // ✅ SOLUCIÓN AL RACE CONDITION:
+    // Setea el 'loading' a true INMEDIATAMENTE.
+    // Así, TicketSelector se montará ya con 'loadingTickets: true'
+    loadingSoldTickets.value = true; 
+    
+    // Ahora sí llamamos a la función que hace el fetch
+    await loadSoldTickets();
+  }
+});
+// ✅ CORREGIDO: Watch mejorado para props.product
+watch(() => props.product, async (newProduct) => {
+  if (newProduct?.uuid && props.open) {
+    console.log('🔄 [ParticipateModal] Producto cambiado, recargando tickets vendidos:', newProduct.title)
+    await loadSoldTickets()
+  }
+}, { immediate: true }) // ✅ Añade immediate: true para que se ejecute al montar el componente
   // Mapear metodoPago (slug) a uuid si está disponible en paymentMethods
   const selectedMethod = paymentMethods.value.find(m => m.slug === form.metodoPago)
   if (selectedMethod) {
@@ -1112,6 +1398,7 @@ const handleConfirm = async () => {
     submitting.value = false
   }
 }
+
 </script>
 
 <style scoped>
