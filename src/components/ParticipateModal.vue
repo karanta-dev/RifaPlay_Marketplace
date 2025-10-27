@@ -91,13 +91,14 @@
             </div>
           </div>
 
-            <div v-else-if="selectionMode === 'manual' && product" class="bg-black/20 rounded-xl border border-white/10 p-4">
-              <TicketSelector
-                :product="product"
-                @update:selected="selectedManualTickets = $event"
-                :maxTickets="maxAvailable"
-              />
-            </div>
+  <div v-else-if="selectionMode === 'manual' && product" class="bg-black/20 rounded-xl border border-white/10 p-4">
+    <TicketSelector
+      :product="product"
+      @update:selected="selectedManualTickets = $event"
+      :maxTickets="maxAvailable"
+      :soldTickets="soldTicketNumbers" 
+      :loadingTickets="loadingSoldTickets" />
+  </div>
 
           <div class="space-y-4">
             <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
@@ -422,6 +423,8 @@
 import { computed, ref, watch } from 'vue'
 import { useTicketStore } from '@/stores/useTicketStore'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { RaffleService } from '@/services/RaffleService'; // ✅ AÑADE ESTA IMPORTACIÓN
+
 import TicketSelector from './TicketSelector.vue'
 import { PaymentFlowService, type Currency, type PaymentMethod, type Bank } from '@/services/PaymentFlow';
 const verifyingPagoMovil = ref(false);
@@ -432,7 +435,8 @@ const reverifySubmitting = ref(false)
 const reverifyForm = ref({ fecha: '', referencia: '', banco: '', prefix: '0414', telefono: '', cedula: '', monto: '' })
 const banks = ref<Bank[]>([])
 const showForm = ref(false) // ← AÑADE ESTA LÍNEA
-
+const soldTicketNumbers = ref<number[]>([])
+const loadingSoldTickets = ref(false)
 const loadingBanks = ref(false)
 // Helper: detect prefix and local part from various phone formats
 function detectPrefixFromPhone(rawPhone: string | undefined | null) {
@@ -1097,7 +1101,41 @@ const totalPriceBs = computed(() => {
     maximumFractionDigits: 2
   })
 })
+const loadSoldTickets = async () => { 
+  console.log('🔍 [DIAGNÓSTICO] loadSoldTickets INICIADA');
+  console.log('📋 [DIAGNÓSTICO] Estado actual:', {
+    product: props.product,
+    tieneUUID: props.product?.uuid,
+    modalAbierto: props.open
+  });
 
+  if (!props.product?.uuid) {
+    console.warn('❌ [DIAGNÓSTICO] No hay UUID de producto para cargar tickets vendidos');
+    soldTicketNumbers.value = [];
+    return;
+  }
+
+  loadingSoldTickets.value = true;
+  
+  try {
+    console.log(`🚀 [DIAGNÓSTICO] Llamando a RaffleService.getSoldTickets con UUID: ${props.product.uuid}`);
+    const soldTickets = await RaffleService.getSoldTickets(props.product.uuid);
+
+    console.log(`✅ [DIAGNÓSTICO] Respuesta recibida de getSoldTickets:`, {
+      cantidad: soldTickets.length,
+      primeros10: soldTickets.slice(0, 10)
+    });
+
+    soldTicketNumbers.value = soldTickets;
+    console.log(`📊 [DIAGNÓSTICO] Estado actualizado - soldTicketNumbers:`, soldTicketNumbers.value.length);
+  } catch (error) {
+    console.error('❌ [DIAGNÓSTICO] Error en loadSoldTickets:', error);
+    soldTicketNumbers.value = [];
+  } finally {
+    loadingSoldTickets.value = false;
+    console.log('🏁 [DIAGNÓSTICO] loadSoldTickets COMPLETADA');
+  }
+};
 // ✅ Cargar tasa BCV, métodos de pago y monedas cuando se abre el modal
 watch(() => props.open, async (open) => {
   if (open) {
@@ -1105,23 +1143,26 @@ watch(() => props.open, async (open) => {
     fetchBcvRate()
     loadPaymentMethods()
     loadBanks()
+
     loadingCurrencies.value = true
     try {
       const result = await PaymentFlowService.fetchCurrencies()
       const currs: Currency[] = result?.currencies ?? []
       const defaultCurrencyId = result?.defaultCurrencyId
-  currencies.value = currs
-  // Asignación segura de moneda seleccionada: preferir defaultCurrencyId, si no existe usar la primera moneda disponible
-  let chosen: string | undefined = undefined
-  if (defaultCurrencyId) chosen = defaultCurrencyId
-  else if (currs.length > 0) chosen = currs[0]?.uuid
-  selectedCurrencyId.value = chosen
+
+      currencies.value = currs
+      // Asignación segura de moneda seleccionada
+      let chosen: string | undefined = undefined
+      if (defaultCurrencyId) chosen = defaultCurrencyId
+      else if (currs.length > 0) chosen = currs[0]?.uuid
+      selectedCurrencyId.value = chosen
     } catch (e) {
       currencies.value = []
       selectedCurrencyId.value = undefined
     } finally {
       loadingCurrencies.value = false
     }
+
     // Calcular tickets iniciales ANTES de cualquier compra
     const userId = authStore.user?.id
     if (userId) {
@@ -1130,8 +1171,21 @@ watch(() => props.open, async (open) => {
       initialTicketsCount.value = ticketStore.tickets.filter(t => t.userId === null).length
     }
     console.log('📊 Initial tickets calculated:', initialTicketsCount.value)
+
+    // 🟦 NUEVO BLOQUE: cargar tickets vendidos
+    if (props.product?.uuid) {
+      console.log('🎟 Ejecutando loadSoldTickets desde watcher...')
+      try {
+        await loadSoldTickets()
+      } catch (err) {
+        console.error('❌ Error al cargar tickets vendidos desde watcher:', err)
+      }
+    } else {
+      console.warn('⚠️ No se ejecuta loadSoldTickets: no hay product.uuid disponible aún')
+    }
   }
 })
+
 
 const handleConfirm = async () => {
   error.value = null
@@ -1238,6 +1292,29 @@ const handleConfirm = async () => {
     }
   }
 
+// ✅ REEMPLAZA EL WATCH DE selectionMode (Línea 1430) CON ESTO:
+watch(() => selectionMode.value, async (newMode) => {
+  console.log(`🔄 [ParticipateModal] selectionMode cambiado: ${newMode}`);
+  
+  if (newMode === 'manual' && props.product?.uuid) {
+    console.log('🎯 [ParticipateModal] Modo manual activado, cargando tickets vendidos...');
+    
+    // ✅ SOLUCIÓN AL RACE CONDITION:
+    // Setea el 'loading' a true INMEDIATAMENTE.
+    // Así, TicketSelector se montará ya con 'loadingTickets: true'
+    loadingSoldTickets.value = true; 
+    
+    // Ahora sí llamamos a la función que hace el fetch
+    await loadSoldTickets();
+  }
+});
+// ✅ CORREGIDO: Watch mejorado para props.product
+watch(() => props.product, async (newProduct) => {
+  if (newProduct?.uuid && props.open) {
+    console.log('🔄 [ParticipateModal] Producto cambiado, recargando tickets vendidos:', newProduct.title)
+    await loadSoldTickets()
+  }
+}, { immediate: true }) // ✅ Añade immediate: true para que se ejecute al montar el componente
   // Mapear metodoPago (slug) a uuid si está disponible en paymentMethods
   const selectedMethod = paymentMethods.value.find(m => m.slug === form.metodoPago)
   if (selectedMethod) {
@@ -1321,6 +1398,7 @@ const handleConfirm = async () => {
     submitting.value = false
   }
 }
+
 </script>
 
 <style scoped>

@@ -376,21 +376,48 @@ async loadRaffles(page = 1, perPage = 16) {
   try {
     const { data, meta } = await RaffleService.getAll(page, perPage);
 
-    // 🔹 Guardamos los productos (mapeo a tu estructura actual)
-    this.topProducts = data.map((r) => ({
-      uuid: r.uuid,
-      title: r.name,
-      // ✅ CORREGIDO: Usar seller.name + seller.last_name en lugar de created_by
-      rifero: r.seller ? `${r.seller.name} ${r.seller.last_name}`.trim() : "Desconocido",
-      categories: r.categories?.map((c) => c.name) ?? [],
-      description: r.description,
-      images: r.images?.map((i) => i.url) ?? [],
-      ticketPrice: r.ticket_price,
-      status: r.status,
-      ticketsVendidos: r.tickets_sold,
-      ticketsMax: r.end_range,
-      drawDate: r.raffle_date,
-    }));
+    // 🔹 Para cada rifa, obtener la cantidad real de tickets vendidos
+    const rafflesWithRealCount = await Promise.all(
+      data.map(async (r) => {
+        try {
+          // Obtener el conteo real de tickets vendidos del backend
+          const realTicketsSold = await RaffleService.getSoldTicketsCount(r.uuid);
+          
+          return {
+            uuid: r.uuid,
+            title: r.name,
+            rifero: r.seller ? `${r.seller.name} ${r.seller.last_name}`.trim() : "Desconocido",
+            categories: r.categories?.map((c) => c.name) ?? [],
+            description: r.description,
+            images: r.images?.map((i) => i.url) ?? [],
+            ticketPrice: r.ticket_price,
+            status: r.status,
+            ticketsVendidos: realTicketsSold, // ✅ Usar el conteo real del backend
+            ticketsMax: r.end_range,
+            drawDate: r.raffle_date,
+          };
+        } catch (error) {
+          console.error(`❌ Error al obtener tickets vendidos para ${r.name}:`, error);
+          // En caso de error, usar el valor por defecto
+          return {
+            uuid: r.uuid,
+            title: r.name,
+            rifero: r.seller ? `${r.seller.name} ${r.seller.last_name}`.trim() : "Desconocido",
+            categories: r.categories?.map((c) => c.name) ?? [],
+            description: r.description,
+            images: r.images?.map((i) => i.url) ?? [],
+            ticketPrice: r.ticket_price,
+            status: r.status,
+            ticketsVendidos: r.tickets_sold ?? 0, // Valor por defecto
+            ticketsMax: r.end_range,
+            drawDate: r.raffle_date,
+          };
+        }
+      })
+    );
+
+    // 🔹 Guardamos los productos con datos reales
+    this.topProducts = rafflesWithRealCount;
 
     // 🔹 Guardamos la metadata (paginación)
     this.pagination = meta || null;
@@ -415,6 +442,74 @@ async loadRaffles(page = 1, perPage = 16) {
         this._savePersist();
     }
     },
+// En las actions de useTicketStore.ts
+async updateRaffleTicketsCount(raffleUuid: string) {
+  try {
+    const realTicketsSold = await RaffleService.getSoldTicketsCount(raffleUuid);
+    
+    // Actualizar el producto en topProducts con verificación de seguridad
+    const productIndex = this.topProducts.findIndex(p => p.uuid === raffleUuid);
+    if (productIndex !== -1 && this.topProducts[productIndex]) {
+      this.topProducts[productIndex].ticketsVendidos = realTicketsSold;
+      this._savePersist();
+    }
+    
+    return realTicketsSold;
+  } catch (error) {
+    console.error(`❌ Error al actualizar tickets vendidos para ${raffleUuid}:`, error);
+    throw error;
+  }
+},
+async getSoldTicketNumbers(raffleUuid: string): Promise<number[]> {
+      try {
+        console.log(`🔍 [TicketStore] Obteniendo números de tickets vendidos para: ${raffleUuid}`);
+        
+        const soldTickets = await RaffleService.getSoldTickets(raffleUuid);
+        
+        console.log(`✅ [TicketStore] ${soldTickets.length} tickets vendidos obtenidos para ${raffleUuid}`);
+        return soldTickets;
+      } catch (error) {
+        console.error(`❌ [TicketStore] Error al obtener números de tickets vendidos para ${raffleUuid}:`, error);
+        return [];
+      }
+    },
+
+    /**
+     * Obtiene los números de tickets disponibles para una rifa específica desde el backend
+     */
+    async getAvailableTicketNumbers(raffleUuid: string): Promise<number[]> {
+      try {
+        console.log(`🔍 [TicketStore] Obteniendo tickets disponibles para: ${raffleUuid}`);
+        
+        // Buscar el producto en topProducts
+        const product = this.topProducts.find(p => p.uuid === raffleUuid);
+        if (!product) {
+          console.warn(`⚠️ [TicketStore] Producto con UUID ${raffleUuid} no encontrado`);
+          return [];
+        }
+
+        const ticketsMax = product.ticketsMax;
+        const soldTickets = await this.getSoldTicketNumbers(raffleUuid);
+        
+        // Crear un Set de tickets vendidos para búsqueda rápida
+        const soldSet = new Set(soldTickets);
+        
+        // Generar lista de tickets disponibles
+        const availableTickets: number[] = [];
+        for (let i = 1; i <= ticketsMax; i++) {
+          if (!soldSet.has(i)) {
+            availableTickets.push(i);
+          }
+        }
+
+        console.log(`✅ [TicketStore] ${availableTickets.length} tickets disponibles de ${ticketsMax} totales para ${product.title}`);
+        return availableTickets;
+      } catch (error) {
+        console.error(`❌ [TicketStore] Error al obtener tickets disponibles para ${raffleUuid}:`, error);
+        return [];
+      }
+    },
+
 
         confirmTicket(productId: string, ticketNumbers: number[], userId: number | string) {
       this.ws?.send(JSON.stringify({
