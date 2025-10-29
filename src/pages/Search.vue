@@ -265,30 +265,33 @@ const clearAllFilters = () => {
 // 🔎 Filtrar productos
 const filteredProducts = computed(() => {
   return ticketStore.topProducts.filter((product: any) => {
-    // Filtro de búsqueda
-    const matchesSearch = 
-      product.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      product.categories.some((cat: string) => 
-        cat.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const title = product.title?.toLowerCase?.() || "";
+    const description = product.description?.toLowerCase?.() || "";
+    const categories = Array.isArray(product.categories) ? product.categories : [];
+
+    const matchesSearch =
+      title.includes(searchQuery.value.toLowerCase()) ||
+      description.includes(searchQuery.value.toLowerCase()) ||
+      categories.some((cat: string) =>
+        cat?.toLowerCase?.().includes(searchQuery.value.toLowerCase())
       );
 
-    // Filtro de categoría
     const matchesCategory = selectedCategory.value
-      ? product.categories.includes(selectedCategory.value)
+      ? categories.includes(selectedCategory.value)
       : true;
 
-    // Filtro de estado
     const isActive = new Date(product.drawDate).getTime() > Date.now();
-    const matchesStatus = statusFilter.value === "all" 
-      ? true 
-      : statusFilter.value === "active" 
-        ? isActive 
+    const matchesStatus =
+      statusFilter.value === "all"
+        ? true
+        : statusFilter.value === "active"
+        ? isActive
         : !isActive;
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
 });
+
 
 // 📊 Productos filtrados y ordenados - LÓGICA CORREGIDA
 const filteredAndSortedProducts = computed(() => {
