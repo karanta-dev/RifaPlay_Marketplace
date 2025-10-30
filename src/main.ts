@@ -29,7 +29,7 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       const authStore = useAuthStore();
-      authStore.handleUnauthorized();
+      authStore.logout();
     }
     return Promise.reject(error);
   }
