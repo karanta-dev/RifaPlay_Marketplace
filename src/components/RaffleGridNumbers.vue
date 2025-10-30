@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 
 // 1. Definir las propiedades y eventos del componente
 const props = defineProps<{

@@ -53,7 +53,6 @@ import { useTicketStore } from "@/stores/useTicketStore"
 import { useAuthStore } from "@/stores/useAuthStore"
 
 import ProductCard from "./ProductCard.vue"
-import ParticiparModal from "./ParticipateModal.vue"
 import ConfirmacionModal from "./ConfirmationModal.vue"
 import DetailsModal from "./ProductDetailsModal.vue"
 import ProductModal from "./ProductModal.vue"
