@@ -40,7 +40,13 @@ export const PaymentFlowService = {
    */
   fetchCurrencies: async (): Promise<{ currencies: Currency[]; defaultCurrencyId?: string }> => {
     try {
-      const response = await apiClient.get('/currencies');
+      const response = await apiClient.get('/currencies', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Accept': 'application/json',
+        },
+      });
       const data = response.data;
       if (data.status !== 'success' || !Array.isArray(data.data)) {
         throw new Error('Formato de respuesta de monedas inválido.');
@@ -82,7 +88,13 @@ async verifyPagoMovil(payload: { phone: string; monto: number; exchange_rate?: n
    */
   fetchPaymentMethods: async (): Promise<PaymentMethod[]> => {
     try {
-      const response = await apiClient.get('/payment-methods');
+      const response = await apiClient.get('/payment-methods', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Accept': 'application/json',
+        },
+      });
       const data = response.data;
       if (data.status !== 'success' || !Array.isArray(data.data)) {
         throw new Error('Formato de respuesta de métodos de pago inválido.');
@@ -143,7 +155,13 @@ async verifyPagoMovil(payload: { phone: string; monto: number; exchange_rate?: n
 
 fetchBanks: async (): Promise<Bank[]> => {
   try {
-    const response = await apiClient.get('/banks');
+    const response = await apiClient.get('/banks', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Accept': 'application/json',
+      },
+    });
     const data = response.data;
     
     console.log('🔍 Respuesta completa de /banks:', data);

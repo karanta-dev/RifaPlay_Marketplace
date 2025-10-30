@@ -72,7 +72,7 @@
     <button
       class="btn_participate px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
       :class="{'bg-green-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.6)]': isSoldOut || isTimeUp, 'bg-yellow-500 text-black hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)]': !isSoldOut && !isTimeUp}"
-      @click.stop="$emit('participar')"
+      @click.stop="gridStore.openParticipateModal(product)"
       :disabled="isSoldOut || isTimeUp"
     >
       {{ isTimeUp ? '¡SORTEADO!' : (isSoldOut ? '¡VENDIDO!' : 'PARTICIPAR') }}
@@ -106,13 +106,9 @@ const now = ref(Date.now())
 let interval: any = null
 
 onMounted(() => {
-  // Cuando la tarjeta se monta, comprueba si necesita cargar su progreso
   if (props.product && props.product.ticketsVendidos === null) {
-    // Si es así, llama a la acción del store para sí misma.
     gridStore.fetchProductProgress(props.product.uuid);
   }
-
-  // La lógica del contador sigue igual
   interval = setInterval(() => { now.value = Date.now() }, 1000)
 })
 

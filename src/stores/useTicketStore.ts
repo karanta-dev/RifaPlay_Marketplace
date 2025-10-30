@@ -198,18 +198,14 @@ export const useTicketStore = defineStore('ticket', {
             this.loading = false;
           }
         },
-        
-        // ✅ 2. NUEVA ACCIÓN SECUENCIAL, SIN PROMESAS DE MIERDA
         async fetchAllProductsProgress() {
-            // Usamos un bucle for...of con await. Esto garantiza que va UNA POR UNA.
             for (const product of this.topProducts) {
-                // Si el producto ya tiene progreso, se lo salta.
                 if (product.ticketsVendidos === null) {
                     const productIndex = this.topProducts.findIndex(p => p.uuid === product.uuid);
                     if (productIndex !== -1) {
                         try {
                             this.topProducts[productIndex].isProgressLoading = true;
-                            // Espera a que esta llamada termine antes de continuar con la siguiente.
+    
                             const realTicketsSold = await RaffleService.getSoldTicketsCount(product.uuid);
                             this.topProducts[productIndex].ticketsVendidos = realTicketsSold;
                         } catch (error) {

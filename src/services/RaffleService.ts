@@ -232,8 +232,44 @@ export const RaffleService = {
       console.error(`Error al obtener la grilla paginada de la rifa:`, error);
       throw error;
     }
-  }
+  },
+
+  /**
+   * Reserva uno o más tickets para un usuario.
+   * @param raffleId - El UUID de la rifa.
+   * @param documentType - Tipo de documento del usuario (ej: "V").
+   * @param documentNumber - Número de documento del usuario.
+   * @param ticketNumbers - Un array de strings con los números a reservar.
+   */
+  async bookTickets(raffleId: string, documentType: string, documentNumber: string, ticketNumbers: string[]): Promise<any> {
+    const payload = {
+      document_type: documentType,
+      document_number: documentNumber,
+      book_numbers: ticketNumbers,
+    };
+    const { data } = await apiClient.post(`/raffles/${raffleId}/book-tickets`, payload);
+    return data;
+  },
+
+  /**
+   * Libera la reserva de uno o más tickets.
+   */
+  async unbookTickets(raffleId: string, documentType: string, documentNumber: string, ticketNumbers: string[]): Promise<any> {
+    const payload = {
+      document_type: documentType,
+      document_number: documentNumber,
+      book_numbers: ticketNumbers,
+    };
+
+    const { data } = await apiClient.post(`/raffles/${raffleId}/unbook-tickets`, payload, 
+      { headers: { 'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+     }}
+     ) ;
+    return data;
+  },
 };
+
 
 export const PrizeService = {
   async getRafflePrizes(raffleUuid: string): Promise<Prize[]> {

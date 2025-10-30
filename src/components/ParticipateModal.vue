@@ -1,10 +1,11 @@
+<!-- ParticipateModal.vue -->
 <template>
   <transition name="fade">
-    <div v-if="open" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40" @click="close" />
+    <div v-if="isParticipateModalOpen" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40" @click="close" />
   </transition>
 
   <transition name="scale-fade">
-    <div v-if="open" class="fixed inset-0 flex items-center justify-center z-50 p-0" @click.self="close">
+    <div v-if="isParticipateModalOpen" class="fixed inset-0 flex items-center justify-center z-50 p-0" @click.self="close">
 
       <div
         :class="[
@@ -15,7 +16,7 @@
         <button
           v-if="authStore.isAuthenticated"
           class="absolute top-4 right-4 z-30 bg-black/40 hover:bg-black/60 text-white/80 hover:text-white p-2 rounded-full transition-all duration-300 border border-white/20 backdrop-blur-sm"
-          @click="emit('close')"
+          @click="close"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -65,7 +66,7 @@
               </div>
             </div>
             
-            <TicketGrid v-if="selectionMode === 'manual' && product" :raffleId="product.uuid" @update:selected="selectedManualTickets = $event" />
+            <TicketGrid v-if="selectionMode === 'manual' && selectedProduct" :raffleId="selectedProduct.uuid" @update:selected="handleSelectionUpdate" />
 
             <div class="space-y-4">
               <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
@@ -182,21 +183,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useTicketStore } from '@/stores/useTicketStore'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { computed, ref, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useTicketStore } from '@/stores/useTicketStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useGridStore } from '@/stores/useGridStore';
 import { PaymentFlowService, type Currency, type PaymentMethod, type Bank } from '@/services/PaymentFlow';
 import TicketGrid from './TicketGrid.vue';
 
-const props = defineProps<{
-  open: boolean
-  product: any | null
-}>()
+const emit = defineEmits(['confirmed']);
 
-const emit = defineEmits(['close', 'confirmed'])
-
-const ticketStore = useTicketStore()
-const authStore = useAuthStore()
+const ticketStore = useTicketStore();
+const authStore = useAuthStore();
+const gridStore = useGridStore();
+const { selectedProduct, isParticipateModalOpen } = storeToRefs(gridStore);
 
 const verifyingPagoMovil = ref(false);
 const pagoMovilVerifyResult = ref<{ success: boolean; message: string; status?: string } | null>(null);
@@ -223,13 +223,20 @@ const previewUrl = ref<string | null>(null)
 const error = ref<string | null>(null)
 const submitting = ref(false)
 
+const totalPrice = ref('0.00');
+const totalPriceBs = ref('0,00');
+
+function handleSelectionUpdate(newSelection: number[]) {
+  selectedManualTickets.value = newSelection;
+}
+
 const close = () => {
   if (selectionMode.value === 'manual') selectedManualTickets.value = []
-  emit('close')
+  gridStore.closeParticipateModal();
 }
 
 const maxAvailable = computed(() => {
-  const p = ticketStore.topProducts.find((t: any) => t.title === props.product?.title)
+  const p = ticketStore.topProducts.find((t: any) => t.title === selectedProduct.value?.title)
   if (!p) return 0
   return Math.max(1, (p.ticketsMax || Infinity) - (p.ticketsVendidos || 0))
 })
@@ -237,27 +244,39 @@ const maxAvailable = computed(() => {
 const currentQty = computed(() => {
   return selectionMode.value === 'manual'
     ? selectedManualTickets.value.length
-    : Math.max(1, Number(form.tickets || 0))
+    : Number(form.tickets || 0);
 })
 
-const totalPrice = computed(() => {
-  const p = ticketStore.topProducts.find((t: any) => t.title === props.product?.title)
-  const price = p?.ticketPrice ?? 0
-  return (currentQty.value * Number(price)).toFixed(2)
-})
-
-const totalPriceBs = computed(() => {
-  if (!bcvRate.value) return '0,00'
-  const totalUsd = parseFloat(totalPrice.value)
-  const totalBs = totalUsd * bcvRate.value
-  return totalBs.toLocaleString('es-VE', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })
-})
+watch([currentQty, bcvRate, selectedProduct], ([qty, rate, product]) => {
+  if (!product || typeof product.ticketPrice === 'undefined') {
+    totalPrice.value = '0.00';
+    totalPriceBs.value = '0,00';
+    return;
+  }
+  const pricePerTicket = Number(product.ticketPrice);
+  if (isNaN(pricePerTicket)) {
+    totalPrice.value = '0.00';
+    totalPriceBs.value = '0,00';
+    return;
+  }
+  const totalUsd = qty * pricePerTicket;
+  totalPrice.value = totalUsd.toFixed(2);
+  if (rate > 0) {
+    const totalBsNum = totalUsd * rate;
+    totalPriceBs.value = totalBsNum.toLocaleString('es-VE', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  } else {
+    totalPriceBs.value = '0,00';
+  }
+}, {
+  immediate: true,
+  deep: true
+});
 
 function triggerAuth() {
-  emit('close')
+  close();
   window.dispatchEvent(new CustomEvent('open-auth'))
 }
 
@@ -342,9 +361,9 @@ const executeAutomaticSale = async (verificationData: any) => {
         }
       }
       if (assignedNumbers.length > 0) {
-        ticketStore.generateTicket(form, props.product, authStore.user?.id ?? null, assignedNumbers)
+        ticketStore.generateTicket(form, selectedProduct.value, authStore.user?.id ?? null, assignedNumbers)
       } else {
-        ticketStore.generateTicket(form, props.product, authStore.user?.id ?? null, ticketsToBuy)
+        ticketStore.generateTicket(form, selectedProduct.value, authStore.user?.id ?? null, ticketsToBuy)
       }
       ticketStore.formData.totalPrice = parseFloat(totalPrice.value);
       ticketStore.formData.totalPriceBs = parseFloat(totalPriceBs.value);
@@ -355,7 +374,6 @@ const executeAutomaticSale = async (verificationData: any) => {
       } else {
         initialTickets = ticketStore.tickets.filter(t => t.userId === null).length - quantity
       }
-      emit('close')
       emit('confirmed', {
         initialTickets: Math.max(0, initialTickets),
         purchasedTickets: assignedNumbers.length > 0 ? assignedNumbers.length : quantity
@@ -475,7 +493,7 @@ const buildSalePayload = (verificationData: any = null) => {
   } else {
     quantity = Math.max(1, Number(form.tickets ?? 1));
     try {
-      ticketsToBuy = ticketStore.getAvailableNumbers(props.product?.title ?? props.product, quantity);
+      ticketsToBuy = ticketStore.getAvailableNumbers(selectedProduct.value?.title ?? selectedProduct.value, quantity);
     } catch (e) {
       console.error('Error obteniendo números disponibles:', e);
       ticketsToBuy = Array.from({length: quantity}, (_, i) => i + 1);
@@ -486,7 +504,7 @@ const buildSalePayload = (verificationData: any = null) => {
     for (const n of ticketsToBuy) {
       details.push({ 
         number: String(n).padStart(4, '0'), 
-        amount: Number(props.product?.ticketPrice ?? 0), 
+        amount: Number(selectedProduct.value?.ticketPrice ?? 0), 
         prizes: '' 
       });
     }
@@ -496,7 +514,7 @@ const buildSalePayload = (verificationData: any = null) => {
   const referencia = verificationData?.referencia || form.referencia || `TX-${Date.now()}`;
   const idempotencyKey = `sale-${userId ?? 'guest'}-${Date.now()}`;
   const payload: any = {
-    raffle_id: props.product?.uuid ?? props.product?.title,
+    raffle_id: selectedProduct.value?.uuid ?? selectedProduct.value?.title,
     user_id: userId,
     details: details,
     payment: {
@@ -657,6 +675,7 @@ watch(() => form.comprobante, (newFile) => {
   }
 });
 
+
 async function loadPaymentMethods() {
   loadingMethods.value = true;
   try {
@@ -681,7 +700,7 @@ async function fetchBcvRate() {
   }
 }
 
-watch(() => props.open, async (open) => {
+watch(() => isParticipateModalOpen.value, async (open) => {
   if (open) {
     fetchBcvRate();
     loadPaymentMethods();
@@ -756,7 +775,7 @@ const handleConfirm = async () => {
     phone = form.telefono || ''
   }
   const payload: any = {
-    raffle_id: props.product?.uuid ?? props.product?.title,
+    raffle_id: selectedProduct.value?.uuid ?? selectedProduct.value?.title,
     user_id: userId,
     details: [],
     payment: {
@@ -778,13 +797,13 @@ const handleConfirm = async () => {
   };
   if (selectionMode.value === 'manual' && ticketsToBuy) {
     for (const n of ticketsToBuy) {
-      payload.details.push({ number: String(n).padStart(4, '0'), amount: Number(props.product?.ticketPrice ?? 0), prizes: '' });
+      payload.details.push({ number: String(n).padStart(4, '0'), amount: Number(selectedProduct.value?.ticketPrice ?? 0), prizes: '' });
     }
   } else {
     try {
-      const avail = ticketStore.getAvailableNumbers(props.product?.title ?? props.product, quantity);
+      const avail = ticketStore.getAvailableNumbers(selectedProduct.value?.title ?? selectedProduct.value, quantity);
       for (const n of avail) {
-        payload.details.push({ number: String(n).padStart(4, '0'), amount: Number(props.product?.ticketPrice ?? 0), prizes: '' });
+        payload.details.push({ number: String(n).padStart(4, '0'), amount: Number(selectedProduct.value?.ticketPrice ?? 0), prizes: '' });
       }
     } catch (e: any) {
       error.value = e?.message || 'No hay suficientes tickets disponibles.';
@@ -830,9 +849,9 @@ const handleConfirm = async () => {
         }
       }
       if (assignedNumbers.length > 0) {
-        ticketStore.generateTicket(form, props.product, userId, assignedNumbers);
+        ticketStore.generateTicket(form, selectedProduct.value, userId, assignedNumbers);
       } else {
-        ticketStore.generateTicket(form, props.product, userId, ticketsToBuy);
+        ticketStore.generateTicket(form, selectedProduct.value, userId, ticketsToBuy);
       }
       ticketStore.formData.totalPrice = parseFloat(totalPrice.value);
       ticketStore.formData.totalPriceBs = parseFloat(totalPriceBs.value);
@@ -938,7 +957,6 @@ const handleConfirm = async () => {
   border-color: #06b6d4;
   box-shadow: 0 0 0 3px rgba(6,182,212,0.08);
 }
-/* Estilos para el spinner de la grilla */
 .grid-spinner {
   width: 3rem;
   height: 3rem;
