@@ -2,6 +2,8 @@
   <div class="bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 min-h-screen pb-8 px-2 flex flex-col items-center animate-casino-fade">
     <Banner />
     <TopProductsCarousel />
+    
+    <!-- ProductGrid se encarga de todo. Catalogo solo lo muestra. -->
     <ProductGrid />
 
   </div>
@@ -12,13 +14,6 @@ import Banner from '../components/Banner.vue'
 import ProductGrid from '../components/ProductGrid.vue'
 import TopProductsCarousel from '../components/TopProductsCarousel.vue'
 
-
-
-
-// Importar el store aquí para inicializarlo (queda disponible en todos los hijos también si usan el mismo)
-// import { useTicketStore } from '@/stores/useTicketStore'
-
-// const ticketStore = useTicketStore()
 </script>
 
 <style scoped>

@@ -1,23 +1,27 @@
 <template>
   <div>
-<div
-  class="w-full max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 p-2"
->
-  <ProductCard
-    v-for="(item, i) in sortedItems"
-    :key="i"
-    :image="item.images?.[0] ?? item.image"
-    :title="item.title"
-    :description="item.description"
-    :progress="productProgress(item)"
-    :drawDate="item.drawDate"
-    @participar="openParticipateModal(item)"
-    @view-details="openDetails(item)"
-  />
-</div>
+    <!-- SPINNER GRANDE: Se muestra mientras se carga la LISTA de productos -->
+    <div v-if="isLoadingList" class="loading-container">
+      <div class="main-spinner"></div>
+      <p class="text-white mt-4">Cargando rifas...</p>
+    </div>
 
-    <!-- 🧭 Controles de paginación -->
-    <div class="flex justify-center items-center gap-4 mt-6">
+    <!-- CUADRÍCULA DE PRODUCTOS: Se muestra cuando la lista ha terminado de cargar -->
+    <div
+      v-else
+      class="w-full max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 p-2"
+    >
+      <ProductCard
+        v-for="product in products"
+        :key="product.uuid"
+        :product="product"
+        @participar="openParticipateModal(product)"
+        @view-details="openDetails(product)"
+      />
+    </div>
+
+    <!-- PAGINACIÓN: Solo se muestra si no está cargando la lista y hay más de una página -->
+    <div v-if="!isLoadingList && totalPages > 1" class="flex justify-center items-center gap-4 mt-6">
       <button
         class="px-4 py-2 rounded-lg bg-blue-800 text-white hover:bg-blue-700 transition disabled:opacity-40"
         :disabled="currentPage === 1"
@@ -25,11 +29,9 @@
       >
         ◀ Anterior
       </button>
-
       <span class="text-white font-semibold">
         Página {{ currentPage }} de {{ totalPages }}
       </span>
-
       <button
         class="px-4 py-2 rounded-lg bg-blue-800 text-white hover:bg-blue-700 transition disabled:opacity-40"
         :disabled="currentPage === totalPages"
@@ -39,138 +41,64 @@
       </button>
     </div>
 
-    <!-- modal de participar -->
-    <ParticiparModal
-      :open="showForm"
-      :product="selectedProduct"
-      @close="showForm = false"
-      @confirmed="handleConfirmed"
-    />
-
-    <!-- modal de jackpot animado -->
-    <JackpotAnimation
-      :show="showJackpot"
-      :initial-tickets="userInitialTickets"
-      :purchased-tickets="purchasedTicketsCount"
-      @close="handleJackpotClose"
-    />
-
-    <ProductModal
-      :isOpen="showProductModal"
-      :category="selectedCategory"
-      @close="showProductModal = false"
-      @participar="openParticipateModal"
-    />
-
-    <!-- <ConfirmacionModal
-      :open="showConfirm"
-      @close="showConfirm = false"
-      @showJackpot="handleShowJackpot"
-    /> -->
-<ConfirmacionModal
-  :open="showConfirm"
-  :selectedProduct="selectedProduct"
-  @close="showConfirm = false"
-  @showJackpot="handleShowJackpot"
-/>
-
-    <DetailsModal
-      :open="showDetails"
-      :product="selectedProduct"
-      @close="showDetails = false"
-      @buy="openParticipateModal"
-    />
+    <!-- MODALES (Estos no usan el gridStore, así que no se tocan) -->
+    <ParticiparModal :open="showForm" :product="selectedProduct" @close="showForm = false" @confirmed="handleConfirmed"/>
+    <JackpotAnimation :show="showJackpot" :initial-tickets="userInitialTickets" :purchased-tickets="purchasedTicketsCount" @close="handleJackpotClose"/>
+    <ProductModal :isOpen="showProductModal" :category="selectedCategory" @close="showProductModal = false" @participar="openParticipateModal"/>
+    <ConfirmacionModal :open="showConfirm" :selectedProduct="selectedProduct" @close="showConfirm = false" @showJackpot="handleShowJackpot"/>
+    <DetailsModal :open="showDetails" :product="selectedProduct" @close="showDetails = false" @buy="openParticipateModal"/>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue"
 import { storeToRefs } from "pinia"
-import { useTicketStore } from "@/stores/useTicketStore"
+
+// ✅ 1. IMPORTAMOS EL NUEVO STORE INDEPENDIENTE
+import { useGridStore } from '@/stores/useGridStore' 
+// Los stores viejos para los modales que los necesiten
+import { useTicketStore } from "@/stores/useTicketStore" 
 import { useAuthStore } from "@/stores/useAuthStore"
 
 import ProductCard from "./ProductCard.vue"
+// El resto de los imports de componentes no cambian
 import ParticiparModal from "./ParticipateModal.vue"
 import ConfirmacionModal from "./ConfirmationModal.vue"
 import DetailsModal from "./ProductDetailsModal.vue"
 import ProductModal from "./ProductModal.vue"
 import JackpotAnimation from "./JackpotAnimation.vue"
 
-const props = defineProps<{
-  products?: any[] | null
-}>()
+// ✅ 2. USAMOS EL NUEVO STORE PARA LA PARRILLA
+const gridStore = useGridStore()
+const { products, isLoadingList, pagination } = storeToRefs(gridStore)
 
-const ticketStore = useTicketStore()
+// Los stores viejos se mantienen para la lógica de los modales
+const ticketStore = useTicketStore() 
 const authStore = useAuthStore()
 
-// ✅ OBTENER METADATOS: Traemos 'pagination' del store (así se llama en tu store)
-const { topProducts, pagination } = storeToRefs(ticketStore)
-const { productProgress } = ticketStore
+const itemsPerPage = 16
 
-// 🔹 PAGINACIÓN (Ahora controlada por el backend)
-const itemsPerPage = 16 // Debe coincidir con el 'perPage' del store/backend
-
+// ✅ 3. onMounted AHORA LLAMA A LA ACCIÓN DEL NUEVO STORE
 onMounted(() => {
-  // ✅ Cargar la página 1 cuando el componente se monta
-  ticketStore.loadRaffles(1, itemsPerPage);
-});
-
-// ✅ Productos a mostrar (del prop o del store)
-const items = computed(() => {
-  if (props.products?.length) return props.products
-  // 'topProducts' ahora son solo los 16 productos de la página actual
-  return topProducts.value
+  gridStore.fetchProductList(1, itemsPerPage)
 })
 
-// 🔹 PRODUCTOS ORDENADOS (Esta lógica es correcta, solo ordenará la página actual)
-const sortedItems = computed(() => {
-  const activeProducts = []
-  const soldOutProducts = []
-  
-  for (const product of items.value) {
-    // Tu store ya no tiene 'productProgress' como getter, lo tienes en el componente
-    // Asegúrate de que 'product' tenga 'ticketsVendidos' y 'ticketsMax'
-    // Tu store SÍ los mapea (línea 363), así que esto está bien.
-    const progress = productProgress(product) 
-    const drawDate = product.drawDate ? new Date(product.drawDate).getTime() : 0
-    const now = Date.now()
-    
-    const isSoldOut = progress === 100
-    const isTimeUp = drawDate <= now
-    
-    if (isSoldOut || isTimeUp) {
-      soldOutProducts.push(product)
-    } else {
-      activeProducts.push(product)
-    }
-  }
-  
-  return [...activeProducts, ...soldOutProducts]
-})
-
-// 🔹 LÓGICA DE PAGINACIÓN (Ahora lee del store)
-
+// ✅ 4. Lógica de paginación ahora usa el nuevo store
 const currentPage = computed(() => pagination.value?.current_page || 1)
-
 const totalPages = computed(() => pagination.value?.last_page || 1)
-
 
 function nextPage() {
   if (currentPage.value < totalPages.value) {
-    // Llama al store para cargar los productos de la SIGUIENTE página
-    ticketStore.loadRaffles(currentPage.value + 1, itemsPerPage)
+    gridStore.fetchProductList(currentPage.value + 1, itemsPerPage)
   }
 }
-
-// ✅ MODIFICADO: 'prevPage' ahora llama al store
 function prevPage() {
   if (currentPage.value > 1) {
-    // Llama al store para cargar los productos de la página ANTERIOR
-    ticketStore.loadRaffles(currentPage.value - 1, itemsPerPage)
+    gridStore.fetchProductList(currentPage.value - 1, itemsPerPage)
   }
 }
 
-// 🔹 Modales y funciones previas (sin cambios)
+// El resto del script es para los modales y no cambia
 const showForm = ref(false)
 const showConfirm = ref(false)
 const showJackpot = ref(false)
@@ -181,9 +109,8 @@ const selectedProduct = ref<any | null>(null)
 const userInitialTickets = ref(0)
 const purchasedTicketsCount = ref(0)
 
-const handleConfirmed = (data?: { initialTickets: number; purchasedTickets: number }) => {
+const handleConfirmed = (data?: { initialTickets: number; purchasedTickets: number; }) => {
   showForm.value = false
-
   if (data) {
     userInitialTickets.value = data.initialTickets
     purchasedTicketsCount.value = data.purchasedTickets
@@ -191,46 +118,57 @@ const handleConfirmed = (data?: { initialTickets: number; purchasedTickets: numb
     userInitialTickets.value = getUserInitialTickets()
     purchasedTicketsCount.value = getPurchasedTicketsCount()
   }
-
   showConfirm.value = true
 }
-
 const getUserInitialTickets = () => {
   const userId = authStore.user?.id
-  if (userId) {
-    const currentCount = ticketStore.userTicketsCount(userId)
-    const justPurchased = ticketStore.lastAssignedTickets?.length || 0
-    return Math.max(0, currentCount - justPurchased)
-  }
-  const currentNullTickets = ticketStore.tickets.filter(t => t.userId === null).length
-  const justPurchased = ticketStore.lastAssignedTickets?.length || 0
-  return Math.max(0, currentNullTickets - justPurchased)
+  if (userId) return Math.max(0, ticketStore.userTicketsCount(userId) - (ticketStore.lastAssignedTickets?.length || 0))
+  return Math.max(0, ticketStore.tickets.filter((t: any) => t.userId === null).length - (ticketStore.lastAssignedTickets?.length || 0))
 }
-
 const getPurchasedTicketsCount = () => {
-  return ticketStore.lastAssignedTickets?.length ||
-         (ticketStore.ticketNumber ? 1 : 0) ||
-         Number(ticketStore.formData?.tickets) || 1
+  return ticketStore.lastAssignedTickets?.length || (ticketStore.ticketNumber ? 1 : 0) || Number(ticketStore.formData?.tickets) || 1
 }
-
 const handleShowJackpot = () => {
   showConfirm.value = false
   showJackpot.value = true
 }
-
 const handleJackpotClose = () => {
   showJackpot.value = false
   setTimeout(() => ticketStore.reset(), 500)
 }
-
 const openDetails = (product: any) => {
   selectedProduct.value = product
   showDetails.value = true
 }
-
 function openParticipateModal(product: any) {
   selectedProduct.value = product
   showDetails.value = false
   showForm.value = true
 }
 </script>
+
+<style scoped>
+/* CSS para el spinner grande */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.main-spinner {
+  width: 4rem;
+  height: 4rem;
+  border: 5px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #f3b243;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
