@@ -93,28 +93,6 @@ const selectedProduct = ref<any | null>(null)
 const userInitialTickets = ref(0)
 const purchasedTicketsCount = ref(0)
 
-const handleConfirmed = (data?: { initialTickets: number; purchasedTickets: number; }) => {
-  gridStore.closeParticipateModal();
-  if (data) {
-    userInitialTickets.value = data.initialTickets
-    purchasedTicketsCount.value = data.purchasedTickets
-  } else {
-    userInitialTickets.value = getUserInitialTickets()
-    purchasedTicketsCount.value = getPurchasedTicketsCount()
-  }
-  showConfirm.value = true
-}
-
-const getUserInitialTickets = () => {
-  const userId = authStore.user?.id
-  if (userId) return Math.max(0, ticketStore.userTicketsCount(userId) - (ticketStore.lastAssignedTickets?.length || 0))
-  return Math.max(0, ticketStore.tickets.filter((t: any) => t.userId === null).length - (ticketStore.lastAssignedTickets?.length || 0))
-}
-
-const getPurchasedTicketsCount = () => {
-  return ticketStore.lastAssignedTickets?.length || (ticketStore.ticketNumber ? 1 : 0) || Number(ticketStore.formData?.tickets) || 1
-}
-
 const handleShowJackpot = () => {
   showConfirm.value = false
   showJackpot.value = true
