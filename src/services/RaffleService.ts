@@ -247,7 +247,11 @@ export const RaffleService = {
       document_number: documentNumber,
       book_numbers: ticketNumbers,
     };
-    const { data } = await apiClient.post(`/raffles/${raffleId}/book-tickets`, payload);
+    const { data } = await apiClient.post(`/raffles/${raffleId}/book-tickets`, payload, 
+      { headers: { 'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+     }}
+     ) ;
     return data;
   },
 

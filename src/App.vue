@@ -3,6 +3,7 @@
     <!-- TU CÓDIGO ORIGINAL SE QUEDA IGUAL -->
     <Navbar />
     <RouterView />
+    <ToastContainer />
     <MobileNav />
     <FloatingSupport /> 
     <SiteFooter />
@@ -20,6 +21,7 @@
 
 <script setup lang="ts">
 import { useAuthStore } from './stores/useAuthStore';
+import ToastContainer from '@/components/ToastContainer.vue';
 import AuthenticationModal from './components/Authentication.vue'; // IMPORTANTE: Asegúrate de que esta ruta a tu modal es correcta
 import Navbar from './components/Navbar.vue'
 import MobileNav from './components/MobileNav.vue'

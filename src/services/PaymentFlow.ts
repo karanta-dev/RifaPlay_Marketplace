@@ -71,7 +71,16 @@ export const PaymentFlowService = {
    */
 async verifyPagoMovil(payload: { phone: string; monto: number; exchange_rate?: number }): Promise<any> {
   try {
-    const response = await apiClient.post('/R4pago-movil-verify', payload);
+    const response = await apiClient.post('/R4pago-movil-verify', payload, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Accept': 'application/json',
+      },
+    });
+    if (response.status !== 200) {
+      throw new Error('Error al verificar pago móvil');
+    };
     return response.data;
   } catch (error: any) {
     if (axios.isAxiosError(error) && error.response) {
