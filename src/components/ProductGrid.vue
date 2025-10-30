@@ -60,10 +60,7 @@ import JackpotAnimation from "./JackpotAnimation.vue"
 
 const gridStore = useGridStore()
 const { products, isLoadingList, pagination } = storeToRefs(gridStore)
-
 const ticketStore = useTicketStore() 
-const authStore = useAuthStore()
-
 const itemsPerPage = 16
 
 onMounted(() => {
