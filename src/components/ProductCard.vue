@@ -85,7 +85,14 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useGridStore } from '@/stores/useGridStore'
 
 const props = defineProps<{
-  product: any;
+  product: any,
+  image?: string,
+  title?: string,
+  description?: string,
+  progress?: number,
+  drawDate?: string,
+  onParticipar?: Function,
+  onViewDetails?: Function
 }>()
 
 const gridStore = useGridStore()
