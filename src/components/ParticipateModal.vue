@@ -65,6 +65,15 @@
                 <div class="text-sm text-white whitespace-nowrap">Disponibles: <strong class="text-yellow-400">{{ maxAvailable }}</strong></div>
               </div>
             </div>
+            <!-- CONTADOR DE TIEMPO  -->
+            <div v-if="selectionMode === 'manual' && bookingTimerStarted" 
+                 class="flex items-center gap-2 rounded-lg px-4 py-2 transition-all duration-300"
+                 :class="getTimerClasses()">
+              <div class="w-3 h-3 rounded-full animate-pulse" :class="getPulseClass()"></div>
+              <span class="font-mono text-lg font-bold">{{ formattedTime }}</span>
+              <span class="text-sm" :class="getTimerTextClass()">para completar</span>
+            </div>
+
             
             <TicketGrid v-if="selectionMode === 'manual' && selectedProduct" :raffleId="selectedProduct.uuid" @update:selected="handleSelectionUpdate" />
 
@@ -188,16 +197,19 @@ import { storeToRefs } from 'pinia';
 import { useTicketStore } from '@/stores/useTicketStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useGridStore } from '@/stores/useGridStore';
+import { RaffleService } from '@/services/RaffleService';
 import { PaymentFlowService, type Currency, type PaymentMethod, type Bank } from '@/services/PaymentFlow';
+import { useBookingTimer } from '@/composables/useBookingTimer';
+import { useToast } from '@/composables/useToast';
 import TicketGrid from './TicketGrid.vue';
 
-const emit = defineEmits(['confirmed']);
+const emit = defineEmits(['confirmed', 'time-expired']); 
 
+const { showToast } = useToast();
 const ticketStore = useTicketStore();
 const authStore = useAuthStore();
 const gridStore = useGridStore();
 const { selectedProduct, isParticipateModalOpen } = storeToRefs(gridStore);
-
 const verifyingPagoMovil = ref(false);
 const pagoMovilVerifyResult = ref<{ success: boolean; message: string; status?: string } | null>(null);
 const pagoMovilNeedsReverify = ref(false)
@@ -225,15 +237,135 @@ const submitting = ref(false)
 
 const totalPrice = ref('0.00');
 const totalPriceBs = ref('0,00');
+const { 
+  timeLeft,         
+  formattedTime, 
+  isExpired, 
+  startTimer, 
+  clearTimer, 
+  resetTimer 
+} = useBookingTimer(10);
 
+const bookingTimerStarted = ref(false);
+
+
+
+
+// 👇 WATCHER PARA EL TIMER EXPIRADO
+watch(isExpired, (expired) => {
+  if (expired) {
+    handleTimeExpired();
+  }
+});
+
+// 👇 FUNCIÓN CUANDO EL TIEMPO SE ACABA
+const handleTimeExpired = async () => {
+  showToast('⏰ El tiempo para completar la compra ha expirado. Los tickets han sido liberados.', 'error', 5000);
+  
+  // Liberar todos los tickets reservados
+  if (selectedManualTickets.value.length > 0 && selectedProduct.value) {
+    try {
+      const user = authStore.user;
+      if (user?.natural_profile?.document_number) {
+        await RaffleService.unbookTickets(
+          selectedProduct.value.uuid, 
+          "V", 
+          user.natural_profile.document_number, 
+          selectedManualTickets.value.map(t => t.toString()) // 👈 Convertir a string
+        );
+      }
+    } catch (error) {
+      console.error('Error liberando tickets expirados:', error);
+    }
+  }
+  
+  // Limpiar todo
+  selectedManualTickets.value = [];
+ bookingTimerStarted.value = false;
+  clearTimer();
+  
+  // Cerrar el modal después de un delay
+  setTimeout(() => {
+    gridStore.closeParticipateModal();
+    emit('time-expired');
+  }, 3000);
+};
+
+// 👇 MODIFICAR LA FUNCIÓN DE ACTUALIZACIÓN DE SELECCIÓN
 function handleSelectionUpdate(newSelection: number[]) {
   selectedManualTickets.value = newSelection;
+  
+  // Iniciar timer cuando se selecciona el primer ticket
+  if (newSelection.length === 1 && !bookingTimerStarted.value) {
+    bookingTimerStarted.value = true;
+    startTimer();
+  }
+  
+  // Detener timer si no hay tickets seleccionados
+  if (newSelection.length === 0 && bookingTimerStarted.value) {
+    bookingTimerStarted.value = false;
+    clearTimer();
+    resetTimer();
+  }
 }
 
+// 👇 MODIFICAR EL WATCHER DEL MODAL PARA RESETEAR TIMER
+watch(isParticipateModalOpen, (open) => {
+  if (!open) {
+    // Limpiar timer cuando se cierra el modal
+    bookingTimerStarted.value = false;
+    clearTimer();
+    resetTimer();
+    selectedManualTickets.value = [];
+  }
+});
+
+// 👇 MODIFICAR LA FUNCIÓN CLOSE PARA LIMPIAR TIMER
 const close = () => {
-  if (selectionMode.value === 'manual') selectedManualTickets.value = []
+  if (selectionMode.value === 'manual' && selectedManualTickets.value.length > 0) {
+    // Liberar tickets al cerrar manualmente
+    freeAllBookedTickets();
+  }
+  
+  bookingTimerStarted.value = false;
+  clearTimer();
+  resetTimer();
+  selectedManualTickets.value = [];
   gridStore.closeParticipateModal();
-}
+};
+
+// 👇 FUNCIÓN PARA LIBERAR TODOS LOS TICKETS RESERVADOS
+const freeAllBookedTickets = async () => {
+  if (selectedManualTickets.value.length > 0 && selectedProduct.value) {
+    try {
+      const user = authStore.user;
+      if (user?.natural_profile?.document_number) {
+        await RaffleService.unbookTickets(
+          selectedProduct.value.uuid, 
+          "V", 
+          user.natural_profile.document_number, 
+          selectedManualTickets.value.map(t => t.toString()) // 👈 Convertir a string
+        );
+      }
+    } catch (error) {
+      console.error('Error liberando tickets al cerrar:', error);
+    }
+  }
+};
+
+// 👇 MODIFICAR EL WATCHER DEL SELECTION MODE
+watch(selectionMode, (newMode) => {
+  if (newMode === 'auto') {
+    // Si cambia a automático, liberar tickets manuales
+    if (selectedManualTickets.value.length > 0) {
+      freeAllBookedTickets();
+      selectedManualTickets.value = [];
+    }
+    bookingTimerStarted.value = false;
+    clearTimer();
+    resetTimer();
+  }
+});
 
 const maxAvailable = computed(() => {
   const p = ticketStore.topProducts.find((t: any) => t.title === selectedProduct.value?.title)
@@ -246,6 +378,8 @@ const currentQty = computed(() => {
     ? selectedManualTickets.value.length
     : Number(form.tickets || 0);
 })
+
+
 
 watch([currentQty, bcvRate, selectedProduct], ([qty, rate, product]) => {
   if (!product || typeof product.ticketPrice === 'undefined') {
@@ -397,6 +531,34 @@ const executeAutomaticSale = async (verificationData: any) => {
     submitting.value = false;
   }
 }
+
+/***********************************************************************/
+/***** timer ***********/
+const getTimerClasses = () => {
+  if (timeLeft.value > 300) { 
+    return 'bg-green-900/80 border border-green-500/50';
+  } else if (timeLeft.value > 120) { 
+    return 'bg-yellow-900/80 border border-yellow-500/50';
+  } else if (timeLeft.value > 60) { 
+    return 'bg-orange-900/80 border border-orange-500/50';
+  } else { 
+    return 'bg-red-900/80 border border-red-500/50 animate-pulse';
+  }
+};
+
+const getPulseClass = () => {
+  if (timeLeft.value > 300) return 'bg-green-500';        // VERDE
+  if (timeLeft.value > 120) return 'bg-yellow-500';       // AMARILLO  
+  if (timeLeft.value > 60) return 'bg-orange-500';        // NARANJA
+  return 'bg-red-500';                                    // ROJO
+};
+const getTimerTextClass = () => {
+  if (timeLeft.value > 300) return 'text-green-200';      // VERDE
+  if (timeLeft.value > 120) return 'text-yellow-200';     // AMARILLO
+  if (timeLeft.value > 60) return 'text-orange-200';      // NARANJA
+  return 'text-red-200';                                  // ROJO
+};
+// timer
 
 async function handleVerifyPagoMovil() {
   pagoMovilVerifyResult.value = null;

@@ -258,20 +258,25 @@ export const RaffleService = {
   /**
    * Libera la reserva de uno o más tickets.
    */
-  async unbookTickets(raffleId: string, documentType: string, documentNumber: string, ticketNumbers: string[]): Promise<any> {
+ async unbookTickets(raffleId: string, docType: string, docNumber: string, ticketNumbers: string[]): Promise<any> {
     const payload = {
-      document_type: documentType,
-      document_number: documentNumber,
+      document_type: docType,
+      document_number: docNumber,
       book_numbers: ticketNumbers,
     };
 
-    const { data } = await apiClient.post(`/raffles/${raffleId}/unbook-tickets`, payload, 
-      { headers: { 'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-     }}
-     ) ;
+    const { data } = await apiClient.post(`/raffles/${raffleId}/unbook-tickets`, payload, {
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (data?.status === false) {
+      throw new Error(`Los siguientes tickets no pudieron ser liberados: ${data.data.join(', ')}`);
+    }
     return data;
-  },
+  }
 };
 
 
