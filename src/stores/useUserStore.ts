@@ -25,6 +25,37 @@ export const useUserStore = defineStore("user", {
         ],
       },
       {
+  id: "76e13f6b-5925-4d73-977b-a4fbdb6f8593",
+  name: "Efren Rojas",
+  avatar: null, // No tiene foto → generará inicial automáticamente
+  rating: 5, // Puedes modificarlo luego si tienes data
+  registeredDays: 1023, // ~ 3 años (simulado a tono con la descripción)
+  lastSeen: "hace 8 min",
+  comments: [
+    {
+      user: "Andrea",
+      rating: 5,
+      text: "Serio y responsable, entrega inmediata. Recomendado 🔥",
+      date: "14-10-2025",
+      avatar: "https://randomuser.me/api/portraits/women/65.jpg"
+    },
+    {
+      user: "Miguel",
+      rating: 5,
+      text: "Verificado y confiable, excelente atención.",
+      date: "09-10-2025",
+      avatar: null
+    },
+    {
+      user: "Sofía",
+      rating: 4,
+      text: "Todo bien pero tardó un poco en responder.",
+      date: "03-10-2025",
+      avatar: "https://randomuser.me/api/portraits/women/12.jpg"
+    }
+  ]
+},
+      {
         id: "3",
         name: "Tech Store",
         avatar: null,

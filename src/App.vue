@@ -22,7 +22,7 @@
 <script setup lang="ts">
 import { useAuthStore } from './stores/useAuthStore';
 import ToastContainer from '@/components/ToastContainer.vue';
-import AuthenticationModal from './components/Authentication.vue'; // IMPORTANTE: Asegúrate de que esta ruta a tu modal es correcta
+import AuthenticationModal from './components/Authentication.vue'; 
 import Navbar from './components/Navbar.vue'
 import MobileNav from './components/MobileNav.vue'
 import FloatingSupport from './components/FloatingSupport.vue' 
