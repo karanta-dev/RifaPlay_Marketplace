@@ -141,6 +141,7 @@
         <div v-for="(rifa, i) in sortedRifas" :key="i">
           <ProductCard
             v-if="isActive(rifa.drawDate)"
+            :product="rifa"
             :image="rifa.images?.[0]"
             :title="rifa.title"
             :description="rifa.description"
