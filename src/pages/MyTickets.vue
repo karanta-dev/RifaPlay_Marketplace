@@ -353,7 +353,7 @@ const stats = computed(() => {
 const availableCategories = computed(() => {
   const categories = new Set<string>()
   userTickets.value.forEach(ticket => {
-    ticket.product.categories?.forEach(cat => categories.add(cat))
+    ticket.product.categories?.forEach((cat: string)   => categories.add(cat))
   })
   return Array.from(categories).sort()
 })
