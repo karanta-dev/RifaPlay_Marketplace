@@ -110,6 +110,7 @@ export const RaffleService = {
         status: r.status,
         images: r.images ?? [],
         categories: r.categories ?? [],
+        prizes: r.prizes ?? [], // ✅ AÑADIDO AQUÍ
         created_by: r.created_by ?? {},
         seller: r.seller ? {
           uuid: r.seller.uuid,

@@ -750,7 +750,7 @@ const buildSalePayload = (verificationData: any = null) => {
 
   const payload: any = {
     raffle_id: props.product?.uuid ?? props.product?.title,
-    user_id: userId,
+    client_id: userId,
     details: details,
     payment: {
       payment_method_id: paymentMethodId,
@@ -761,7 +761,6 @@ const buildSalePayload = (verificationData: any = null) => {
       transaction_id: referencia,
       entity: form.metodoPago === 'pago-movil' ? (verificationData?.banco_emisor || form.pagoMovilBanco) : undefined,
       idempotency_key: idempotencyKey,
-      // ✅ NUEVO: Incluir datos específicos de Pago Móvil verificados
       pago_movil_data: verificationData ? {
         uuid: verificationData.uuid,
         banco_emisor: verificationData.banco_emisor,
@@ -884,7 +883,7 @@ async function handleSubmitReverify() {
 
   // Este es el objeto que se enviará al backend
   const payload = {
-    user_id: userId, // ✅ ID DE USUARIO AÑADIDO AL INICIO
+    client_id: userId, // ✅ ID DE USUARIO AÑADIDO AL INICIO
     fecha,
     referencia,
     banco,
@@ -1254,7 +1253,7 @@ const handleConfirm = async () => {
 
   const payload: any = {
     raffle_id: props.product?.uuid ?? props.product?.title,
-    user_id: userId,
+    client_id: userId,
     details: [],
     payment: {
       payment_method_id: form.metodoPago,
