@@ -140,6 +140,7 @@
       <div v-if="currentTab === 'Rifas'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div v-for="(rifa, i) in sortedRifas" :key="i">
           <ProductCard
+            :product="rifa"
             v-if="isActive(rifa.drawDate)"
             :image="rifa.images?.[0]"
             :title="rifa.title"

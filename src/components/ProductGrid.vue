@@ -50,8 +50,6 @@ import { storeToRefs } from "pinia"
 
 import { useGridStore } from '@/stores/useGridStore' 
 import { useTicketStore } from "@/stores/useTicketStore" 
-import { useAuthStore } from "@/stores/useAuthStore"
-
 import ProductCard from "./ProductCard.vue"
 import ConfirmacionModal from "./ConfirmationModal.vue"
 import DetailsModal from "./ProductDetailsModal.vue"
