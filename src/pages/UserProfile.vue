@@ -14,39 +14,43 @@
         </div>
         
         <!-- Perfil del usuario -->
-        <div class="flex items-center gap-3">
-
-          <div class="flex items-center gap-3">
-            <!-- Avatar del usuario -->
-            <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-[#00d8a7]">
-              <img
-                v-if="user?.avatar"
-                :src="user?.avatar"
-                alt="avatar"
-                class="w-full h-full object-cover"
-              />
-              <div
-                v-else
-                class="w-full h-full bg-gradient-to-r from-[#00d8a7] to-[#00c797] flex items-center justify-center text-white font-bold"
-              >
-                {{ user?.name?.charAt(0).toUpperCase() ?? 'U' }}
-              </div>
-            </div>
-            
-            <!-- Nombre del usuario -->
-            <div class="text-white font-bold">
-              {{ user?.name ?? 'Usuario' }}
-            </div>
-          </div>
-          
-          <button class="p-2 rounded-lg bg-[#2a3b4a] hover:bg-[#34495e] text-gray-300 transition-all">
-            <i class="fas fa-share-alt"></i>
-          </button>
-        </div>
+<div class="flex items-center gap-3">
+  <div class="flex items-center gap-3">
+    <!-- Avatar del usuario -->
+    <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-[#00d8a7]">
+      <img
+        v-if="userAvatar" 
+        :src="userAvatar" 
+        alt="avatar"
+        class="w-full h-full object-cover"
+      />
+      <div
+        v-else
+        class="w-full h-full bg-gradient-to-r from-[#00d8a7] to-[#00c797] flex items-center justify-center text-white font-bold"
+      >
+        {{ fullName.charAt(0).toUpperCase() }}
+      </div>
+    </div>
+    
+    <!-- Información del usuario -->
+    <div>
+      <div class="text-white font-bold">
+        {{ fullName }}
+      </div>
+      <div class="text-gray-400 text-xs" v-if="userProfile">
+        Miembro desde {{ formatDate(userProfile.member_since) }}
+      </div>
+    </div>
+  </div>
+  
+  <button class="p-2 rounded-lg bg-[#2a3b4a] hover:bg-[#34495e] text-gray-300 transition-all">
+    <i class="fas fa-share-alt"></i>
+  </button>
+</div>
       </div>
     </div>
 
-        <!-- Navegación Mejorada -->
+    <!-- Navegación Mejorada -->
     <div class="bg-[#1a2a37] border-b border-[#2a3b4a]">
       <div class="max-w-4xl mx-auto">
         <div class="flex justify-center space-x-1 py-2">
@@ -116,8 +120,6 @@
         <i class="fas fa-chevron-right"></i>
       </button>
     </div>
-
-
 
     <!-- Contenido Principal -->
     <div class="max-w-6xl mx-auto p-6">
@@ -200,40 +202,34 @@
         </div>
       </div>
 
-      <!-- Sección Rifas -->
+     <!-- Sección Rifas -->
       <div v-if="currentTab === 'Rifas'" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div 
-            v-for="rifa in todasLasRifas" 
-            :key="rifa.id"
-            class="bg-[#1a2a37] rounded-xl border border-[#2a3b4a] p-6 hover:border-[#00d8a7] transition-colors"
-          >
-            <div class="h-40 bg-gradient-to-r from-[#2a3b4a] to-[#1a2a37] rounded-lg mb-4 flex items-center justify-center">
-              <i :class="rifa.icon" class="text-5xl text-[#00d8a7]"></i>
-            </div>
-            <h3 class="font-bold text-white text-lg mb-2">{{ rifa.title }}</h3>
-            <p class="text-gray-400 text-sm mb-4">{{ rifa.description }}</p>
-            
-            <div class="mb-4">
-              <div class="flex justify-between text-sm mb-1">
-                <span class="text-gray-400">Progreso</span>
-                <span class="text-white font-bold">{{ rifa.progress }}%</span>
-              </div>
-              <div class="w-full bg-[#2a3b4a] rounded-full h-2">
-                <div 
-                  class="bg-[#00d8a7] h-2 rounded-full" 
-                  :style="{ width: rifa.progress + '%' }"
-                ></div>
-              </div>
-            </div>
-            
-            <div class="flex justify-between items-center">
-              <span class="text-gray-400 text-sm">Sorteo: {{ rifa.date }}</span>
-              <button class="bg-[#00d8a7] text-[#0f1923] px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#00c797] transition-colors">
-                PARTICIPAR
-              </button>
-            </div>
-          </div>
+        <!-- Loading State -->
+        <div v-if="loading" class="loading-container">
+          <div class="main-spinner"></div>
+          <p class="text-white mt-4">Cargando rifas...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="text-center py-8">
+          <i class="fas fa-exclamation-triangle text-3xl text-yellow-500 mb-4"></i>
+          <p class="text-gray-400">{{ error }}</p>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else-if="userRafflesAsProducts.length === 0" class="text-center py-8">
+          <i class="fas fa-ticket-alt text-3xl text-gray-500 mb-4"></i>
+          <p class="text-gray-400">Este usuario no tiene rifas activas</p>
+        </div>
+
+        <!-- Rifas Grid -->
+        <div v-else class="w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
+          <ProductCard
+            v-for="product in userRafflesAsProducts"
+            :key="product.uuid"
+            :product="product"
+            @view-details="openDetails(product)"
+          />
         </div>
       </div>
 
@@ -282,6 +278,32 @@
         <!-- <p>© 2024 TWIN. Todos los derechos reservados.</p> -->
       </div>
     </div>
+
+    <!-- Modales -->
+    <JackpotAnimation 
+      :show="showJackpot" 
+      :initial-tickets="userInitialTickets" 
+      :purchased-tickets="purchasedTicketsCount" 
+      @close="handleJackpotClose"
+    />
+    <ProductModal 
+      :isOpen="showProductModal" 
+      :category="selectedCategory" 
+      @close="showProductModal = false" 
+      @participar="openParticipateModalThroughStore"
+    />
+    <ConfirmacionModal 
+      :open="showConfirm" 
+      :selectedProduct="selectedProduct" 
+      @close="showConfirm = false" 
+      @showJackpot="handleShowJackpot"
+    />
+    <DetailsModal 
+      :open="showDetails" 
+      :product="selectedProduct" 
+      @close="showDetails = false" 
+      @buy="openParticipateModalThroughStore"
+    />
   </div>
 </template>
 
@@ -289,25 +311,38 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import { useUserStore } from "@/stores/useUserStore";
+import { useTicketStore } from "@/stores/useTicketStore";
+import { UserService, type UserProfile, type Raffle } from "@/services/RaffleService";
+
+// Components
+import ProductCard from "@/components/ProductCard.vue";
+import ConfirmacionModal from "@/components/ConfirmationModal.vue";
+import DetailsModal from "@/components/ProductDetailsModal.vue";
+import ProductModal from "@/components/ProductModal.vue";
+import JackpotAnimation from "@/components/JackpotAnimation.vue";
 
 const userStore = useUserStore();
+const ticketStore = useTicketStore();
 const route = useRoute();
-
-// Datos del usuario con valores por defecto
-const user = computed(() => {
-  const userData = userStore.getUserById(route.params.id as string);
-  return userData || {
-    id: "1",
-    name: "Usuario",
-    avatar: "",
-    lastSeen: "hace 5 min",
-    rating: 4.8
-  };
-});
 
 // Tabs de navegación
 const tabs = ["Inicio", "Rifas", "Comentarios"];
 const currentTab = ref("Inicio");
+
+// Perfil del usuario cargado desde el endpoint
+const userProfile = ref<UserProfile | null>(null);
+const loading = ref(true);
+const error = ref<string | null>(null);
+
+// Modal states
+const showConfirm = ref(false);
+const showJackpot = ref(false);
+const showProductModal = ref(false);
+const selectedCategory = ref<string | null>(null);
+const showDetails = ref(false);
+const selectedProduct = ref<any | null>(null);
+const userInitialTickets = ref(0);
+const purchasedTicketsCount = ref(0);
 
 // Carrusel de banners
 const currentBannerIndex = ref(0);
@@ -355,6 +390,62 @@ const prevBanner = () => {
 // Configurar el cambio automático cada 3 segundos
 let bannerInterval: number;
 
+// Computed para el nombre completo (name + last_name)
+const fullName = computed(() => {
+  if (userProfile.value) {
+    const firstName = userProfile.value.name || '';
+    const lastName = userProfile.value.profile.data.last_name || '';
+    return `${firstName} ${lastName}`.trim();
+  }
+  
+  // Fallback al store si no hay perfil cargado
+  const userData = userStore.getUserById(route.params.id as string);
+  return userData?.name || 'Usuario';
+});
+
+// Transformar las rifas del usuario al formato de Product que espera ProductCard
+const userRafflesAsProducts = computed(() => {
+  return userRaffles.value.map(raffle => ({
+    uuid: raffle.uuid,
+    title: raffle.name,
+    description: raffle.description,
+    ticketPrice: Number(raffle.ticket_price) || 0, // ✅ Convertir a número
+    ticketsVendidos: raffle.tickets_sold || 0,
+    ticketsMax: (raffle.end_range - raffle.initial_range + 1) || 100,
+    images: raffle.images?.map(img => img.url) || [],
+    rifero: fullName.value,
+    category: raffle.categories?.[0]?.name || "General",
+    progress: calculateProgress(raffle),
+    drawDate: raffle.raffle_date,
+    isProgressLoading: false,
+    initial_range: raffle.initial_range,
+    end_range: raffle.end_range,
+    raffle_date: raffle.raffle_date,
+    status: raffle.status
+  }));
+});
+// Modal handlers
+const handleShowJackpot = () => {
+  showConfirm.value = false;
+  showJackpot.value = true;
+};
+
+const handleJackpotClose = () => {
+  showJackpot.value = false;
+  setTimeout(() => ticketStore.reset(), 500);
+};
+
+const openDetails = (product: any) => {
+  selectedProduct.value = product;
+  showDetails.value = true;
+};
+
+const openParticipateModalThroughStore = (product: any) => {
+  selectedProduct.value = product;
+  showDetails.value = false;
+  showConfirm.value = true;
+};
+
 onMounted(() => {
   bannerInterval = setInterval(nextBanner, 3000);
 });
@@ -364,7 +455,18 @@ onUnmounted(() => {
     clearInterval(bannerInterval);
   }
 });
-
+// Cargar perfil del usuario
+onMounted(async () => {
+  const userId = route.params.id as string;
+  try {
+    userProfile.value = await UserService.getPublicProfile(userId);
+    
+  } catch (error) {
+    console.error("Error al cargar el perfil del usuario:", error);
+  } finally {
+    loading.value = false;
+  }
+});
 // Datos de promociones
 const promociones = ref([
   {
@@ -390,7 +492,7 @@ const promociones = ref([
   }
 ]);
 
-// Rifas populares
+// Rifas populares (simuladas)
 const rifasPopulares = ref([
   {
     id: 1,
@@ -442,58 +544,6 @@ const juegos = ref([
   { id: 12, name: "VIP", icon: "fas fa-crown" }
 ]);
 
-// Todas las rifas
-const todasLasRifas = ref([
-  {
-    id: 1,
-    title: "Ferrari F8 Spider",
-    description: "Participa por este increíble superdeportivo italiano",
-    progress: 65,
-    date: "15/12/2023",
-    icon: "fas fa-car"
-  },
-  {
-    id: 2,
-    title: "iPhone 15 Pro Max",
-    description: "El último smartphone de Apple con todas las funciones",
-    progress: 82,
-    date: "20/12/2023",
-    icon: "fas fa-mobile-alt"
-  },
-  {
-    id: 3,
-    title: "MacBook Pro M2",
-    description: "La mejor laptop para trabajo y creatividad",
-    progress: 45,
-    date: "10/01/2024",
-    icon: "fas fa-laptop"
-  },
-  {
-    id: 4,
-    title: "Viaje a Cancún",
-    description: "7 días en hotel 5 estrellas todo incluido",
-    progress: 30,
-    date: "25/12/2023",
-    icon: "fas fa-umbrella-beach"
-  },
-  {
-    id: 5,
-    title: "PlayStation 5",
-    description: "Consola next-gen con 5 juegos incluidos",
-    progress: 78,
-    date: "05/01/2024",
-    icon: "fas fa-gamepad"
-  },
-  {
-    id: 6,
-    title: "Smart TV 65\"",
-    description: "4K OLED con tecnología QLED",
-    progress: 55,
-    date: "18/12/2023",
-    icon: "fas fa-tv"
-  }
-]);
-
 // Comentarios
 const comentarios = ref([
   {
@@ -525,6 +575,44 @@ const comentarios = ref([
     text: "Increíble! Gané el Ferrari F8 Spider! No podía creerlo cuando me llamaron. Servicio impecable."
   }
 ]);
+
+// Cargar perfil del usuario
+onMounted(async () => {
+  const userId = route.params.id as string;
+  try {
+    userProfile.value = await UserService.getPublicProfile(userId);
+  } catch (error) {
+    console.error("Error al cargar el perfil del usuario:", error);
+  } finally {
+    loading.value = false;
+  }
+});
+
+// Computed para las rifas del usuario
+const userRaffles = computed(() => {
+  return userProfile.value?.raffles || [];
+});
+
+
+// Computed para el avatar (asegura que sea string o undefined, nunca null)
+const userAvatar = computed(() => {
+  const userData = userStore.getUserById(route.params.id as string);
+  return userData?.avatar || undefined; // Convierte null a undefined
+});
+
+
+// Función para calcular el progreso de una rifa
+const calculateProgress = (raffle: Raffle) => {
+  const totalTickets = raffle.end_range - raffle.initial_range + 1;
+  const soldTickets = raffle.tickets_sold;
+  return Math.round((soldTickets / totalTickets) * 100);
+};
+
+// Función para formatear la fecha
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
 </script>
 
 <style scoped>
