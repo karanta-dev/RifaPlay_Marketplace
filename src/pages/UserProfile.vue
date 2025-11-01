@@ -14,39 +14,39 @@
         </div>
         
         <!-- Perfil del usuario -->
-<div class="flex items-center gap-3">
-  <div class="flex items-center gap-3">
-    <!-- Avatar del usuario -->
-    <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-[#00d8a7]">
-      <img
-        v-if="userAvatar" 
-        :src="userAvatar" 
-        alt="avatar"
-        class="w-full h-full object-cover"
-      />
-      <div
-        v-else
-        class="w-full h-full bg-gradient-to-r from-[#00d8a7] to-[#00c797] flex items-center justify-center text-white font-bold"
-      >
-        {{ fullName.charAt(0).toUpperCase() }}
-      </div>
-    </div>
-    
-    <!-- Información del usuario -->
-    <div>
-      <div class="text-white font-bold">
-        {{ fullName }}
-      </div>
-      <div class="text-gray-400 text-xs" v-if="userProfile">
-        Miembro desde {{ formatDate(userProfile.member_since) }}
-      </div>
-    </div>
-  </div>
-  
-  <button class="p-2 rounded-lg bg-[#2a3b4a] hover:bg-[#34495e] text-gray-300 transition-all">
-    <i class="fas fa-share-alt"></i>
-  </button>
-</div>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3">
+            <!-- Avatar del usuario -->
+            <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-[#00d8a7]">
+              <img
+                v-if="userAvatar" 
+                :src="userAvatar" 
+                alt="avatar"
+                class="w-full h-full object-cover"
+              />
+              <div
+                v-else
+                class="w-full h-full bg-gradient-to-r from-[#00d8a7] to-[#00c797] flex items-center justify-center text-white font-bold"
+              >
+                {{ fullName.charAt(0).toUpperCase() }}
+              </div>
+            </div>
+            
+            <!-- Información del usuario -->
+            <div>
+              <div class="text-white font-bold">
+                {{ fullName }}
+              </div>
+              <div class="text-gray-400 text-xs" v-if="userProfile">
+                Miembro desde {{ formatDate(userProfile.member_since) }}
+              </div>
+            </div>
+          </div>
+          
+          <button class="p-2 rounded-lg bg-[#2a3b4a] hover:bg-[#34495e] text-gray-300 transition-all">
+            <i class="fas fa-share-alt"></i>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -126,7 +126,7 @@
       <!-- Sección Inicio -->
       <div v-if="currentTab === 'Inicio'" class="space-y-8">
         <!-- Promociones Destacadas -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div 
             v-for="promo in promociones" 
             :key="promo.id"
@@ -140,9 +140,9 @@
               <p class="text-gray-400 text-sm mb-4">{{ promo.description }}</p>
               <div class="flex justify-between items-center">
                 <span class="text-[#00d8a7] text-sm font-bold">{{ promo.bonus }}</span>
-                <button class="bg-[#00d8a7] text-[#0f1923] px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#00c797] transition-colors">
+                <!-- <button class="bg-[#00d8a7] text-[#0f1923] px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#00c797] transition-colors">
                   PARTICIPAR
-                </button>
+                </button> -->
               </div>
             </div>
           </div>
@@ -150,39 +150,27 @@
 
         <!-- Rifas Populares -->
         <div>
-          <h2 class="text-2xl font-bold text-white mb-6">Rifas Populares</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div 
-              v-for="rifa in rifasPopulares" 
-              :key="rifa.id"
-              class="bg-[#1a2a37] rounded-xl border border-[#2a3b4a] p-4 hover:border-[#00d8a7] transition-colors"
-            >
-              <div class="h-32 bg-gradient-to-r from-[#2a3b4a] to-[#1a2a37] rounded-lg mb-4 flex items-center justify-center">
-                <i :class="rifa.icon" class="text-3xl text-[#00d8a7]"></i>
-              </div>
-              <h4 class="font-bold text-white text-sm mb-2">{{ rifa.title }}</h4>
-              <p class="text-gray-400 text-xs mb-3">{{ rifa.prize }}</p>
-              
-              <div class="mb-3">
-                <div class="flex justify-between text-xs mb-1">
-                  <span class="text-gray-400">Progreso</span>
-                  <span class="text-white font-bold">{{ rifa.progress }}%</span>
-                </div>
-                <div class="w-full bg-[#2a3b4a] rounded-full h-2">
-                  <div 
-                    class="bg-[#00d8a7] h-2 rounded-full" 
-                    :style="{ width: rifa.progress + '%' }"
-                  ></div>
-                </div>
-              </div>
-              
-              <div class="flex justify-between items-center">
-                <span class="text-gray-400 text-xs">{{ rifa.date }}</span>
-                <button class="bg-[#00d8a7] text-[#0f1923] px-3 py-1 rounded text-xs font-bold hover:bg-[#00c797] transition-colors">
-                  JUGAR
-                </button>
-              </div>
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-white">Rifas Populares</h2>
+            <div v-if="loadingPopularRaffles" class="flex items-center gap-2">
+              <div class="w-4 h-4 border-2 border-[#00d8a7] border-t-transparent rounded-full animate-spin"></div>
+              <span class="text-gray-400 text-sm">Cargando...</span>
             </div>
+          </div>
+
+          <div v-if="!loadingPopularRaffles && popularRaffles.length === 0" class="text-center py-8">
+            <i class="fas fa-ticket-alt text-3xl text-gray-500 mb-4"></i>
+            <p class="text-gray-400">No hay rifas populares disponibles</p>
+          </div>
+
+          <!-- Usando ProductCard para las rifas populares -->
+          <div v-else class="w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
+            <ProductCard
+              v-for="product in popularRaffles"
+              :key="product.uuid"
+              :product="product"
+              @view-details="openDetails(product)"
+            />
           </div>
         </div>
 
@@ -202,7 +190,7 @@
         </div>
       </div>
 
-     <!-- Sección Rifas -->
+      <!-- Sección Rifas -->
       <div v-if="currentTab === 'Rifas'" class="space-y-6">
         <!-- Loading State -->
         <div v-if="loading" class="loading-container">
@@ -312,7 +300,8 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import { useUserStore } from "@/stores/useUserStore";
 import { useTicketStore } from "@/stores/useTicketStore";
-import { UserService, type UserProfile, type Raffle } from "@/services/RaffleService";
+import { useGridStore } from '@/stores/useGridStore'; 
+import { UserService, type UserProfile, type Raffle, RaffleService } from "@/services/RaffleService";
 
 // Components
 import ProductCard from "@/components/ProductCard.vue";
@@ -323,6 +312,7 @@ import JackpotAnimation from "@/components/JackpotAnimation.vue";
 
 const userStore = useUserStore();
 const ticketStore = useTicketStore();
+const gridStore = useGridStore();
 const route = useRoute();
 
 // Tabs de navegación
@@ -333,6 +323,10 @@ const currentTab = ref("Inicio");
 const userProfile = ref<UserProfile | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
+
+// Rifas populares
+const popularRaffles = ref<any[]>([]);
+const loadingPopularRaffles = ref(false);
 
 // Modal states
 const showConfirm = ref(false);
@@ -377,6 +371,66 @@ const banners = ref([
   }
 ]);
 
+// Función para cargar rifas populares
+const loadPopularRaffles = async () => {
+  loadingPopularRaffles.value = true;
+  try {
+    // Obtener todas las rifas
+    const response = await RaffleService.getAll(1, 50);
+    
+    if (response && Array.isArray(response.data)) {
+      // Filtrar solo rifas activas (no sorteadas)
+      const now = new Date();
+      const activeRaffles = response.data.filter(raffle => {
+        if (!raffle || !raffle.uuid) return false;
+        
+        // Verificar si la rifa ya fue sorteada (fecha de sorteo en el pasado)
+        if (raffle.raffle_date) {
+          const raffleDate = new Date(raffle.raffle_date);
+          if (raffleDate < now) return false; // Excluir rifas sorteadas
+        }
+        
+        // Verificar estado de la rifa
+        if (raffle.status && raffle.status.toLowerCase() === 'completed') {
+          return false; // Excluir rifas completadas
+        }
+        
+        return true;
+      });
+
+      // Ordenar por tickets vendidos (de mayor a menor) y tomar las primeras 4
+      const sortedRaffles = activeRaffles
+        .sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0))
+        .slice(0, 4);
+
+      // Transformar al formato necesario para ProductCard
+      popularRaffles.value = sortedRaffles.map(raffle => ({
+        uuid: raffle.uuid,
+        title: raffle.name,
+        description: raffle.description,
+        ticketPrice: Number(raffle.ticket_price) || 0,
+        ticketsVendidos: raffle.tickets_sold || 0,
+        ticketsMax: (raffle.end_range - raffle.initial_range + 1) || 100,
+        images: raffle.images?.map(img => img.url) || [],
+        rifero: raffle.seller ? `${raffle.seller.name} ${raffle.seller.last_name}`.trim() : "Anónimo",
+        category: raffle.categories?.[0]?.name || "General",
+        progress: calculateProgress(raffle),
+        drawDate: raffle.raffle_date,
+        isProgressLoading: false,
+        initial_range: raffle.initial_range,
+        end_range: raffle.end_range,
+        raffle_date: raffle.raffle_date,
+        status: raffle.status
+      }));
+    }
+  } catch (error) {
+    console.error("Error al cargar rifas populares:", error);
+    popularRaffles.value = [];
+  } finally {
+    loadingPopularRaffles.value = false;
+  }
+};
+
 // Función para cambiar al siguiente banner
 const nextBanner = () => {
   currentBannerIndex.value = (currentBannerIndex.value + 1) % banners.value.length;
@@ -409,7 +463,7 @@ const userRafflesAsProducts = computed(() => {
     uuid: raffle.uuid,
     title: raffle.name,
     description: raffle.description,
-    ticketPrice: Number(raffle.ticket_price) || 0, // ✅ Convertir a número
+    ticketPrice: Number(raffle.ticket_price) || 0,
     ticketsVendidos: raffle.tickets_sold || 0,
     ticketsMax: (raffle.end_range - raffle.initial_range + 1) || 100,
     images: raffle.images?.map(img => img.url) || [],
@@ -424,6 +478,7 @@ const userRafflesAsProducts = computed(() => {
     status: raffle.status
   }));
 });
+
 // Modal handlers
 const handleShowJackpot = () => {
   showConfirm.value = false;
@@ -443,11 +498,13 @@ const openDetails = (product: any) => {
 const openParticipateModalThroughStore = (product: any) => {
   selectedProduct.value = product;
   showDetails.value = false;
-  showConfirm.value = true;
+  gridStore.openParticipateModal(product);
 };
 
 onMounted(() => {
   bannerInterval = setInterval(nextBanner, 3000);
+  // Cargar rifas populares cuando se monte el componente
+  loadPopularRaffles();
 });
 
 onUnmounted(() => {
@@ -455,18 +512,19 @@ onUnmounted(() => {
     clearInterval(bannerInterval);
   }
 });
+
 // Cargar perfil del usuario
 onMounted(async () => {
   const userId = route.params.id as string;
   try {
     userProfile.value = await UserService.getPublicProfile(userId);
-    
   } catch (error) {
     console.error("Error al cargar el perfil del usuario:", error);
   } finally {
     loading.value = false;
   }
 });
+
 // Datos de promociones
 const promociones = ref([
   {
@@ -483,65 +541,30 @@ const promociones = ref([
     bonus: "FREE MONEY",
     icon: "fas fa-money-bill-wave"
   },
-  {
-    id: 3,
-    title: "Cashback Semanal",
-    description: "Hasta 15% de cashback todas las semanas",
-    bonus: "15% CASHBACK",
-    icon: "fas fa-chart-line"
-  }
-]);
 
-// Rifas populares (simuladas)
-const rifasPopulares = ref([
-  {
-    id: 1,
-    title: "Ferrari F8",
-    prize: "Superdeportivo Italiano",
-    progress: 65,
-    date: "15/12/2023",
-    icon: "fas fa-car"
-  },
-  {
-    id: 2,
-    title: "iPhone 15 Pro",
-    prize: "512GB Negro Espacial",
-    progress: 82,
-    date: "20/12/2023",
-    icon: "fas fa-mobile-alt"
-  },
-  {
-    id: 3,
-    title: "MacBook Pro",
-    prize: "M2 Max 1TB SSD",
-    progress: 45,
-    date: "10/01/2024",
-    icon: "fas fa-laptop"
-  },
-  {
-    id: 4,
-    title: "PlayStation 5",
-    prize: "Edición Digital + Juegos",
-    progress: 78,
-    date: "05/01/2024",
-    icon: "fas fa-gamepad"
-  }
 ]);
 
 // Todos los juegos
 const juegos = ref([
-  { id: 1, name: "Slots", icon: "fas fa-dice" },
-  { id: 2, name: "Blackjack", icon: "fas fa-club" },
-  { id: 3, name: "Ruleta", icon: "fas fa-circle" },
-  { id: 4, name: "Póker", icon: "fas fa-spade" },
-  { id: 5, name: "Baccarat", icon: "fas fa-heart" },
-  { id: 6, name: "Dados", icon: "fas fa-dice-six" },
+  // { id: 1, name: "Slots", icon: "fas fa-dice" },
+  // { id: 2, name: "Blackjack", icon: "fas fa-club" },
+  // { id: 3, name: "Ruleta", icon: "fas fa-circle" },
+  // { id: 4, name: "Póker", icon: "fas fa-spade" },
+  // { id: 5, name: "Baccarat", icon: "fas fa-heart" },
+  // { id: 6, name: "Dados", icon: "fas fa-dice-six" },
   { id: 7, name: "Deportes", icon: "fas fa-football-ball" },
-  { id: 8, name: "Live", icon: "fas fa-video" },
+  // { id: 8, name: "Live", icon: "fas fa-video" },
   { id: 9, name: "Virtual", icon: "fas fa-robot" },
   { id: 10, name: "Rifas", icon: "fas fa-ticket-alt" },
   { id: 11, name: "Promos", icon: "fas fa-gift" },
-  { id: 12, name: "VIP", icon: "fas fa-crown" }
+  { id: 12, name: "VIP", icon: "fas fa-crown" },
+  { id: 13, name: "Autos", icon: "fas fa-car" },
+  { id: 14, name: "Electrónica", icon: "fas fa-tv" },
+  { id: 15, name: "Hogar", icon: "fas fa-home" },
+  { id: 16, name: "Moda", icon: "fas fa-tshirt" },
+  { id: 17, name: "Viajes", icon: "fas fa-plane" },
+  
+
 ]);
 
 // Comentarios
@@ -576,30 +599,16 @@ const comentarios = ref([
   }
 ]);
 
-// Cargar perfil del usuario
-onMounted(async () => {
-  const userId = route.params.id as string;
-  try {
-    userProfile.value = await UserService.getPublicProfile(userId);
-  } catch (error) {
-    console.error("Error al cargar el perfil del usuario:", error);
-  } finally {
-    loading.value = false;
-  }
-});
-
 // Computed para las rifas del usuario
 const userRaffles = computed(() => {
   return userProfile.value?.raffles || [];
 });
 
-
 // Computed para el avatar (asegura que sea string o undefined, nunca null)
 const userAvatar = computed(() => {
   const userData = userStore.getUserById(route.params.id as string);
-  return userData?.avatar || undefined; // Convierte null a undefined
+  return userData?.avatar || undefined;
 });
-
 
 // Función para calcular el progreso de una rifa
 const calculateProgress = (raffle: Raffle) => {
