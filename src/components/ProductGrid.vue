@@ -10,14 +10,14 @@
       class="w-full max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 p-2"
     >
       <ProductCard
-        v-for="product in products"
+        v-for="product in displayedProducts"
         :key="product.uuid"
         :product="product"
         @view-details="openDetails(product)"
       />
     </div>
 
-    <div v-if="!isLoadingList && totalPages > 1" class="flex justify-center items-center gap-4 mt-6">
+    <div v-if="!isLoadingList && !props.products && totalPages > 1" class="flex justify-center items-center gap-4 mt-6">
       <button
         class="px-4 py-2 rounded-lg bg-blue-800 text-white hover:bg-blue-700 transition disabled:opacity-40"
         :disabled="currentPage === 1"
@@ -56,13 +56,66 @@ import DetailsModal from "./ProductDetailsModal.vue"
 import ProductModal from "./ProductModal.vue"
 import JackpotAnimation from "./JackpotAnimation.vue"
 
+// Define las props que recibe el componente
+const props = defineProps<{
+  products?: any[]  // Hacemos que products sea opcional
+}>()
+
 const gridStore = useGridStore()
-const { products, isLoadingList, pagination } = storeToRefs(gridStore)
+const { products: storeProducts, isLoadingList, pagination } = storeToRefs(gridStore)
 const ticketStore = useTicketStore() 
 const itemsPerPage = 16
 
+// Función para ordenar productos con sorteados al final y activos por popularidad
+const sortProductsByPopularityWithFinishedLast = (products: any[]) => {
+  const now = Date.now();
+  const activeProducts: any[] = [];
+  const finishedProducts: any[] = [];
+
+  products.forEach(product => {
+    const drawDate = new Date(product.drawDate).getTime();
+    if (drawDate > now) {
+      activeProducts.push(product);
+    } else {
+      finishedProducts.push(product);
+    }
+  });
+
+  // Ordenar productos activos por popularidad (más tickets vendidos primero)
+  const sortedActiveProducts = [...activeProducts].sort((a, b) => {
+    const aTickets = a.ticketsVendidos || 0;
+    const bTickets = b.ticketsVendidos || 0;
+    
+    // Orden descendente: más tickets primero
+    return bTickets - aTickets;
+  });
+
+  // Ordenar productos sorteados por fecha de sorteo (más recientes primero)
+  const sortedFinishedProducts = [...finishedProducts].sort((a, b) => {
+    const aDate = new Date(a.drawDate).getTime();
+    const bDate = new Date(b.drawDate).getTime();
+    return bDate - aDate;
+  });
+
+  return [...sortedActiveProducts, ...sortedFinishedProducts];
+};
+
+// Lógica para determinar qué productos mostrar:
+// Si se pasan productos por props, usarlos. Si no, usar los del store ordenados.
+const displayedProducts = computed(() => {
+  if (props.products) {
+    return props.products; // Ya vienen ordenados desde Search.vue
+  } else {
+    // Ordenar productos del store con sorteados al final y activos por popularidad
+    return sortProductsByPopularityWithFinishedLast(storeProducts.value);
+  }
+})
+
+// Solo cargar productos si no se están pasando por props
 onMounted(() => {
-  gridStore.fetchProductList(1, itemsPerPage)
+  if (!props.products) {
+    gridStore.fetchProductList(1, itemsPerPage)
+  }
 })
 
 const currentPage = computed(() => pagination.value?.current_page || 1)

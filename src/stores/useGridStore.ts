@@ -35,7 +35,7 @@ export const useGridStore = defineStore('grid', {
                 images: r.images?.map((img: any) => img.url) ?? [],
                 categories: r.prizes?.[0]?.category ? [r.prizes[0].category.name] : [],
                 status: r.status,
-                ticketsVendidos: null,
+                ticketsVendidos: 0,
                 isProgressLoading: false,
               }));
 
