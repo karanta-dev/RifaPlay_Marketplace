@@ -24,6 +24,7 @@ export const useUserStore = defineStore("user", {
           { user: "Jorge", rating: 5, text: "Entregó el carro a tiempo 👌.", date: "23-09-2025", avatar: null },
         ],
       },
+      
       {
         id: "3",
         name: "Tech Store",

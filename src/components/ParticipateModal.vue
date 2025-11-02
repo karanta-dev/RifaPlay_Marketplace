@@ -203,7 +203,10 @@ import { useBookingTimer } from '@/composables/useBookingTimer';
 import { useToast } from '@/composables/useToast';
 import TicketGrid from './TicketGrid.vue';
 
-const emit = defineEmits(['confirmed', 'time-expired']); 
+const emit = defineEmits(['confirmed', 'time-expired', 'close'])
+defineOptions({
+  inheritAttrs: false
+})
 
 const { showToast } = useToast();
 const ticketStore = useTicketStore();
@@ -332,6 +335,8 @@ const close = () => {
   resetTimer();
   selectedManualTickets.value = [];
   gridStore.closeParticipateModal();
+    emit('close')
+
 };
 
 // 👇 FUNCIÓN PARA LIBERAR TODOS LOS TICKETS RESERVADOS
