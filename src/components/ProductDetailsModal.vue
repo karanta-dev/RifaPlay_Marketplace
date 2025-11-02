@@ -50,15 +50,22 @@
         >
           <div class="relative">
             <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full blur-sm opacity-60"></div>
+            <img
+              v-if="riferoUser?.avatar"
+              :src="riferoUser.avatar"
+              alt="avatar"
+              class="w-10 h-10 rounded-full object-cover relative z-10 border-2 border-white/20"
+            />
             <div
+              v-else
               class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold relative z-10 border-2 border-white/20"
             >
-              {{ riferoInitial }}
+              {{ product.rifero.charAt(0).toUpperCase() }}
             </div>
           </div>
           <div class="flex-1">
             <span class="text-sm text-cyan-300 group-hover:text-cyan-200 transition-colors font-medium">
-              Organizado por: {{ riferoName }}
+              Organizado por: {{ product.rifero }}
             </span>
             <p class="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">
               Ver perfil del rifero
@@ -68,6 +75,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
           </svg>
         </div>
+
         <!-- Descripción -->
         <p class="text-gray-300 mb-6 leading-relaxed text-sm bg-black/20 p-4 rounded-xl border border-white/10">
           {{ product.description }}
@@ -115,7 +123,7 @@
           <div class="flex items-center justify-between bg-black/30 p-4 rounded-xl border border-yellow-500/30">
             <span class="text-white/80 font-medium">Precio por ticket:</span>
             <span class="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-              ${{ (product.ticketPrice || 0).toFixed(2) }}
+              ${{ product.ticketPrice.toFixed(2) }}
             </span>
           </div>
 
@@ -135,8 +143,8 @@
             </div>
             
             <div class="flex justify-between text-xs text-gray-400">
-              <span>{{ (product.ticketsVendidos || 0).toLocaleString() }} vendidos</span>
-              <span>{{ (product.ticketsMax || 0).toLocaleString() }} total</span>
+              <span>{{ product.ticketsVendidos.toLocaleString() }} vendidos</span>
+              <span>{{ product.ticketsMax.toLocaleString() }} total</span>
             </div>
           </div>
         </div>
@@ -168,7 +176,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-// import { useTicketStore } from '@/stores/useTicketStore'
+import { useTicketStore } from '@/stores/useTicketStore'
 import { useUserStore } from '@/stores/useUserStore'
 import { useRouter } from 'vue-router'
 import { PrizeService, type Prize } from '@/services/RaffleService'
@@ -176,7 +184,7 @@ import { PrizeService, type Prize } from '@/services/RaffleService'
 const props = defineProps<{ open: boolean; product: any | null }>()
 const emit = defineEmits(['close', 'buy'])
 
-// const ticketStore = useTicketStore()
+const ticketStore = useTicketStore()
 const userStore = useUserStore()
 const router = useRouter()
 
@@ -184,31 +192,16 @@ const router = useRouter()
 const prizes = ref<Prize[]>([])
 const loadingPrizes = ref(false)
 
-// 🎯 Estado para el ID del creador (lo obtenemos de los premios)
-const riferoId = ref<string | null>(null)
+// 🧑‍💻 Buscar el usuario (rifero) por nombre
+const riferoUser = computed(() =>
+  props.product ? userStore.getUserByName(props.product.rifero) : null
+)
 
-// 🎯 Computed para el nombre del rifero
-const riferoName = computed(() => {
-  return props.product?.rifero || 'Rifero'
-})
+const progress = computed(() =>
+  props.product ? ticketStore.productProgress(props.product) : 0
+)
 
-// 🎯 Computed para la inicial del rifero
-const riferoInitial = computed(() => {
-  return riferoName.value.charAt(0).toUpperCase()
-})
-
-const progress = computed(() => {
-  if (!props.product) return 0
-  
-  const vendidos = props.product.ticketsVendidos || 0
-  const max = props.product.ticketsMax || 1
-  
-  if (max === 0) return 0
-  
-  return Math.round((vendidos / max) * 100)
-})
-
-// Función para cargar los premios del sorteo Y obtener el created_by_id
+// Función para cargar los premios del sorteo
 const loadPrizes = async () => {
   if (!props.product?.uuid) return
   
@@ -217,17 +210,6 @@ const loadPrizes = async () => {
     console.log('🎯 Cargando premios para el sorteo:', props.product.uuid)
     prizes.value = await PrizeService.getRafflePrizes(props.product.uuid)
     console.log('✅ Premios cargados:', prizes.value)
-    
-    // 🎯 OBTENER EL created_by_id DEL PRIMER PREMIO (con optional chaining)
-    if (prizes.value.length > 0 && prizes.value[0]?.created_by_id) {
-      riferoId.value = prizes.value[0].created_by_id
-      console.log('🎯 ID del rifero encontrado:', riferoId.value)
-    } else {
-      console.warn('⚠️ No se encontró created_by_id en los premios')
-      // Fallback: buscar por nombre en el store (solo para datos mock)
-      const userFromStore = userStore.getUserByName(props.product.rifero)
-      riferoId.value = userFromStore?.id || null
-    }
   } catch (error) {
     console.error('❌ Error al cargar premios:', error)
     prizes.value = []
@@ -235,14 +217,14 @@ const loadPrizes = async () => {
     loadingPrizes.value = false
   }
 }
+
 // Watch para cargar premios cuando el modal se abre
 watch(() => props.open, (isOpen) => {
   if (isOpen && props.product) {
     loadPrizes()
   } else {
-    // Resetear premios y ID cuando se cierra el modal
+    // Resetear premios cuando se cierra el modal
     prizes.value = []
-    riferoId.value = null
   }
 })
 
@@ -255,22 +237,20 @@ function handleBuy() {
 }
 
 function goToRiferoProfile() {
-  if (riferoId.value) {
-    console.log('🎯 Navegando al perfil del rifero:', riferoId.value)
+  if (riferoUser.value) {
+    let routeName = 'user-profile'
+    
+    if (riferoUser.value.name === "Juan Pérez") {
+      routeName = 'user-profile-juan'
+    } else if (riferoUser.value.name === "Tech Store") {
+      routeName = 'user-profile-tech'
+    }
+    
     router.push({ 
-      name: 'user-profile', 
-      params: { id: riferoId.value } 
+      name: routeName, 
+      params: { id: riferoUser.value.id } 
     })
     close()
-  } else {
-    console.error('❌ No se pudo encontrar el ID del rifero')
-    console.log('🔍 Información disponible:', {
-      product: props.product,
-      prizes: prizes.value,
-      riferoId: riferoId.value
-    })
-    // Opcional: mostrar mensaje al usuario
-    alert('No se puede acceder al perfil del rifero en este momento.')
   }
 }
 </script>
