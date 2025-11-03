@@ -28,9 +28,9 @@ jobs:
         with:
           version: 8           
       - name: Instalar dependencias
-        run: pnpm install
-        env: 
-          PNPM_WORKSPACE_ROOT: .
+        run: |
+          rm -f pnpm-workspace.yaml
+          pnpm install --ignore-workspace-root-check
       - name: Crear archivo .env desde secrets
         run: |
           echo "VITE_API_URL=${{secrets.VITE_API_URL_DEMO}}">>.env
