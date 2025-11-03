@@ -15,18 +15,18 @@ jobs:
 
     steps:
       - name: Clonar el repositorio
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '22.16.0'
       - name: Instalar pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: 8           
       - name: Instalar dependencias
-        run: pnpm install --force
+        run: pnpm install 
       - name: Crear archivo .env desde secrets
         run: |
           echo "VITE_API_URL=${{secrets.VITE_API_URL_DEV}}">>.env
