@@ -95,7 +95,7 @@
                     <button type="button" @click="copyPagoMovilData($event)" class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all duration-200 text-xs border border-cyan-400/30" title="Copiar datos al portapapeles"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> Copiar</button>
                   </div>
                   <div class="space-y-1">
-                    <p class="flex items-center gap-2"><span class="text-cyan-400">🏦</span> Banco: <strong>(0191) Banco Nacional de Crédito</strong></p>
+                    <p class="flex items-center gap-2"><span class="text-cyan-400">🏦</span> Banco: <strong>(0169) R4 (Mi Banco)</strong></p>
                     <p class="flex items-center gap-2"><span class="text-cyan-400">📋</span> C.I: <strong>{{ authStore.user?.natural_profile?.document_number || 'N/A' }}</strong></p>
                     <p class="flex items-center gap-2"><span class="text-cyan-400">📞</span> Teléfono: <strong>0414-1908656</strong></p>
                   </div>
