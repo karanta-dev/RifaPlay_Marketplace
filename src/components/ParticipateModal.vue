@@ -185,10 +185,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { XMarkIcon } from '@heroicons/vue/20/solid'
-
+import { XMarkIcon } from '@heroicons/vue/24/outline';
 import { useTicketStore } from '@/stores/useTicketStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useGridStore } from '@/stores/useGridStore';
@@ -197,7 +196,6 @@ import { PaymentFlowService, type Currency, type PaymentMethod, type Bank } from
 import { useBookingTimer } from '@/composables/useBookingTimer';
 import { useToast } from '@/composables/useToast';
 import TicketGrid from './TicketGrid.vue';
-
 const emit = defineEmits(['confirmed', 'time-expired']); 
 
 const { showToast } = useToast();
@@ -827,35 +825,23 @@ async function fetchBcvRate() {
   }
 }
 
-watch(() => isParticipateModalOpen.value, async (open) => {
-  if (open) {
-    fetchBcvRate();
-    loadPaymentMethods();
-    loadBanks();
-    loadingCurrencies.value = true;
-    try {
-      const result = await PaymentFlowService.fetchCurrencies();
-      const currs: Currency[] = result?.currencies ?? [];
-      const defaultCurrencyId = result?.defaultCurrencyId;
-      currencies.value = currs;
-      let chosen: string | undefined = undefined;
-      if (defaultCurrencyId) chosen = defaultCurrencyId;
-      else if (currs.length > 0) chosen = currs[0]?.uuid;
-      selectedCurrencyId.value = chosen;
-    } catch (e) {
-      currencies.value = [];
-      selectedCurrencyId.value = undefined;
-    } finally {
-      loadingCurrencies.value = false;
-    }
-    const userId = authStore.user?.id;
-    if (userId) {
-      initialTicketsCount.value = ticketStore.userTicketsCount(userId);
-    } else {
-      initialTicketsCount.value = ticketStore.tickets.filter(t => t.userId === null).length;
-    }
-  }
-});
+onMounted(() => {
+  console.log('🔴 Componente montado - cargando datos UNA SOLA VEZ')
+  
+  // Cargar los datos cuando el componente se monte
+  fetchBcvRate()
+  loadPaymentMethods()
+  loadBanks()
+  
+  loadingCurrencies.value = true
+  PaymentFlowService.fetchCurrencies().then(result => {
+    const currs = result?.currencies ?? []
+    currencies.value = currs
+    selectedCurrencyId.value = result?.defaultCurrencyId || currs[0]?.uuid
+  }).finally(() => {
+    loadingCurrencies.value = false
+  })
+})
 
 const handleConfirm = async () => {
   error.value = null;

@@ -88,6 +88,7 @@ export const useGridStore = defineStore('grid', {
         },
 
         openParticipateModal(product: any) {
+          
           this.selectedProduct = product;
           this.availableTickets= null; 
           this.isParticipateModalOpen = true;

@@ -69,12 +69,12 @@
       </div>
     </div>
 
-    <button
-      class="btn_participate px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
-      :class="{'bg-green-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.6)]': isSoldOut || isTimeUp, 'bg-yellow-500 text-black hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)]': !isSoldOut && !isTimeUp}"
-      @click.stop="gridStore.openParticipateModal(product)"
-      :disabled="isSoldOut || isTimeUp"
-    >
+   <button
+  class="btn_participate px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
+  :class="{'bg-green-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.6)]': isSoldOut || isTimeUp, 'bg-yellow-500 text-black hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)]': !isSoldOut && !isTimeUp}"
+  @click.stop="handleParticipate"
+  :disabled="isSoldOut || isTimeUp"
+>
       {{ isTimeUp ? '¡SORTEADO!' : (isSoldOut ? '¡VENDIDO!' : 'PARTICIPAR') }}
     </button>
 </div>
@@ -122,7 +122,11 @@ onMounted(() => {
 onUnmounted(() => {
   clearInterval(interval)
 })
-
+const handleParticipate = (event: Event) => {
+  event.stopPropagation();
+  event.preventDefault();
+  gridStore.openParticipateModal(props.product);
+};
 const timeLeft = computed(() => {
   if (!props.product?.drawDate) return { total: 0, days: '00', hours: '00', minutes: '00', seconds: '00' }
   const diff = new Date(props.product.drawDate).getTime() - now.value
