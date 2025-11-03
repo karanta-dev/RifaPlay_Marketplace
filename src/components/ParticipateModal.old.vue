@@ -1,42 +1,47 @@
+<!-- ParticipateModal.vue -->
 <template>
   <transition name="fade">
     <div v-if="isParticipateModalOpen" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40" @click="close" />
   </transition>
 
   <transition name="scale-fade">
-    <div v-if="isParticipateModalOpen" class="fixed inset-0 z-50" @click.self="close">
+    <div v-if="isParticipateModalOpen" class="fixed inset-0 flex items-center justify-center z-50 p-0" @click.self="close">
+
       <div
-        class="bg-gradient-to-br from-blue-900 to-purple-800 relative transition-all duration-300 border-purple-400/30 flex flex-col w-screen h-screen p-4 sm:p-6"
+        :class="[
+          selectionMode === 'auto' ? 'max-w-lg' : 'max-w-4xl',
+          'bg-gradient-to-br from-blue-900 to-purple-800 rounded-2xl shadow-2xl p-4 relative transition-all duration-300 mx-4 md:mx-0 max-h-[90vh] border border-purple-400/30 flex flex-col'
+        ]"
       >
-<button
+        <button
           v-if="authStore.isAuthenticated"
-          class="absolute top-4 right-4 z-30 bg-transparent border-none p-1"
+          class="absolute top-4 right-4 z-30 bg-black/40 hover:bg-black/60 text-white/80 hover:text-white p-2 rounded-full transition-all duration-300 border border-white/20 backdrop-blur-sm"
           @click="close"
-          aria-label="Cerrar"
         >
-          <XMarkIcon class="h-5 w-5 text-white/70 hover:text-white transition-colors" />
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-</svg>
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-yellow-400/10 rounded-full blur-xl"></div>
+        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-500/10 rounded-full blur-xl"></div>
 
-
-        <div class="relative z-10 mb-4 flex-shrink-0 flex items-center justify-between gap-2">   
-          <div class="flex items-center justify-left gap-3">
-            <img src="/rifaLogo.png" alt="Slot" class="h-10 sm:h-16 w-auto" />
-            <h2 class="text-lg sm:text-2xl font-bold bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent whitespace-nowrap">
+<div class="relative z-10 mb-4 flex-shrink-0 flex items-center justify-between gap-2">   
+<div class="flex items-center justify-left gap-3">
+        <img src="/rifaLogo.png" alt="Slot" class="h-10 sm:h-16 w-auto" />
+        <h2 class="text-lg sm:text-2xl font-bold bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent whitespace-nowrap">
               Compra de tickets
             </h2>
           </div>
-          <div v-if="selectionMode === 'manual' && bookingTimerStarted" 
+               <!-- CONTADOR DE TIEMPO  -->
+            <div v-if="selectionMode === 'manual' && bookingTimerStarted" 
                  class="flex items-center gap-2 rounded-lg px-4 py-2 transition-all duration-300"
-                 :class="timerClasses">
-              <div class="w-3 h-3 rounded-full animate-pulse" :class="pulseClass"></div>
-             <span class="font-mono text-base sm:text-lg font-bold" :class="timerTextClass">{{ formattedTime }}</span>
+                 :class="getTimerClasses()">
+              <div class="w-3 h-3 rounded-full animate-pulse" :class="getPulseClass()"></div>
+             <span class="font-mono text-base sm:text-lg font-bold" :class="getTimerTextClass()">{{ formattedTime }}</span>
             </div>
         </div>
 
-        <form @submit.prevent="handleConfirm" class="space-y-6 relative z-10 flex-grow overflow-y-auto pr-2 pb-16">
+        <form @submit.prevent="handleConfirm" class="space-y-6 relative z-10 flex-grow overflow-y-auto pr-2">
           <template v-if="!authStore.isAuthenticated">
             <div class="p-6 bg-black/20 rounded-xl border border-white/10 text-center">
               <p class="text-white text-lg font-semibold mb-2">Necesitas iniciar sesión</p>
@@ -49,7 +54,7 @@
           </template>
 
           <template v-else>
-            <div class="flex flex-col sm:flex-row justify-center gap-4 p-4 bg-black/30 rounded-xl border border-white/10">
+            <div class="flex justify-center gap-4 p-4 bg-black/30 rounded-xl border border-white/10">
               <label class="flex items-center space-x-3 cursor-pointer group">
                 <div class="relative"><input type="radio" v-model="selectionMode" value="auto" class="h-5 w-5 text-cyan-500 border-gray-300 focus:ring-cyan-500 bg-transparent"/></div>
                 <span class="font-semibold text-white group-hover:text-cyan-300 transition-colors">Selección Automática</span>
@@ -63,11 +68,13 @@
             <div v-if="selectionMode === 'auto'" class="p-5 bg-black/30 rounded-xl border border-cyan-500/30">
               <label class="font-semibold text-cyan-300 mb-3 block text-lg">🎲 Cantidad de tickets (Automático)</label>
               <div class="flex items-center gap-3">
-                <input v-model.number="form.tickets" type="number" min="1" :max="maxAvailable === null ? undefined : maxAvailable" placeholder="Cantidad de tickets" class="input-custom flex-grow" :required="selectionMode === 'auto'"/>
+                <input v-model.number="form.tickets" type="number" min="1" :max="maxAvailable" placeholder="Cantidad de tickets" class="input-custom flex-grow" :required="selectionMode === 'auto'"/>
                 <div class="text-sm text-white whitespace-nowrap">Disponibles: <strong class="text-yellow-400">{{ maxAvailable }}</strong></div>
               </div>
             </div>
        
+
+            
             <TicketGrid v-if="selectionMode === 'manual' && selectedProduct" :raffleId="selectedProduct.uuid" @update:selected="handleSelectionUpdate" />
 
             <div class="space-y-4">
@@ -78,7 +85,7 @@
               </select>
               <p v-if="!loadingMethods && paymentMethods.length === 0" class="text-red-400 text-sm">No se pudieron cargar métodos de pago.</p>
               <div v-if="form.metodoPago === 'pago-movil'" class="mt-4">
-                <div class="flex flex-col sm:flex-row bg-black/30 rounded-xl p-1 border border-cyan-500/30 shadow-lg">
+                <div class="flex bg-black/30 rounded-xl p-1 border border-cyan-500/30 shadow-lg">
                   <button type="button" @click="pagoMovilMode = 'manual'" :class="{'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'manual', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'manual'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-cyan-500/30"><div class="flex items-center justify-center gap-2"><span class="text-lg">👤</span><span>Manual</span></div></button>
                   <button type="button" @click="pagoMovilMode = 'automatico'" :class="{'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'automatico', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'automatico'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-emerald-500/30"><div class="flex items-center justify-center gap-2"><span class="text-lg">⚡</span><span>Automático</span></div></button>
                 </div>
@@ -88,7 +95,7 @@
                     <button type="button" @click="copyPagoMovilData($event)" class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all duration-200 text-xs border border-cyan-400/30" title="Copiar datos al portapapeles"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> Copiar</button>
                   </div>
                   <div class="space-y-1">
-                    <p class="flex items-center gap-2"><span class="text-cyan-400">🏦</span> Banco: <strong>(0169) R4 (Mi Banco)</strong></p>
+                    <p class="flex items-center gap-2"><span class="text-cyan-400">🏦</span> Banco: <strong>(0191) Banco Nacional de Crédito</strong></p>
                     <p class="flex items-center gap-2"><span class="text-cyan-400">📋</span> C.I: <strong>{{ authStore.user?.natural_profile?.document_number || 'N/A' }}</strong></p>
                     <p class="flex items-center gap-2"><span class="text-cyan-400">📞</span> Teléfono: <strong>0414-1908656</strong></p>
                   </div>
@@ -140,9 +147,9 @@
 
             <div v-if="error" class="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm">⚠️ {{ error }}</div>
 
-            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6">
-              <button type="button" @click="close" class="w-full sm:w-auto px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-300 transform hover:scale-105 border border-gray-500/30">Cancelar</button>
-              <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-green-400/30" :disabled="currentQty === 0 || submitting"><span v-if="submitting">Procesando...</span><span v-else>🎉 {{ authStore.isAuthenticated ? 'Participar' : 'Confirmar' }}</span></button>
+            <div class="flex justify-end gap-3 mt-6">
+              <button type="button" @click="close" class="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-300 transform hover:scale-105 border border-gray-500/30">Cancelar</button>
+              <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-green-400/30" :disabled="currentQty === 0 || submitting"><span v-if="submitting">Procesando...</span><span v-else>🎉 {{ authStore.isAuthenticated ? 'Participar' : 'Confirmar' }}</span></button>
             </div>
           </template>
         </form>
@@ -187,8 +194,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { XMarkIcon } from '@heroicons/vue/20/solid'
-
 import { useTicketStore } from '@/stores/useTicketStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useGridStore } from '@/stores/useGridStore';
@@ -243,38 +248,21 @@ const {
 
 const bookingTimerStarted = ref(false);
 
-const timerClasses = computed(() => {
-  if (timeLeft.value > 300) { 
-    return 'bg-green-500/80 border border-green-400/50';
-  } else if (timeLeft.value > 120) { 
-    return 'bg-yellow-500/80 border border-yellow-400/50';
-  } else if (timeLeft.value > 60) { 
-    return 'bg-orange-500/80 border border-orange-400/50';
-  } else { 
-    return 'bg-red-600/90 border border-red-400/50 animate-pulse';
-  }
-});
 
-const pulseClass = computed(() => {
-  if (timeLeft.value > 300) return 'bg-green-500';
-  if (timeLeft.value > 120) return 'bg-yellow-500';
-  if (timeLeft.value > 60) return 'bg-orange-500';
-  return 'bg-red-500';
-});
 
-const timerTextClass = computed(() => {
-  return 'text-white';
-});
 
+// 👇 WATCHER PARA EL TIMER EXPIRADO
 watch(isExpired, (expired) => {
   if (expired) {
     handleTimeExpired();
   }
 });
 
+// 👇 FUNCIÓN CUANDO EL TIEMPO SE ACABA
 const handleTimeExpired = async () => {
   showToast('⏰ El tiempo para completar la compra ha expirado. Los tickets han sido liberados.', 'error', 5000);
   
+  // Liberar todos los tickets reservados
   if (selectedManualTickets.value.length > 0 && selectedProduct.value) {
     try {
       const user = authStore.user;
@@ -283,7 +271,7 @@ const handleTimeExpired = async () => {
           selectedProduct.value.uuid, 
           "V", 
           user.natural_profile.document_number, 
-          selectedManualTickets.value.map(t => t.toString())
+          selectedManualTickets.value.map(t => t.toString()) // 👈 Convertir a string
         );
       }
     } catch (error) {
@@ -291,24 +279,29 @@ const handleTimeExpired = async () => {
     }
   }
   
+  // Limpiar todo
   selectedManualTickets.value = [];
  bookingTimerStarted.value = false;
   clearTimer();
   
+  // Cerrar el modal después de un delay
   setTimeout(() => {
     gridStore.closeParticipateModal();
     emit('time-expired');
   }, 3000);
 };
 
+// 👇 MODIFICAR LA FUNCIÓN DE ACTUALIZACIÓN DE SELECCIÓN
 function handleSelectionUpdate(newSelection: number[]) {
   selectedManualTickets.value = newSelection;
   
+  // Iniciar timer cuando se selecciona el primer ticket
   if (newSelection.length === 1 && !bookingTimerStarted.value) {
     bookingTimerStarted.value = true;
     startTimer();
   }
   
+  // Detener timer si no hay tickets seleccionados
   if (newSelection.length === 0 && bookingTimerStarted.value) {
     bookingTimerStarted.value = false;
     clearTimer();
@@ -316,8 +309,10 @@ function handleSelectionUpdate(newSelection: number[]) {
   }
 }
 
+// 👇 MODIFICAR EL WATCHER DEL MODAL PARA RESETEAR TIMER
 watch(isParticipateModalOpen, (open) => {
   if (!open) {
+    // Limpiar timer cuando se cierra el modal
     bookingTimerStarted.value = false;
     clearTimer();
     resetTimer();
@@ -325,8 +320,10 @@ watch(isParticipateModalOpen, (open) => {
   }
 });
 
+// 👇 MODIFICAR LA FUNCIÓN CLOSE PARA LIMPIAR TIMER
 const close = () => {
   if (selectionMode.value === 'manual' && selectedManualTickets.value.length > 0) {
+    // Liberar tickets al cerrar manualmente
     freeAllBookedTickets();
   }
   
@@ -337,6 +334,7 @@ const close = () => {
   gridStore.closeParticipateModal();
 };
 
+// 👇 FUNCIÓN PARA LIBERAR TODOS LOS TICKETS RESERVADOS
 const freeAllBookedTickets = async () => {
   if (selectedManualTickets.value.length > 0 && selectedProduct.value) {
     try {
@@ -346,7 +344,7 @@ const freeAllBookedTickets = async () => {
           selectedProduct.value.uuid, 
           "V", 
           user.natural_profile.document_number, 
-          selectedManualTickets.value.map(t => t.toString())
+          selectedManualTickets.value.map(t => t.toString()) // 👈 Convertir a string
         );
       }
     } catch (error) {
@@ -355,8 +353,10 @@ const freeAllBookedTickets = async () => {
   }
 };
 
+// 👇 MODIFICAR EL WATCHER DEL SELECTION MODE
 watch(selectionMode, (newMode) => {
   if (newMode === 'auto') {
+    // Si cambia a automático, liberar tickets manuales
     if (selectedManualTickets.value.length > 0) {
       freeAllBookedTickets();
       selectedManualTickets.value = [];
@@ -367,12 +367,19 @@ watch(selectionMode, (newMode) => {
   }
 });
 
-const maxAvailable = computed(() => gridStore.availableTickets)
+const maxAvailable = computed(() => {
+  const p = ticketStore.topProducts.find((t: any) => t.title === selectedProduct.value?.title)
+  if (!p) return 0
+  return Math.max(1, (p.ticketsMax || Infinity) - (p.ticketsVendidos || 0))
+})
+
 const currentQty = computed(() => {
   return selectionMode.value === 'manual'
     ? selectedManualTickets.value.length
     : Number(form.tickets || 0);
 })
+
+
 
 watch([currentQty, bcvRate, selectedProduct], ([qty, rate, product]) => {
   if (!product || typeof product.ticketPrice === 'undefined') {
@@ -524,6 +531,34 @@ const executeAutomaticSale = async (verificationData: any) => {
     submitting.value = false;
   }
 }
+
+/***********************************************************************/
+/***** timer ***********/
+const getTimerClasses = () => {
+  if (timeLeft.value > 300) { 
+    return 'bg-green-500/80 border border-green-400/50';
+  } else if (timeLeft.value > 120) { 
+    return 'bg-yellow-500/80 border border-yellow-400/50';
+  } else if (timeLeft.value > 60) { 
+    return 'bg-orange-500/80 border border-orange-400/50';
+  } else { 
+    return 'bg-red-600/90 border border-red-400/50 animate-pulse';
+  }
+};
+
+const getPulseClass = () => {
+  if (timeLeft.value > 300) return 'bg-green-500';        // VERDE
+  if (timeLeft.value > 120) return 'bg-yellow-500';       // AMARILLO  
+  if (timeLeft.value > 60) return 'bg-orange-500';        // NARANJA
+  return 'bg-red-500';                                    // ROJO
+};
+const getTimerTextClass = () => {
+  //if (timeLeft.value > 300) return 'text-white-200';      // VERDE
+  //if (timeLeft.value > 120) return 'text-yellow-200';     // AMARILLO
+  //if (timeLeft.value > 60) return 'text-orange-200';      // NARANJA
+  return 'text-white';                                  // ROJO
+};
+// timer
 
 async function handleVerifyPagoMovil() {
   pagoMovilVerifyResult.value = null;
@@ -870,7 +905,7 @@ const handleConfirm = async () => {
     }
   } else {
     quantity = Math.max(1, Number(form.tickets ?? 1));
-    if (quantity > (maxAvailable.value ?? 0)) {
+    if (quantity > maxAvailable.value) {
       error.value = `Solo quedan ${maxAvailable.value} tickets disponibles`;
       return;
     }
