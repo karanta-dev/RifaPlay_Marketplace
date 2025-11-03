@@ -234,6 +234,23 @@ export const RaffleService = {
     }
   },
 
+  async getAvailableTickets(raffleId: string) {
+      try {
+      const token = localStorage.getItem("token");
+      const response = await apiClient.get(`/get-tickets-available/${raffleId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+
+      const apiData = response.data.data;
+
+      
+      return apiData;
+    } catch (error) {
+      console.error(`Error al obtener la grilla paginada de la rifa:`, error);
+      throw error;
+    }
+  },
+
   /**
    * Reserva uno o más tickets para un usuario.
    * @param raffleId - El UUID de la rifa.
