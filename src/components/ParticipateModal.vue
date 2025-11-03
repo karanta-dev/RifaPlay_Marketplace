@@ -63,7 +63,7 @@
             <div v-if="selectionMode === 'auto'" class="p-5 bg-black/30 rounded-xl border border-cyan-500/30">
               <label class="font-semibold text-cyan-300 mb-3 block text-lg">🎲 Cantidad de tickets (Automático)</label>
               <div class="flex items-center gap-3">
-                <input v-model.number="form.tickets" type="number" min="1" :max="maxAvailable" placeholder="Cantidad de tickets" class="input-custom flex-grow" :required="selectionMode === 'auto'"/>
+                <input v-model.number="form.tickets" type="number" min="1" :max="maxAvailable === null ? undefined : maxAvailable" placeholder="Cantidad de tickets" class="input-custom flex-grow" :required="selectionMode === 'auto'"/>
                 <div class="text-sm text-white whitespace-nowrap">Disponibles: <strong class="text-yellow-400">{{ maxAvailable }}</strong></div>
               </div>
             </div>
@@ -870,7 +870,7 @@ const handleConfirm = async () => {
     }
   } else {
     quantity = Math.max(1, Number(form.tickets ?? 1));
-    if (quantity > maxAvailable.value) {
+    if (quantity > (maxAvailable.value ?? 0)) {
       error.value = `Solo quedan ${maxAvailable.value} tickets disponibles`;
       return;
     }
