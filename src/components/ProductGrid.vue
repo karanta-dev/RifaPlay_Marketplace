@@ -111,6 +111,7 @@ const displayedProducts = computed(() => {
   }
 })
 
+
 // Solo cargar productos si no se están pasando por props
 onMounted(() => {
   if (!props.products) {
