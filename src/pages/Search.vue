@@ -22,7 +22,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="🔍 Buscar rifas, productos, categorías..."
+            placeholder=" Buscar rifas, productos, categorías..."
             class="w-full p-4 pl-12 rounded-2xl bg-gray-800/60 backdrop-blur-sm border border-cyan-500/30 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-300 shadow-lg"
           />
           <div class="absolute left-4 top-1/2 transform -translate-y-1/2">
@@ -112,9 +112,9 @@
                 v-model="statusFilter"
                 class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500 min-w-[140px]"
               >
-                <option value="all">Todas</option>
+                <option value="all">Todas (activas primero)</option>
                 <option value="active">Solo activas</option>
-                <option value="finished">Finalizadas</option>
+                <option value="finished">Solo sorteadas</option>
               </select>
             </div>
 
@@ -227,11 +227,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import ProductGrid from "../components/ProductGrid.vue";
 import { useTicketStore } from "@/stores/useTicketStore";
+import { useGridStore } from "@/stores/useGridStore";
 
 const ticketStore = useTicketStore();
+const gridStore = useGridStore();
 
 // 📝 Búsqueda
 const searchQuery = ref("");
@@ -242,9 +244,16 @@ const selectedCategory = ref<string | null>(null);
 // 🎯 Filtro de estado
 const statusFilter = ref<"all" | "active" | "finished">("all");
 
-// 🔄 Ordenamiento - CORREGIDO: incluir "endingSoon" en el tipo
+// 🔄 Ordenamiento
 const sortBy = ref<"popularity" | "endingSoon" | "newest" | "priceLow" | "priceHigh" | "progress" | "title">("popularity");
 const sortDirection = ref<"asc" | "desc">("desc");
+
+// Cargar productos al montar el componente
+onMounted(() => {
+  if (gridStore.products.length === 0) {
+    gridStore.fetchProductList(1, 16);
+  }
+});
 
 const toggleCategory = (cat: string) => {
   selectedCategory.value = selectedCategory.value === cat ? null : cat;
@@ -262,9 +271,11 @@ const clearAllFilters = () => {
   sortDirection.value = "desc";
 };
 
-// 🔎 Filtrar productos
+// 🔎 Filtrar productos (solo por búsqueda y categoría)
 const filteredProducts = computed(() => {
-  return ticketStore.topProducts.filter((product: any) => {
+  const now = Date.now();
+  
+  return gridStore.products.filter((product: any) => {
     const title = product.title?.toLowerCase?.() || "";
     const description = product.description?.toLowerCase?.() || "";
     const categories = Array.isArray(product.categories) ? product.categories : [];
@@ -280,7 +291,11 @@ const filteredProducts = computed(() => {
       ? categories.includes(selectedCategory.value)
       : true;
 
-    const isActive = new Date(product.drawDate).getTime() > Date.now();
+    // Determinar si la rifa está activa o sorteada
+    const drawDate = new Date(product.drawDate).getTime();
+    const isActive = drawDate > now;
+    
+    // Aplicar filtro de estado
     const matchesStatus =
       statusFilter.value === "all"
         ? true
@@ -292,72 +307,88 @@ const filteredProducts = computed(() => {
   });
 });
 
-
-// 📊 Productos filtrados y ordenados - LÓGICA CORREGIDA
+// 📊 Productos filtrados y ordenados - VERSIÓN CORREGIDA
 const filteredAndSortedProducts = computed(() => {
-  const products = [...filteredProducts.value];
+  const now = Date.now();
   
-  return products.sort((a, b) => {
-    let aValue: any, bValue: any;
-    
-    switch (sortBy.value) {
-      case "popularity":
-        aValue = a.ticketsVendidos || 0;
-        bValue = b.ticketsVendidos || 0;
-        break;
-        
-      case "endingSoon":
-        // Para "ending soon", manejamos la lógica completa aquí
-        aValue = new Date(a.drawDate).getTime();
-        bValue = new Date(b.drawDate).getTime();
-        // Las que terminan primero van primero (ascendente por defecto)
-        if (sortDirection.value === "asc") {
-          return aValue - bValue;
-        } else {
-          return bValue - aValue;
-        }
-        
-      case "newest":
-        // Asumiendo que no tenemos fecha de creación, usamos drawDate como referencia
-        aValue = new Date(a.drawDate).getTime();
-        bValue = new Date(b.drawDate).getTime();
-        break;
-        
-      case "priceLow":
-        aValue = a.ticketPrice || 0;
-        bValue = b.ticketPrice || 0;
-        break;
-        
-      case "priceHigh":
-        aValue = a.ticketPrice || 0;
-        bValue = b.ticketPrice || 0;
-        break;
-        
-      case "progress":
-        const progressA = ticketStore.productProgress(a);
-        const progressB = ticketStore.productProgress(b);
-        aValue = progressA;
-        bValue = progressB;
-        break;
-        
-      case "title":
-        aValue = a.title.toLowerCase();
-        bValue = b.title.toLowerCase();
-        break;
-        
-      default:
-        aValue = a.ticketsVendidos || 0;
-        bValue = b.ticketsVendidos || 0;
+  // Si el filtro de estado no es "all", no necesitamos separar porque ya están filtradas
+  if (statusFilter.value !== "all") {
+    // Ordenar normalmente sin separación
+    return [...filteredProducts.value].sort((a, b) => applySort(a, b));
+  }
+
+  // Para "all", separamos activas de sorteadas y ordenamos cada grupo
+  const activeProducts: any[] = [];
+  const finishedProducts: any[] = [];
+
+  filteredProducts.value.forEach(product => {
+    const drawDate = new Date(product.drawDate).getTime();
+    if (drawDate > now) {
+      activeProducts.push(product);
+    } else {
+      finishedProducts.push(product);
     }
-    
-    // Ordenamiento normal para todos los casos excepto endingSoon
-    // (endingSoon ya retornó en el case anterior)
-    if (aValue < bValue) return sortDirection.value === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortDirection.value === "asc" ? 1 : -1;
-    
-    return 0;
   });
+
+  // Ordenar cada grupo por separado
+  const sortedActiveProducts = [...activeProducts].sort((a, b) => applySort(a, b));
+  const sortedFinishedProducts = [...finishedProducts].sort((a, b) => applySort(a, b));
+
+  // Devolver activas primero, sorteadas después
+  return [...sortedActiveProducts, ...sortedFinishedProducts];
 });
+
+// Función auxiliar para aplicar el ordenamiento
+const applySort = (a: any, b: any): number => {
+  // Caso especial para endingSoon - manejado por separado
+  if (sortBy.value === "endingSoon") {
+    const aValue = new Date(a.drawDate).getTime();
+    const bValue = new Date(b.drawDate).getTime();
+    return sortDirection.value === "asc" ? aValue - bValue : bValue - aValue;
+  }
+
+  // Para los demás casos, extraemos los valores según el criterio
+  let aValue: any, bValue: any;
+  
+  switch (sortBy.value) {
+    case "popularity":
+      aValue = a.ticketsVendidos || 0;
+      bValue = b.ticketsVendidos || 0;
+      break;
+      
+    case "newest":
+      aValue = new Date(a.drawDate).getTime();
+      bValue = new Date(b.drawDate).getTime();
+      break;
+      
+    case "priceLow":
+    case "priceHigh":
+      aValue = a.ticketPrice || 0;
+      bValue = b.ticketPrice || 0;
+      break;
+      
+    case "progress":
+      const progressA = ticketStore.productProgress(a);
+      const progressB = ticketStore.productProgress(b);
+      aValue = progressA;
+      bValue = progressB;
+      break;
+      
+    case "title":
+      aValue = a.title.toLowerCase();
+      bValue = b.title.toLowerCase();
+      break;
+      
+    default:
+      aValue = a.ticketsVendidos || 0;
+      bValue = b.ticketsVendidos || 0;
+  }
+  
+  // Ordenamiento normal para los demás casos
+  if (aValue < bValue) return sortDirection.value === "asc" ? -1 : 1;
+  if (aValue > bValue) return sortDirection.value === "asc" ? 1 : -1;
+  return 0;
+};
 
 // 🎯 Iconos por categoría
 const getCategoryIcon = (category: string) => {

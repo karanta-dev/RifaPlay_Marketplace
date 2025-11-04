@@ -28,6 +28,7 @@ import MobileNav from './components/MobileNav.vue'
 import FloatingSupport from './components/FloatingSupport.vue' 
 import SiteFooter from './components/SiteFooter.vue'
 import { useGridStore } from './stores/useGridStore';
+import ParticipateModal from '@/components/ParticipateModal.vue';
 
 const authStore = useAuthStore();
 const gridStore = useGridStore();
