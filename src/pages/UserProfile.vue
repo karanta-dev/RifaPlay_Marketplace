@@ -1,338 +1,278 @@
 <template>
-  <div class="min-h-screen bg-[#0f1923] text-white">
-    <!-- Header estilo 1Win con perfil de usuario -->
-    <div class="bg-[#1a2a37] border-b border-[#2a3b4a] p-4">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <button 
-            @click="$router.back()" 
-            class="px-4 py-2 rounded-lg bg-[#2a3b4a] hover:bg-[#34495e] text-gray-300 hover:text-white transition-all duration-300 flex items-center gap-2"
-          >
-            <i class="fas fa-arrow-left"></i>
-            <span class="hidden sm:inline">Volver</span>
-          </button>
-        </div>
-        
-        <!-- Perfil del usuario -->
-        <div class="flex items-center gap-3">
-          <div class="flex items-center gap-3">
-            <!-- Avatar del usuario -->
-            <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-[#00d8a7]">
-              <img
-                v-if="userAvatar" 
-                :src="userAvatar" 
-                alt="avatar"
-                class="w-full h-full object-cover"
-              />
-              <div
-                v-else
-                class="w-full h-full bg-gradient-to-r from-[#00d8a7] to-[#00c797] flex items-center justify-center text-white font-bold"
-              >
-                {{ fullName.charAt(0).toUpperCase() }}
-              </div>
-            </div>
-            
-            <!-- Información del usuario -->
-            <div>
-              <div class="text-white font-bold">
-                {{ fullName }}
-              </div>
-              <div class="text-gray-400 text-xs" v-if="userProfile">
-                Miembro desde {{ formatDate(userProfile.member_since) }}
-              </div>
-            </div>
-          </div>
-          
-          <button class="p-2 rounded-lg bg-[#2a3b4a] hover:bg-[#34495e] text-gray-300 transition-all">
-            <i class="fas fa-share-alt"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Navegación Mejorada -->
-    <div class="bg-[#1a2a37] border-b border-[#2a3b4a]">
-      <div class="max-w-4xl mx-auto">
-        <div class="flex justify-center space-x-1 py-2">
-          <button 
-            v-for="tab in tabs" 
-            :key="tab"
-            @click="currentTab = tab"
-            :class="[
-              'px-6 py-3 rounded-lg font-medium text-sm transition-all duration-300',
-              currentTab === tab 
-                ? 'bg-[#00d8a7] text-[#0f1923] shadow-lg shadow-[#00d8a7]/20' 
-                : 'bg-[#2a3b4a] text-gray-300 hover:bg-[#34495e] hover:text-white'
-            ]"
-          >
-            {{ tab }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Carrusel de Banners -->
-    <div class="relative h-60 overflow-hidden">
-      <!-- Banner activo -->
-      <div 
-        v-for="(banner, index) in banners" 
-        :key="banner.id"
-        v-show="currentBannerIndex === index"
-        class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
-        :class="{ 'opacity-100': currentBannerIndex === index, 'opacity-0': currentBannerIndex !== index }"
-      >
-        <div class="h-full w-full bg-cover bg-center" :style="{ backgroundImage: `url(${banner.image})` }">
-          <div class="absolute inset-0 bg-black bg-opacity-50"></div>
-          <div class="relative h-full flex items-center">
-            <div class="max-w-6xl mx-auto px-6 w-full">
-              <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">{{ banner.title }}</h1>
-              <p class="text-gray-300 mb-4 text-lg">{{ banner.description }}</p>
-              <button class="bg-[#00d8a7] text-[#0f1923] px-6 py-3 rounded-lg font-bold hover:bg-[#00c797] transition-colors">
-                {{ banner.buttonText }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Indicadores del carrusel -->
-      <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        <button
-          v-for="(banner, index) in banners"
-          :key="banner.id"
-          @click="currentBannerIndex = index"
-          class="w-3 h-3 rounded-full transition-all"
-          :class="currentBannerIndex === index ? 'bg-[#00d8a7]' : 'bg-white bg-opacity-50'"
-        ></button>
-      </div>
-      
-      <!-- Controles de navegación -->
+  <div class="min-h-screen bg-gradient-to-br from-black via-blue-800 to-purple-900 text-white relative overflow-hidden">
+    <!-- Patrón de fondo elegante -->
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-400/5 via-purple-300/3 to-red-400/5"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent"></div>
+    
+    <!-- Header Premium -->
+    <div class="relative bg-gradient-to-r from-sky-900/90 to-purple-900/90 backdrop-blur-sm p-4 flex items-center justify-between border-b border-blue-500/30 shadow-2xl">
       <button 
-        @click="prevBanner" 
-        class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+        @click="$router.back()" 
+        class="px-4 py-2 rounded-xl bg-blue-800/60 hover:bg-blue-700 text-purple-200 hover:text-white transition-all duration-300 shadow-lg hover:shadow-blue-500/25 flex items-center gap-2"
       >
-        <i class="fas fa-chevron-left"></i>
+        <i class="fas fa-arrow-left"></i>
+        <span class="hidden sm:inline">Volver</span>
       </button>
-      <button 
-        @click="nextBanner" 
-        class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
-      >
-        <i class="fas fa-chevron-right"></i>
-      </button>
+      <div class="flex items-center gap-3 text-sm">
+        <div class="flex items-center gap-2 bg-blue-800/40 px-3 py-1 rounded-full">
+          <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+          <span class="text-blue-200">En línea {{ user?.lastSeen }}</span>
+        </div>
+        <button class="p-2 rounded-lg bg-blue-800/40 hover:bg-blue-700/60 text-blue-200 transition-all">
+          <i class="fas fa-share-alt"></i>
+        </button>
+      </div>
     </div>
 
-    <!-- Contenido Principal -->
-    <div class="max-w-6xl mx-auto p-6">
-      <!-- Sección Inicio -->
-      <div v-if="currentTab === 'Inicio'" class="space-y-8">
-        <!-- Promociones Destacadas -->
-        <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div 
-            v-for="promo in promociones" 
-            :key="promo.id"
-            class="bg-[#1a2a37] rounded-xl border border-[#2a3b4a] overflow-hidden hover:border-[#00d8a7] transition-colors"
-          >
-            <div class="h-40 bg-gradient-to-r from-[#2a3b4a] to-[#1a2a37] flex items-center justify-center">
-              <i :class="promo.icon" class="text-4xl text-[#00d8a7]"></i>
-            </div>
-            <div class="p-4">
-              <h3 class="font-bold text-white text-lg mb-2">{{ promo.title }}</h3>
-              <p class="text-gray-400 text-sm mb-4">{{ promo.description }}</p>
-              <div class="flex justify-between items-center">
-                <span class="text-[#00d8a7] text-sm font-bold">{{ promo.bonus }}</span>
-                <!-- <button class="bg-[#00d8a7] text-[#0f1923] px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#00c797] transition-colors">
-                  PARTICIPAR
-                </button> -->
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Rifas Populares -->
-        <div>
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-white">Rifas Populares</h2>
-            <div v-if="loadingPopularRaffles" class="flex items-center gap-2">
-              <div class="w-4 h-4 border-2 border-[#00d8a7] border-t-transparent rounded-full animate-spin"></div>
-              <span class="text-gray-400 text-sm">Cargando...</span>
-            </div>
-          </div>
-
-          <div v-if="!loadingPopularRaffles && popularRaffles.length === 0" class="text-center py-8">
-            <i class="fas fa-ticket-alt text-3xl text-gray-500 mb-4"></i>
-            <p class="text-gray-400">No hay rifas populares disponibles</p>
-          </div>
-
-          <!-- Usando ProductCard para las rifas populares -->
-          <div v-else class="w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
-            <ProductCard
-              v-for="product in popularRaffles"
-              :key="product.uuid"
-              :product="product"
-              @view-details="openDetails(product)"
-            />
-          </div>
-        </div>
-
-        <!-- Todos los Juegos -->
-        <div>
-          <h2 class="text-2xl font-bold text-white mb-6">Todos las categorias</h2>
-          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <div 
-              v-for="juego in juegos" 
-              :key="juego.id"
-              class="bg-[#1a2a37] rounded-lg border border-[#2a3b4a] p-4 text-center hover:border-[#00d8a7] transition-colors cursor-pointer"
-            >
-              <i :class="juego.icon" class="text-2xl text-[#00d8a7] mb-2"></i>
-              <p class="text-white text-sm">{{ juego.name }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sección Rifas -->
-      <div v-if="currentTab === 'Rifas'" class="space-y-6">
-        <!-- Loading State -->
-        <div v-if="loading" class="loading-container">
-          <div class="main-spinner"></div>
-          <p class="text-white mt-4">Cargando rifas...</p>
-        </div>
-
-        <!-- Error State -->
-        <div v-else-if="error" class="text-center py-8">
-          <i class="fas fa-exclamation-triangle text-3xl text-yellow-500 mb-4"></i>
-          <p class="text-gray-400">{{ error }}</p>
-        </div>
-
-        <!-- Empty State -->
-        <div v-else-if="userRafflesAsProducts.length === 0" class="text-center py-8">
-          <i class="fas fa-ticket-alt text-3xl text-gray-500 mb-4"></i>
-          <p class="text-gray-400">Este usuario no tiene rifas activas</p>
-        </div>
-
-        <!-- Rifas Grid -->
-        <div v-else class="w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
-          <ProductCard
-            v-for="product in userRafflesAsProducts"
-            :key="product.uuid"
-            :product="product"
-            @view-details="openDetails(product)"
+    <!-- Hero Section -->
+    <div class="relative p-6 flex flex-col items-center text-center z-10" v-if="user">
+      <div class="relative">
+        <div class="w-28 h-28 rounded-full overflow-hidden shadow-2xl border-4 border-blue-400/80 relative">
+          <img
+            v-if="user.avatar"
+            :src="user.avatar"
+            alt="avatar"
+            class="w-full h-full object-cover"
           />
+          <div
+            v-else
+            class="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold"
+          >
+            {{ user.name.charAt(0).toUpperCase() }}
+          </div>
+        </div>
+        <!-- Badge verificado -->
+        <div class="absolute -bottom-2 -right-2 bg-gradient-to-r from-blue-500 to-sky-600 rounded-full p-2 shadow-lg border-2 border-white">
+          <i class="fas fa-check text-white text-xs"></i>
         </div>
       </div>
+      
+      <h1 class="mt-4 text-3xl font-bold text-white drop-shadow-lg">
+        {{ user.name }}
+      </h1>
+      <p class="text-blue-200 mt-1 text-sm">Rifero Premium Verificado</p>
 
-      <!-- Sección Comentarios -->
-      <div v-if="currentTab === 'Comentarios'" class="space-y-6">
-        <div class="bg-[#1a2a37] rounded-xl border border-[#2a3b4a] p-6">
-          <h2 class="text-2xl font-bold text-white mb-6">Comentarios de Usuarios</h2>
-          
-          <div class="space-y-4">
-            <div 
-              v-for="comentario in comentarios" 
-              :key="comentario.id"
-              class="border-b border-[#2a3b4a] pb-4 last:border-b-0"
+      <!-- Rating con estilo premium -->
+      <div class="flex items-center gap-3 mt-3 bg-blue-900/40 px-4 py-2 rounded-full border border-blue-500/30">
+        <div class="flex">
+          <i
+            v-for="n in 5"
+            :key="n"
+            class="fas text-lg"
+            :class="n <= user.rating ? 'fa-star text-yellow-400' : 'fa-star text-yellow-700'"
+          ></i>
+        </div>
+        <span class="text-blue-200 text-sm font-semibold">{{ user.rating }}/5</span>
+      </div>
+    </div>
+
+    <!-- Tabs Elegantes -->
+    <div class="relative flex justify-center gap-2 px-4 py-4 bg-blue-900/30 backdrop-blur-sm border-y border-blue-500/20">
+      <button
+        v-for="tab in tabs"
+        :key="tab"
+        @click="currentTab = tab"
+        :class="[ 
+          'px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg border',
+          currentTab === tab
+            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-blue-500/50 scale-105 border-blue-400/50'
+            : 'bg-blue-900/40 text-blue-200 hover:bg-blue-800/60 hover:text-white border-blue-700/30'
+        ]"
+      >
+        {{ tab }}
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="relative p-6 space-y-6" v-if="user">
+      <!-- Información -->
+      <div v-if="currentTab === 'Información'" class="space-y-6">
+        <!-- Tarjeta de Especialización -->
+        <div class="bg-gradient-to-br from-blue-800/60 to-purple-800/60 rounded-2xl p-6 shadow-2xl border border-blue-500/30 backdrop-blur-sm">
+          <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <i class="fas fa-gem text-blue-400"></i>
+            Categorias manejadas
+          </h3>
+          <div class="flex flex-wrap gap-3">
+            <span
+              v-for="cat in categories"
+              :key="cat"
+              class="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full text-sm font-semibold text-white shadow-lg border border-blue-400/30"
             >
-              <div class="flex items-start gap-4">
-                <div class="w-10 h-10 bg-[#00d8a7] rounded-full flex items-center justify-center text-[#0f1923] font-bold">
-                  {{ comentario.user.charAt(0) }}
-                </div>
-                <div class="flex-1">
-                  <div class="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 class="font-bold text-white">{{ comentario.user }}</h4>
-                      <div class="flex items-center gap-1 mt-1">
-                        <i 
-                          v-for="n in 5" 
-                          :key="n"
-                          class="fas fa-star text-xs"
-                          :class="n <= comentario.rating ? 'text-yellow-400' : 'text-gray-600'"
-                        ></i>
-                      </div>
-                    </div>
-                    <span class="text-gray-400 text-sm">{{ comentario.date }}</span>
-                  </div>
-                  <p class="text-gray-300 text-sm">{{ comentario.text }}</p>
-                </div>
-              </div>
+              {{ cat }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Estadísticas Premium -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-blue-800/40 rounded-xl p-4 text-center border border-blue-500/20 backdrop-blur-sm">
+            <div class="text-2xl font-bold text-white">{{ userRifas.length }}</div>
+            <div class="text-blue-200 text-sm mt-1">Rifas Publicadas</div>
+          </div>
+          <div class="bg-purple-800/40 rounded-xl p-4 text-center border border-purple-500/20 backdrop-blur-sm">
+            <div class="text-2xl font-bold text-white">{{ totalTickets }}</div>
+            <div class="text-purple-200 text-sm mt-1">Tickets Vendidos</div>
+          </div>
+        </div>
+
+        <!-- Información Detallada -->
+        <div class="bg-gradient-to-br from-blue-800/50 to-purple-800/50 rounded-2xl p-6 shadow-xl border border-blue-500/20">
+          <h3 class="text-lg font-bold text-white mb-4">Información del Rifero</h3>
+          <div class="space-y-3 text-blue-100">
+            <div class="flex justify-between items-center py-2 border-b border-blue-700/30">
+              <span class="font-semibold">📅 Miembro desde</span>
+              <span class="text-white">hace {{ user.registeredDays }} días</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-blue-700/30">
+              <span class="font-semibold">🔥 Rifas Activas</span>
+              <span class="text-white">{{ userRifas.filter(r => isActive(r.drawDate)).length }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+              <span class="font-semibold">✅ Tasa de Éxito</span>
+              <span class="text-green-400 font-bold">100%</span>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Footer -->
-    <div class="bg-[#1a2a37] border-t border-[#2a3b4a] mt-12 p-6">
-      <div class="max-w-6xl mx-auto text-center text-gray-400 text-sm">
-        <!-- <p>© 2024 TWIN. Todos los derechos reservados.</p> -->
+      <!-- Rifas -->
+      <div v-if="currentTab === 'Rifas'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div v-for="(rifa, i) in sortedRifas" :key="i">
+          <ProductCard
+            :product="rifa"
+            v-if="isActive(rifa.drawDate)"
+            :image="rifa.images?.[0]"
+            :title="rifa.title"
+            :description="rifa.description"
+            :progress="productProgress(rifa)"
+            :drawDate="rifa.drawDate"
+            @view-details="() => openDetails(rifa)"
+            @participar="() => openParticipateModal(rifa)"
+          />
+          <div
+            v-else
+            class="p-6 rounded-2xl bg-gradient-to-br from-blue-800/40 to-purple-800/40 border border-blue-700/30 shadow-xl opacity-70"
+          >
+            <h3 class="font-bold text-white text-lg">{{ rifa.title }}</h3>
+            <p class="text-blue-200 mt-2">{{ rifa.description }}</p>
+            <div class="mt-3 px-3 py-1 bg-blue-900/60 rounded-full text-blue-300 text-sm inline-block">
+              Finalizado: {{ new Date(rifa.drawDate).toLocaleDateString() }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comentarios -->
+      <div v-if="currentTab === 'Comentarios'" class="space-y-4">
+        <div
+          v-for="(c, i) in user.comments"
+          :key="i"
+          class="bg-gradient-to-br from-blue-800/50 to-purple-800/50 rounded-2xl p-6 shadow-xl border border-blue-500/20 backdrop-blur-sm"
+        >
+          <div class="flex gap-4 items-start">
+            <!-- Avatar -->
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+              <img
+                v-if="c.avatar"
+                :src="c.avatar"
+                alt="avatar"
+                class="w-full h-full object-cover rounded-2xl"
+              />
+              <span v-else>{{ c.user.charAt(0).toUpperCase() }}</span>
+            </div>
+
+            <!-- Contenido -->
+            <div class="flex-1">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <h4 class="font-bold text-white text-lg">{{ c.user }}</h4>
+                  <div class="flex items-center gap-2 mt-1">
+                    <div class="flex">
+                      <i
+                        v-for="n in 5"
+                        :key="n"
+                        class="fas text-blue-400"
+                        :class="n <= c.rating ? 'fa-star' : 'fa-star text-blue-700'"
+                      ></i>
+                    </div>
+                  </div>
+                </div>
+                <span class="text-blue-300 text-sm bg-blue-900/40 px-2 py-1 rounded-full">{{ c.date }}</span>
+              </div>
+              <p class="text-blue-100 leading-relaxed">{{ c.text }}</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Modales -->
-    <JackpotAnimation 
-      :show="showJackpot" 
-      :initial-tickets="userInitialTickets" 
-      :purchased-tickets="purchasedTicketsCount" 
-      @close="handleJackpotClose"
+    <ParticiparModal
+      :open="showForm"
+      :product="selectedProduct"
+      @close="showForm = false"
+      @confirmed="handleConfirmed"
     />
-    <ProductModal 
-      :isOpen="showProductModal" 
-      :category="selectedCategory" 
-      @close="showProductModal = false" 
-      @participar="openParticipateModalThroughStore"
+
+    <ConfirmacionModal
+      :open="showConfirm"
+      @close="showConfirm = false"
     />
-    <ConfirmacionModal 
-      :open="showConfirm" 
-      :selectedProduct="selectedProduct" 
-      @close="showConfirm = false" 
-      @showJackpot="handleShowJackpot"
-    />
-    <DetailsModal 
-      :open="showDetails" 
-      :product="selectedProduct" 
-      @close="showDetails = false" 
-      @buy="openParticipateModalThroughStore"
+
+    <DetailsModal
+      :open="showDetails"
+      :product="selectedProduct"
+      @close="showDetails = false"
+      @buy="openParticipateModal"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useUserStore } from "@/stores/useUserStore";
 import { useTicketStore } from "@/stores/useTicketStore";
-import { useGridStore } from '@/stores/useGridStore'; 
-import { UserService, type UserProfile, type Raffle, RaffleService } from "@/services/RaffleService";
 
-// Components
 import ProductCard from "@/components/ProductCard.vue";
+import ParticiparModal from "@/components/ParticipateModal.vue";
 import ConfirmacionModal from "@/components/ConfirmationModal.vue";
 import DetailsModal from "@/components/ProductDetailsModal.vue";
-import ProductModal from "@/components/ProductModal.vue";
-import JackpotAnimation from "@/components/JackpotAnimation.vue";
 
+const route = useRoute();
 const userStore = useUserStore();
 const ticketStore = useTicketStore();
-const gridStore = useGridStore();
-const route = useRoute();
 
-// Tabs de navegación
-const tabs = ["Inicio", "Rifas", "Comentarios"];
-const currentTab = ref("Inicio");
+const user = computed(() => userStore.getUserById(route.params.id as string));
+const userRifas = computed(() =>
+  user.value ? userStore.getUserProducts(user.value.name) : []
+);
 
-// Perfil del usuario cargado desde el endpoint
-const userProfile = ref<UserProfile | null>(null);
-const loading = ref(true);
-const error = ref<string | null>(null);
+const { productProgress } = ticketStore;
 
-// Rifas populares
-const popularRaffles = ref<any[]>([]);
-const loadingPopularRaffles = ref(false);
+// Tabs
+const tabs = ["Información", "Rifas", "Comentarios"];
+const currentTab = ref("Información");
 
-// Modal states
+// Ordenar rifas (activas primero, más nuevas antes)
+const sortedRifas = computed(() => {
+  return [...userRifas.value].sort((a, b) => {
+    const activeA = isActive(a.drawDate);
+    const activeB = isActive(b.drawDate);
+
+    if (activeA !== activeB) return activeA ? -1 : 1;
+    return new Date(b.drawDate).getTime() - new Date(a.drawDate).getTime();
+  });
+});
+
+function isActive(drawDate: string) {
+  return new Date(drawDate).getTime() > Date.now();
+}
+
+// Modales
+const showForm = ref(false);
 const showConfirm = ref(false);
-const showJackpot = ref(false);
-const showProductModal = ref(false);
-const selectedCategory = ref<string | null>(null);
 const showDetails = ref(false);
 const selectedProduct = ref<any | null>(null);
 const userInitialTickets = ref(0);
@@ -503,169 +443,22 @@ const openDetails = (product: any) => {
   showDetails.value = true;
 };
 
-const openParticipateModalThroughStore = (product: any) => {
+const totalTickets = computed(() => {
+  return userRifas.value.reduce((acc, r) => acc + (r.ticketsVendidos || 0), 0);
+});
+
+const categories = computed(() => {
+  const all = userRifas.value.flatMap(r => r.categories || []);
+  return [...new Set(all)];
+});
+
+function openParticipateModal(product: any) {
   selectedProduct.value = product;
   showDetails.value = false;
-  gridStore.openParticipateModal(product);
-};
-
-onMounted(() => {
-  bannerInterval = setInterval(nextBanner, 3000);
-  // Cargar rifas populares cuando se monte el componente
-  loadPopularRaffles();
-});
-
-onUnmounted(() => {
-  if (bannerInterval) {
-    clearInterval(bannerInterval);
-  }
-});
-
-// Cargar perfil del usuario
-onMounted(async () => {
-  const userId = route.params.id as string;
-  try {
-    userProfile.value = await UserService.getPublicProfile(userId);
-  } catch (error) {
-    console.error("Error al cargar el perfil del usuario:", error);
-  } finally {
-    loading.value = false;
-  }
-});
-
-// Datos de promociones
-const promociones = ref([
-  {
-    id: 1,
-    title: "Bono de Bienvenida",
-    description: "+500% en tus primeros 4 depósitos",
-    bonus: "+500% BONUS",
-    icon: "fas fa-gift"
-  },
-  {
-    id: 2,
-    title: "Free Money",
-    description: "Sorteamos Ferrari F8 Spider",
-    bonus: "FREE MONEY",
-    icon: "fas fa-money-bill-wave"
-  },
-
-]);
-
-// Todos los juegos
-const juegos = ref([
-  // { id: 1, name: "Slots", icon: "fas fa-dice" },
-  // { id: 2, name: "Blackjack", icon: "fas fa-club" },
-  // { id: 3, name: "Ruleta", icon: "fas fa-circle" },
-  // { id: 4, name: "Póker", icon: "fas fa-spade" },
-  // { id: 5, name: "Baccarat", icon: "fas fa-heart" },
-  // { id: 6, name: "Dados", icon: "fas fa-dice-six" },
-  { id: 7, name: "Deportes", icon: "fas fa-football-ball" },
-  // { id: 8, name: "Live", icon: "fas fa-video" },
-  { id: 9, name: "Virtual", icon: "fas fa-robot" },
-  { id: 10, name: "Rifas", icon: "fas fa-ticket-alt" },
-  { id: 11, name: "Promos", icon: "fas fa-gift" },
-  { id: 12, name: "VIP", icon: "fas fa-crown" },
-  { id: 13, name: "Autos", icon: "fas fa-car" },
-  { id: 14, name: "Electrónica", icon: "fas fa-tv" },
-  { id: 15, name: "Hogar", icon: "fas fa-home" },
-  { id: 16, name: "Moda", icon: "fas fa-tshirt" },
-  { id: 17, name: "Viajes", icon: "fas fa-plane" },
-  
-
-]);
-
-// Comentarios
-const comentarios = ref([
-  {
-    id: 1,
-    user: "Carlos Rodríguez",
-    rating: 5,
-    date: "hace 2 días",
-    text: "Excelente plataforma, muy confiable. Gané un iPhone en la última rifa y todo fue transparente y rápido."
-  },
-  {
-    id: 2,
-    user: "Ana Martínez",
-    rating: 4,
-    date: "hace 1 semana",
-    text: "Muy buena experiencia, aunque el sorteo se retrasó un poco. Pero al final todo salió perfecto."
-  },
-  {
-    id: 3,
-    user: "Miguel Sánchez",
-    rating: 5,
-    date: "hace 3 semanas",
-    text: "Participé en 3 rifas diferentes y en todas tuve una experiencia excelente. Muy recomendable."
-  },
-  {
-    id: 4,
-    user: "Laura González",
-    rating: 5,
-    date: "hace 1 mes",
-    text: "Increíble! Gané el Ferrari F8 Spider! No podía creerlo cuando me llamaron. Servicio impecable."
-  }
-]);
-
-// Computed para las rifas del usuario
-const userRaffles = computed(() => {
-  return userProfile.value?.raffles || [];
-});
-
-// Computed para el avatar (asegura que sea string o undefined, nunca null)
-const userAvatar = computed(() => {
-  const userData = userStore.getUserById(route.params.id as string);
-  return userData?.avatar || undefined;
-});
-
-// Función para calcular el progreso de una rifa
-const calculateProgress = (raffle: Raffle) => {
-  const totalTickets = raffle.end_range - raffle.initial_range + 1;
-  const soldTickets = raffle.tickets_sold;
-  return Math.round((soldTickets / totalTickets) * 100);
-};
-
-// Función para formatear la fecha
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
+  showForm.value = true;
+}
 </script>
 
 <style scoped>
-/* Estilos adicionales para mejorar la apariencia */
-body {
-  background-color: #0f1923;
-  font-family: 'Inter', sans-serif;
-}
-
-/* Efectos hover mejorados */
-.hover\:border-\[\#00d8a7\]:hover {
-  border-color: #00d8a7;
-  transform: translateY(-2px);
-  transition: all 0.3s ease;
-}
-
-/* Scrollbar personalizado */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #1a2a37;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #00d8a7;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #00c797;
-}
-
-/* Transiciones suaves para el carrusel */
-.transition-opacity {
-  transition: opacity 1s ease-in-out;
-}
+/* Efectos adicionales para el tema ámbar/naranja */
 </style>

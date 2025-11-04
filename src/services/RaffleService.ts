@@ -47,19 +47,6 @@ export interface Prize {
   is_published?: boolean;
   created_at?: string;
   updated_at?: string;
-  created_by_id?: string;
-  created_name_by?: string | null;
-  updated_by_id?: string;
-  updated_name_by?: string | null;
-  raffle_id?: string;
-  deleted_at?: string | null;
-  has_winner?: boolean;
-  is_claimed?: boolean;
-  lottery_draw_id?: string | null;
-  number_winner?: string | null;
-  status?: string;
-  status_history?: string | null;
-  ticket_winner?: string | null;
 }
 
 export interface PrizeResponse {
@@ -101,29 +88,6 @@ export interface PaginatedGridResponse {
   meta: PaginationMeta;
 }
 
-// Interfaz para el perfil de usuario (rifero)
-export interface UserProfile {
-  uuid: string;
-  name: string;
-  member_since: string;
-  profile: {
-    type: string;
-    data: {
-      first_name: string | null;
-      last_name: string | null;
-      city: string | null;
-      state: string | null;
-    };
-  };
-  raffles: Raffle[]; // Usamos la interfaz Raffle que ya tenemos
-}
-
-export interface UserProfileResponse {
-  success: boolean;
-  data: UserProfile;
-  message: string;
-}
-
 export const RaffleService = {
   async getAll(page = 1, perPage = 10): Promise<PaginatedResponse<Raffle>> {
     try {
@@ -148,7 +112,6 @@ export const RaffleService = {
         status: r.status,
         images: r.images ?? [],
         categories: r.categories ?? [],
-        prizes: r.prizes ?? [], // ✅ AÑADIDO AQUÍ
         created_by: r.created_by ?? {},
         seller: r.seller ? {
           uuid: r.seller.uuid,
@@ -271,6 +234,23 @@ export const RaffleService = {
     }
   },
 
+  async getAvailableTickets(raffleId: string) {
+      try {
+      const token = localStorage.getItem("token");
+      const response = await apiClient.get(`/get-tickets-available/${raffleId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+
+      const apiData = response.data.data;
+
+      
+      return apiData;
+    } catch (error) {
+      console.error(`Error al obtener la grilla paginada de la rifa:`, error);
+      throw error;
+    }
+  },
+
   /**
    * Reserva uno o más tickets para un usuario.
    * @param raffleId - El UUID de la rifa.
@@ -343,23 +323,6 @@ export const PrizeService = {
       return response.data.data || response.data;
     } catch (error) {
       console.error("Error al obtener detalles del premio:", error);
-      throw error;
-    }
-  },
-};
-// Servicio para obtener el perfil público del usuario
-export const UserService = {
-  async getPublicProfile(userId: string): Promise<UserProfile> {
-    try {
-      const response = await apiClient.get(`/users/public/${userId}`);
-      const responseData = response.data as UserProfileResponse;
-      if (responseData.success) {
-        return responseData.data;
-      } else {
-        throw new Error(responseData.message);
-      }
-    } catch (error) {
-      console.error("Error al obtener el perfil público:", error);
       throw error;
     }
   },

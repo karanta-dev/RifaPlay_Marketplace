@@ -4,6 +4,8 @@ on:
   pull_request:
     types:
       - closed
+    branches:
+      - main-demo
   push:
     branches:
       - main-demo
@@ -21,21 +23,27 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '22.16.0'
+          
       - name: Instalar pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8           
+          version: 8
+          
       - name: Instalar dependencias
-        run: pnpm install --force
+        run: |
+          rm -f pnpm-workspace.yaml
+          rm -f pnpm-workspace.yml
+          pnpm install --frozen-lockfile
+
       - name: Crear archivo .env desde secrets
         run: |
-          echo "VITE_API_URL=${{secrets.VITE_API_URL_DEMO}}">>.env
+          echo "VITE_API_URL=${{secrets.VITE_API_URL_DEMO}}" > .env
 
       - name: Compilar proyecto 
         run: pnpm run build -m pwa
 
       - name: Verificar archivos generados
-        run: ls -R dist
+        run: ls -la dist/
 
       - name: Subir archivos al servidor (directorio temporal)
         uses: appleboy/scp-action@v0.1.7
