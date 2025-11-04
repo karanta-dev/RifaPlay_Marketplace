@@ -8,7 +8,7 @@ interface GridState {
     pagination: any | null;
     selectedProduct: any | null;
     isParticipateModalOpen: boolean;
-    availableTickets: number | null; // <-- AQUÍ LE DICES A TYPESCRIPT QUE ESTA MIERDA EXISTE
+    availableTickets: number | null; 
 }
 
 export const useGridStore = defineStore('grid', {
@@ -45,7 +45,7 @@ export const useGridStore = defineStore('grid', {
                 images: r.images?.map((img: any) => img.url) ?? [],
                 categories: r.prizes?.[0]?.category ? [r.prizes[0].category.name] : [],
                 status: r.status,
-                ticketsVendidos: null,
+                ticketsVendidos: 0,
                 isProgressLoading: false,
               }));
 
