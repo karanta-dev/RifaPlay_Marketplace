@@ -126,7 +126,7 @@
       <!-- Sección Inicio -->
       <div v-if="currentTab === 'Inicio'" class="space-y-8">
         <!-- Promociones Destacadas -->
-        <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div 
             v-for="promo in promociones" 
             :key="promo.id"
@@ -139,14 +139,10 @@
               <h3 class="font-bold text-white text-lg mb-2">{{ promo.title }}</h3>
               <p class="text-gray-400 text-sm mb-4">{{ promo.description }}</p>
               <div class="flex justify-between items-center">
-                <span class="text-[#00d8a7] text-sm font-bold">{{ promo.bonus }}</span>
+                <span class="text-[#00d8a7] text-sm font-bold">{{ promo.bonus }}</span> -->
                 <!-- <button class="bg-[#00d8a7] text-[#0f1923] px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#00c797] transition-colors">
                   PARTICIPAR
                 </button> -->
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- Rifas Populares -->
         <div>
@@ -534,23 +530,23 @@ onMounted(async () => {
 });
 
 // Datos de promociones
-const promociones = ref([
-  {
-    id: 1,
-    title: "Bono de Bienvenida",
-    description: "+500% en tus primeros 4 depósitos",
-    bonus: "+500% BONUS",
-    icon: "fas fa-gift"
-  },
-  {
-    id: 2,
-    title: "Free Money",
-    description: "Sorteamos Ferrari F8 Spider",
-    bonus: "FREE MONEY",
-    icon: "fas fa-money-bill-wave"
-  },
+// const promociones = ref([
+//   // {
+//   //   id: 1,
+//   //   title: "Bono de Bienvenida",
+//   //   description: "+500% en tus primeros 4 depósitos",
+//   //   bonus: "+500% BONUS",
+//   //   icon: "fas fa-gift"
+//   // },
+//   // {
+//   //   id: 2,
+//   //   title: "Free Money",
+//   //   description: "Sorteamos Ferrari F8 Spider",
+//   //   bonus: "FREE MONEY",
+//   //   icon: "fas fa-money-bill-wave"
+//   // },
 
-]);
+// ]);
 
 // Todos los juegos
 const juegos = ref([
