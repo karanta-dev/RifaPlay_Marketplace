@@ -372,6 +372,7 @@ const banners = ref([
 ]);
 
 // Función para cargar rifas populares
+// Función para cargar rifas populares DEL USUARIO ACTUAL
 const loadPopularRaffles = async () => {
   loadingPopularRaffles.value = true;
   try {
@@ -379,10 +380,17 @@ const loadPopularRaffles = async () => {
     const response = await RaffleService.getAll(1, 50);
     
     if (response && Array.isArray(response.data)) {
-      // Filtrar solo rifas activas (no sorteadas)
+      const userId = route.params.id as string;
+      
+      // Filtrar solo rifas activas del usuario actual
       const now = new Date();
-      const activeRaffles = response.data.filter(raffle => {
+      const userActiveRaffles = response.data.filter(raffle => {
         if (!raffle || !raffle.uuid) return false;
+        
+        // Verificar que la rifa pertenezca al usuario actual
+        if (raffle.seller && raffle.seller.uuid !== userId) {
+          return false; // Excluir rifas de otros usuarios
+        }
         
         // Verificar si la rifa ya fue sorteada (fecha de sorteo en el pasado)
         if (raffle.raffle_date) {
@@ -399,7 +407,7 @@ const loadPopularRaffles = async () => {
       });
 
       // Ordenar por tickets vendidos (de mayor a menor) y tomar las primeras 4
-      const sortedRaffles = activeRaffles
+      const sortedRaffles = userActiveRaffles
         .sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0))
         .slice(0, 4);
 
@@ -412,7 +420,7 @@ const loadPopularRaffles = async () => {
         ticketsVendidos: raffle.tickets_sold || 0,
         ticketsMax: (raffle.end_range - raffle.initial_range + 1) || 100,
         images: raffle.images?.map(img => img.url) || [],
-        rifero: raffle.seller ? `${raffle.seller.name} ${raffle.seller.last_name}`.trim() : "Anónimo",
+        rifero: fullName.value,
         category: raffle.categories?.[0]?.name || "General",
         progress: calculateProgress(raffle),
         drawDate: raffle.raffle_date,
