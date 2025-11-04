@@ -202,24 +202,15 @@ const { showToast } = useToast();
 const ticketStore = useTicketStore();
 const authStore = useAuthStore();
 const gridStore = useGridStore();
-const { selectedProduct, isParticipateModalOpen } = storeToRefs(gridStore);
 const verifyingPagoMovil = ref(false);
 const pagoMovilVerifyResult = ref<{ success: boolean; message: string; status?: string } | null>(null);
 const pagoMovilNeedsReverify = ref(false)
 const showReverifyModal = ref(false)
 const reverifySubmitting = ref(false)
 const reverifyForm = ref({ fecha: '', referencia: '', banco: '', prefix: '0414', telefono: '', cedula: '', monto: '' })
-const banks = ref<Bank[]>([])
-const loadingBanks = ref(false)
 const selectionMode = ref<'auto' | 'manual'>('auto')
 const selectedManualTickets = ref<number[]>([])
 const pagoMovilMode = ref<'manual' | 'automatico'>('manual')
-const bcvRate = ref(0)
-const loadingBcv = ref(false)
-const paymentMethods = ref<PaymentMethod[]>([])
-const loadingMethods = ref(false)
-const currencies = ref<Currency[]>([])
-const loadingCurrencies = ref(false)
 const selectedCurrencyId = ref<string | undefined>(undefined)
 const initialTicketsCount = ref(0)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -238,6 +229,21 @@ const {
   clearTimer, 
   resetTimer 
 } = useBookingTimer(10);
+
+// Leemos todo directamente desde el store. ¡Listo!
+const { 
+  selectedProduct,
+  isParticipateModalOpen,
+  bcvRate, 
+  banks, 
+  paymentMethods, 
+  currencies,
+  isLoadingModalData // El estado de carga centralizado
+} = storeToRefs(gridStore);
+const loadingBcv = computed(() => isLoadingModalData.value);
+const loadingBanks = computed(() => isLoadingModalData.value);
+const loadingMethods = computed(() => isLoadingModalData.value);
+const loadingCurrencies = computed(() => isLoadingModalData.value);
 
 const bookingTimerStarted = ref(false);
 
@@ -396,7 +402,6 @@ watch([currentQty, bcvRate, selectedProduct], ([qty, rate, product]) => {
     totalPriceBs.value = '0,00';
   }
 }, {
-  immediate: true,
   deep: true
 });
 
@@ -768,18 +773,6 @@ async function handleSubmitReverify() {
     reverifySubmitting.value = false;
   }
 }
-
-async function loadBanks() {
-  loadingBanks.value = true;
-  try {
-    banks.value = await PaymentFlowService.fetchBanks();
-  } catch (error: any) {
-    console.error('Error al cargar los bancos:', error);
-  } finally {
-    loadingBanks.value = false;
-  }
-}
-
 function triggerFileDialog() {
   fileInput.value?.click();
 }
@@ -801,47 +794,12 @@ watch(() => form.comprobante, (newFile) => {
 });
 
 
-async function loadPaymentMethods() {
-  loadingMethods.value = true;
-  try {
-    paymentMethods.value = await PaymentFlowService.fetchPaymentMethods();
-  } catch (error) {
-    console.error('Error al cargar los métodos de pago:', error);
-  } finally {
-    loadingMethods.value = false;
-  }
-}
 
-async function fetchBcvRate() {
-  loadingBcv.value = true;
-  try {
-    const response = await fetch('https://bcv-api.karanta.dev/rates/');
-    const data = await response.json();
-    bcvRate.value = data.bcv || 0;
-  } catch (error) {
-    console.error('Error fetching BCV rate:', error);
-  } finally {
-    loadingBcv.value = false;
-  }
-}
 
-onMounted(() => {
-  console.log('🔴 Componente montado - cargando datos UNA SOLA VEZ')
-  
-  // Cargar los datos cuando el componente se monte
-  fetchBcvRate()
-  loadPaymentMethods()
-  loadBanks()
-  
-  loadingCurrencies.value = true
-  PaymentFlowService.fetchCurrencies().then(result => {
-    const currs = result?.currencies ?? []
-    currencies.value = currs
-    selectedCurrencyId.value = result?.defaultCurrencyId || currs[0]?.uuid
-  }).finally(() => {
-    loadingCurrencies.value = false
-  })
-})
+
+
+
+
 
 const handleConfirm = async () => {
   error.value = null;
