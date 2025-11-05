@@ -1,23 +1,23 @@
 <template>
   <div>
-<div
-  class="w-full max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 p-2"
->
-  <ProductCard
-    v-for="(item, i) in sortedItems"
-    :key="i"
-    :image="item.images?.[0] ?? item.image"
-    :title="item.title"
-    :description="item.description"
-    :progress="productProgress(item)"
-    :drawDate="item.drawDate"
-    @participar="openParticipateModal(item)"
-    @view-details="openDetails(item)"
-  />
-</div>
+    <div v-if="isLoadingList" class="loading-container">
+      <div class="main-spinner"></div>
+      <p class="text-white mt-4">Cargando rifas...</p>
+    </div>
 
-    <!-- 🧭 Controles de paginación -->
-    <div class="flex justify-center items-center gap-4 mt-6">
+    <div
+      v-else
+      class="w-full max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 p-2"
+    >
+      <ProductCard
+        v-for="product in displayedProducts"
+        :key="product.uuid"
+        :product="product"
+        @view-details="openDetails(product)"
+      />
+    </div>
+
+    <div v-if="!isLoadingList && !props.products && totalPages > 1" class="flex justify-center items-center gap-4 mt-6">
       <button
         class="px-4 py-2 rounded-lg bg-blue-800 text-white hover:bg-blue-700 transition disabled:opacity-40"
         :disabled="currentPage === 1"
@@ -25,11 +25,9 @@
       >
         ◀ Anterior
       </button>
-
       <span class="text-white font-semibold">
         Página {{ currentPage }} de {{ totalPages }}
       </span>
-
       <button
         class="px-4 py-2 rounded-lg bg-blue-800 text-white hover:bg-blue-700 transition disabled:opacity-40"
         :disabled="currentPage === totalPages"
@@ -39,139 +37,101 @@
       </button>
     </div>
 
-    <!-- modal de participar -->
-    <ParticiparModal
-      :open="showForm"
-      :product="selectedProduct"
-      @close="showForm = false"
-      @confirmed="handleConfirmed"
-    />
-
-    <!-- modal de jackpot animado -->
-    <JackpotAnimation
-      :show="showJackpot"
-      :initial-tickets="userInitialTickets"
-      :purchased-tickets="purchasedTicketsCount"
-      @close="handleJackpotClose"
-    />
-
-    <ProductModal
-      :isOpen="showProductModal"
-      :category="selectedCategory"
-      @close="showProductModal = false"
-      @participar="openParticipateModal"
-    />
-
-    <!-- <ConfirmacionModal
-      :open="showConfirm"
-      @close="showConfirm = false"
-      @showJackpot="handleShowJackpot"
-    /> -->
-<ConfirmacionModal
-  :open="showConfirm"
-  :selectedProduct="selectedProduct"
-  @close="showConfirm = false"
-  @showJackpot="handleShowJackpot"
-/>
-
-    <DetailsModal
-      :open="showDetails"
-      :product="selectedProduct"
-      @close="showDetails = false"
-      @buy="openParticipateModal"
-    />
+    <JackpotAnimation :show="showJackpot" :initial-tickets="userInitialTickets" :purchased-tickets="purchasedTicketsCount" @close="handleJackpotClose"/>
+    <ProductModal :isOpen="showProductModal" :category="selectedCategory" @close="showProductModal = false" @participar="openParticipateModalThroughStore"/>
+    <ConfirmacionModal :open="showConfirm" :selectedProduct="selectedProduct" @close="showConfirm = false" @showJackpot="handleShowJackpot"/>
+    <DetailsModal :open="showDetails" :product="selectedProduct" @close="showDetails = false" @buy="openParticipateModalThroughStore"/>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue"
 import { storeToRefs } from "pinia"
-import { useTicketStore } from "@/stores/useTicketStore"
-import { useAuthStore } from "@/stores/useAuthStore"
 
+import { useGridStore } from '@/stores/useGridStore' 
+import { useTicketStore } from "@/stores/useTicketStore" 
 import ProductCard from "./ProductCard.vue"
-import ParticiparModal from "./ParticipateModal.vue"
 import ConfirmacionModal from "./ConfirmationModal.vue"
 import DetailsModal from "./ProductDetailsModal.vue"
 import ProductModal from "./ProductModal.vue"
 import JackpotAnimation from "./JackpotAnimation.vue"
 
+// Define las props que recibe el componente
 const props = defineProps<{
-  products?: any[] | null
+  products?: any[]  // Hacemos que products sea opcional
 }>()
 
-const ticketStore = useTicketStore()
-const authStore = useAuthStore()
+const gridStore = useGridStore()
+const { products: storeProducts, isLoadingList, pagination } = storeToRefs(gridStore)
+const ticketStore = useTicketStore() 
+const itemsPerPage = 16
 
-// ✅ OBTENER METADATOS: Traemos 'pagination' del store (así se llama en tu store)
-const { topProducts, pagination } = storeToRefs(ticketStore)
-const { productProgress } = ticketStore
+// Función para ordenar productos con sorteados al final y activos por popularidad
+const sortProductsByPopularityWithFinishedLast = (products: any[]) => {
+  const now = Date.now();
+  const activeProducts: any[] = [];
+  const finishedProducts: any[] = [];
 
-// 🔹 PAGINACIÓN (Ahora controlada por el backend)
-const itemsPerPage = 16 // Debe coincidir con el 'perPage' del store/backend
-
-onMounted(() => {
-  // ✅ Cargar la página 1 cuando el componente se monta
-  ticketStore.loadRaffles(1, itemsPerPage);
-});
-
-// ✅ Productos a mostrar (del prop o del store)
-const items = computed(() => {
-  if (props.products?.length) return props.products
-  // 'topProducts' ahora son solo los 16 productos de la página actual
-  return topProducts.value
-})
-
-// 🔹 PRODUCTOS ORDENADOS (Esta lógica es correcta, solo ordenará la página actual)
-const sortedItems = computed(() => {
-  const activeProducts = []
-  const soldOutProducts = []
-  
-  for (const product of items.value) {
-    // Tu store ya no tiene 'productProgress' como getter, lo tienes en el componente
-    // Asegúrate de que 'product' tenga 'ticketsVendidos' y 'ticketsMax'
-    // Tu store SÍ los mapea (línea 363), así que esto está bien.
-    const progress = productProgress(product) 
-    const drawDate = product.drawDate ? new Date(product.drawDate).getTime() : 0
-    const now = Date.now()
-    
-    const isSoldOut = progress === 100
-    const isTimeUp = drawDate <= now
-    
-    if (isSoldOut || isTimeUp) {
-      soldOutProducts.push(product)
+  products.forEach(product => {
+    const drawDate = new Date(product.drawDate).getTime();
+    if (drawDate > now) {
+      activeProducts.push(product);
     } else {
-      activeProducts.push(product)
+      finishedProducts.push(product);
     }
+  });
+
+  // Ordenar productos activos por popularidad (más tickets vendidos primero)
+  const sortedActiveProducts = [...activeProducts].sort((a, b) => {
+    const aTickets = a.ticketsVendidos || 0;
+    const bTickets = b.ticketsVendidos || 0;
+    
+    // Orden descendente: más tickets primero
+    return bTickets - aTickets;
+  });
+
+  // Ordenar productos sorteados por fecha de sorteo (más recientes primero)
+  const sortedFinishedProducts = [...finishedProducts].sort((a, b) => {
+    const aDate = new Date(a.drawDate).getTime();
+    const bDate = new Date(b.drawDate).getTime();
+    return bDate - aDate;
+  });
+
+  return [...sortedActiveProducts, ...sortedFinishedProducts];
+};
+
+// Lógica para determinar qué productos mostrar:
+// Si se pasan productos por props, usarlos. Si no, usar los del store ordenados.
+const displayedProducts = computed(() => {
+  if (props.products) {
+    return props.products; // Ya vienen ordenados desde Search.vue
+  } else {
+    // Ordenar productos del store con sorteados al final y activos por popularidad
+    return sortProductsByPopularityWithFinishedLast(storeProducts.value);
   }
-  
-  return [...activeProducts, ...soldOutProducts]
 })
 
-// 🔹 LÓGICA DE PAGINACIÓN (Ahora lee del store)
+// Solo cargar productos si no se están pasando por props
+onMounted(() => {
+  if (!props.products) {
+    gridStore.fetchProductList(1, itemsPerPage)
+  }
+})
 
 const currentPage = computed(() => pagination.value?.current_page || 1)
-
 const totalPages = computed(() => pagination.value?.last_page || 1)
-
 
 function nextPage() {
   if (currentPage.value < totalPages.value) {
-    // Llama al store para cargar los productos de la SIGUIENTE página
-    ticketStore.loadRaffles(currentPage.value + 1, itemsPerPage)
+    gridStore.fetchProductList(currentPage.value + 1, itemsPerPage)
   }
 }
-
-// ✅ MODIFICADO: 'prevPage' ahora llama al store
 function prevPage() {
   if (currentPage.value > 1) {
-    // Llama al store para cargar los productos de la página ANTERIOR
-    ticketStore.loadRaffles(currentPage.value - 1, itemsPerPage)
+    gridStore.fetchProductList(currentPage.value - 1, itemsPerPage)
   }
 }
 
-// 🔹 Modales y funciones previas (sin cambios)
-const showForm = ref(false)
 const showConfirm = ref(false)
 const showJackpot = ref(false)
 const showProductModal = ref(false)
@@ -180,38 +140,6 @@ const showDetails = ref(false)
 const selectedProduct = ref<any | null>(null)
 const userInitialTickets = ref(0)
 const purchasedTicketsCount = ref(0)
-
-const handleConfirmed = (data?: { initialTickets: number; purchasedTickets: number }) => {
-  showForm.value = false
-
-  if (data) {
-    userInitialTickets.value = data.initialTickets
-    purchasedTicketsCount.value = data.purchasedTickets
-  } else {
-    userInitialTickets.value = getUserInitialTickets()
-    purchasedTicketsCount.value = getPurchasedTicketsCount()
-  }
-
-  showConfirm.value = true
-}
-
-const getUserInitialTickets = () => {
-  const userId = authStore.user?.id
-  if (userId) {
-    const currentCount = ticketStore.userTicketsCount(userId)
-    const justPurchased = ticketStore.lastAssignedTickets?.length || 0
-    return Math.max(0, currentCount - justPurchased)
-  }
-  const currentNullTickets = ticketStore.tickets.filter(t => t.userId === null).length
-  const justPurchased = ticketStore.lastAssignedTickets?.length || 0
-  return Math.max(0, currentNullTickets - justPurchased)
-}
-
-const getPurchasedTicketsCount = () => {
-  return ticketStore.lastAssignedTickets?.length ||
-         (ticketStore.ticketNumber ? 1 : 0) ||
-         Number(ticketStore.formData?.tickets) || 1
-}
 
 const handleShowJackpot = () => {
   showConfirm.value = false
@@ -228,9 +156,34 @@ const openDetails = (product: any) => {
   showDetails.value = true
 }
 
-function openParticipateModal(product: any) {
-  selectedProduct.value = product
-  showDetails.value = false
-  showForm.value = true
+function openParticipateModalThroughStore(product: any) {
+  selectedProduct.value = product;
+  showDetails.value = false;
+  gridStore.openParticipateModal(product);
 }
 </script>
+
+<style scoped>
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.main-spinner {
+  width: 4rem;
+  height: 4rem;
+  border: 5px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #f3b243;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

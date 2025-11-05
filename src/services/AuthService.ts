@@ -1,4 +1,6 @@
-import apiClient from "./api";
+// src/services/AuthService.ts - MODIFICADO
+
+import  apiClient  from "./api";
 
 export const AuthService = {
   async login(email: string, password: string) {
@@ -7,21 +9,11 @@ export const AuthService = {
       password,
     });
 
-    // Normalizar respuesta para que el store pueda manejar distintos formatos
-    // Backend puede devolver { succes: 'true', data: { ... , token } , message }
-    // o { status: 'success', data: { ... } } o simplemente { data: {...} }
     const raw = data;
-
-    // token puede venir en data.token o data.data.token
     const token = data?.token || data?.data?.token || data?.access_token || null;
-
-    // user puede estar en data.data o data.data.user o data (si ya trae el objeto)
     const user = data?.data || data?.user || (typeof data === 'object' ? data : null);
 
-// ✅ CRÍTICO: Guardar el token para que el Interceptor pueda leerlo
-    if (token) {
-        localStorage.setItem('auth_token', token);
-    }
+    // El store se encargará de guardar el token.
     
     return { raw, token, user };
   },
@@ -41,21 +33,19 @@ export const AuthService = {
     const token = data?.token || data?.data?.token || data?.access_token || null;
     const user = data?.data || data?.user || (typeof data === 'object' ? data : null);
 
-// ✅ CRÍTICO: Guardar el token al registrarse
-    if (token) {
-        localStorage.setItem('auth_token', token);
-    }
+    // El store se encargará de guardar el token.
     
     return { raw, token, user };
   },
 
   async getUserProfile() {
+    // NO SE NECESITAN CAMBIOS AQUÍ.
     const { data } = await apiClient.get('/admin/me');
     return data;
   },
 
-  // ✅ Nuevo método para subir avatar
   async uploadAvatar(userId: string | number, avatarFile: File) {
+    // NO SE NECESITAN CAMBIOS AQUÍ.
     const formData = new FormData();
     formData.append('photo', avatarFile);
 
@@ -67,29 +57,12 @@ export const AuthService = {
 
     return data;
   },
-  // ✅ Añadir una función para limpiar al cerrar sesión
-  logout() {
-    localStorage.removeItem('auth_token');
-    // Opcional: Llamar al endpoint de logout del backend
-    // apiClient.post('/auth/logout'); 
-  }
-
-  // async getUserProfile(token: string) {
-  //   const { data } = await apiClient.get('/auth/me', {
-  //     headers: { 
-  //       'Authorization': `Bearer ${token}`,
-  //     },
-  //   });
-
-  //   // Normalizar para devolver siempre el objeto user
-  //   return data?.data || data;
-  // },
-
-  // async logout(token: string) {
-  //   await apiClient.post('/auth/logout', {}, {
-  //     headers: { 
-  //       'Authorization': `Bearer ${token}`,
-  //     }
-  //   });
-  // },
+  
+  async logout() {
+    try {
+      await apiClient.post('/auth/logout'); 
+    } catch (error) {
+      console.warn("No se pudo notificar al servidor el cierre de sesión. Limpiando localmente.");
+    }
+  },
 };

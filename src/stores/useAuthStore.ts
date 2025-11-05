@@ -3,7 +3,7 @@ import { ref, computed, watch } from "vue";
 import { AuthService } from "@/services/AuthService";
 import axios from "axios";
 
-// Función auxiliar para obtener el usuario de forma segura... (sin cambios)
+// Función auxiliar para obtener el usuario de forma segura...
 const getInitialUser = () => {
   const userString = localStorage.getItem('user');
   if (!userString || userString === 'undefined') {
@@ -23,6 +23,7 @@ export const useAuthStore = defineStore("auth", () => {
   const user = ref<any>(getInitialUser()); 
   const token = ref<string | null>(localStorage.getItem("token"));
   const isAuthenticated = computed(() => !!token.value);
+  const showLoginModal = ref(false); // 👈 AÑADE ESTA LÍNEA
 
   // Ensure axios default header is set on startup if token exists
   if (token.value) {
@@ -36,10 +37,6 @@ export const useAuthStore = defineStore("auth", () => {
       
       const response = await AuthService.login(email, password);
       console.log('✅ Login response:', response);
-      
-      // ----------------------------------------------------
-      // 👇 INICIO DE LA MODIFICACIÓN (REEMPLAZA EL BLOQUE ANTERIOR)
-      // ----------------------------------------------------
       
       // AuthService returns { raw, token, user }
       const responseToken = response.token || response.raw?.token || null;
@@ -58,17 +55,13 @@ export const useAuthStore = defineStore("auth", () => {
       }
 
       // Save user (strip token if present)
-  const userToStore = { ...responseUser };
-  if (userToStore.token) delete userToStore.token;
-  // Normalize id field for components expecting `id`
-  if (!userToStore.id && userToStore.uuid) userToStore.id = userToStore.uuid;
-  user.value = userToStore;
-  localStorage.setItem("user", JSON.stringify(userToStore));
+      const userToStore = { ...responseUser };
+      if (userToStore.token) delete userToStore.token;
+      // Normalize id field for components expecting `id`
+      if (!userToStore.id && userToStore.uuid) userToStore.id = userToStore.uuid;
+      user.value = userToStore;
+      localStorage.setItem("user", JSON.stringify(userToStore));
       
-      // ----------------------------------------------------
-      // 👆 FIN DE LA MODIFICACIÓN
-      // ----------------------------------------------------
-
       console.log('✅ Login successful, user:', user.value);
       return true;
       
@@ -138,11 +131,11 @@ export const useAuthStore = defineStore("auth", () => {
       }
 
       if (responseUser) {
-  const userToStore = { ...responseUser };
-  if (userToStore.token) delete userToStore.token;
-  if (!userToStore.id && userToStore.uuid) userToStore.id = userToStore.uuid;
-  user.value = userToStore;
-  localStorage.setItem("user", JSON.stringify(userToStore));
+        const userToStore = { ...responseUser };
+        if (userToStore.token) delete userToStore.token;
+        if (!userToStore.id && userToStore.uuid) userToStore.id = userToStore.uuid;
+        user.value = userToStore;
+        localStorage.setItem("user", JSON.stringify(userToStore));
       }
 
       // If the backend didn't return a token but provided a user, attempt to fetch profile
@@ -165,7 +158,7 @@ export const useAuthStore = defineStore("auth", () => {
   };
 
   // Resto del código permanece igual...
-const loadUserProfile = async () => {
+  const loadUserProfile = async () => {
     if (!token.value) return;
     try {
       // 1. Renombrar 'profile' a 'response' para más claridad
@@ -228,24 +221,33 @@ const loadUserProfile = async () => {
   const isAdult = computed(() => {
     return userAge.value !== null && userAge.value >= 18;
   });
-const userPhoto = computed(() => {
-  const photoPath = user.value?.natural_profile?.photo; //
 
-  if (photoPath) {
+  const userPhoto = computed(() => {
+    const photoPath = user.value?.natural_profile?.photo; //
+
+    if (photoPath) {
+      // 1. Esta es tu URL de API (ej: http://192.168.1.17:8000/api/v1)
+      const apiUrl = import.meta.env.VITE_API_URL;
+      
+      // 2. ✅ LE QUITAMOS EL PREFIJO DE LA API
+      // Asumimos que la URL base es la API_URL sin el '/api/v1'
+      const baseUrl = apiUrl.replace('/api/v1', ''); // Queda: http://192.168.1.17:8000
+      
+      // 3. Construimos la URL correcta al storage
+      return `${baseUrl}/storage/${photoPath}`; // Queda: http://.../storage/users/avatars/...
+    }
     
-    // 1. Esta es tu URL de API (ej: http://192.168.1.17:8000/api/v1)
-    const apiUrl = import.meta.env.VITE_API_URL;
-    
-    // 2. ✅ LE QUITAMOS EL PREFIJO DE LA API
-    // Asumimos que la URL base es la API_URL sin el '/api/v1'
-    const baseUrl = apiUrl.replace('/api/v1', ''); // Queda: http://192.168.1.17:8000
-    
-    // 3. Construimos la URL correcta al storage
-    return `${baseUrl}/storage/${photoPath}`; // Queda: http://.../storage/users/avatars/...
-  }
-  
-  return null;
-});
+    return null;
+  });
+
+  // 👈 AÑADE ESTAS FUNCIONES PARA MANEJAR EL MODAL
+  const openLoginModal = () => {
+    showLoginModal.value = true;
+  };
+
+  const closeLoginModal = () => {
+    showLoginModal.value = false;
+  };
 
   watch(token, (val) => {
     if (val) localStorage.setItem("token", val);
@@ -267,9 +269,12 @@ const userPhoto = computed(() => {
     userAge,
     isAdult,
     userPhoto,
+    showLoginModal, 
     login, 
     register, 
     logout, 
-    loadUserProfile 
+    loadUserProfile,
+    openLoginModal, 
+    closeLoginModal 
   };
 });

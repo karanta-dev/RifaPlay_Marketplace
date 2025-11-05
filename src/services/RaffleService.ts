@@ -47,7 +47,21 @@ export interface Prize {
   is_published?: boolean;
   created_at?: string;
   updated_at?: string;
+  created_by_id?: string;
+  created_name_by?: string | null;
+  updated_by_id?: string;
+  updated_name_by?: string | null;
+  raffle_id?: string;
+  deleted_at?: string | null;
+  has_winner?: boolean;
+  is_claimed?: boolean;
+  lottery_draw_id?: string | null;
+  number_winner?: string | null;
+  status?: string;
+  status_history?: string | null;
+  ticket_winner?: string | null;
 }
+
 
 export interface PrizeResponse {
   status: string;
@@ -61,9 +75,8 @@ export interface TicketsCountResponse {
   };
   message: string;
 }
-// O MEJOR AÚN, usa esta estructura más limpia:
 export interface SoldTicketsData {
-  tickets: { [key: string]: string }; // Solo los tickets como strings
+  tickets: { [key: string]: string };
   pagination: {
     current_page: number;
     total: number;
@@ -78,24 +91,50 @@ export interface SoldTicketsResponse {
   message: string;
 }
 
+// INTERFAZ ARREGLADA: 'number' ahora es un 'string'
+export interface RaffleGridTicket {
+  number: string;
+  status: 'sold' | 'reserved' | 'available';
+}
+
+export interface PaginatedGridResponse {
+  data: RaffleGridTicket[];
+  meta: PaginationMeta;
+}
+
+// Interfaz para el perfil de usuario (rifero)
+export interface UserProfile {
+  uuid: string;
+  name: string;
+  member_since: string;
+  profile: {
+    type: string;
+    data: {
+      first_name: string | null;
+      last_name: string | null;
+      city: string | null;
+      state: string | null;
+    };
+  };
+  raffles: Raffle[]; // Usamos la interfaz Raffle que ya tenemos
+}
+
+export interface UserProfileResponse {
+  success: boolean;
+  data: UserProfile;
+  message: string;
+}
+
 export const RaffleService = {
   async getAll(page = 1, perPage = 10): Promise<PaginatedResponse<Raffle>> {
     try {
       const token = localStorage.getItem("token");
-      console.log(`🔍 [RaffleService] Obteniendo rifas - Página: ${page}, Por página: ${perPage}`);
-
       const response = await apiClient.get('/raffles', {
         params: { page, perPage: perPage, paginated: true },
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-
-      console.log(`✅ [RaffleService] Respuesta recibida:`, response.data);
-
       const raffles = response.data?.data || [];
       const meta = response.data?.meta || response.data?.pagination || null;
-
-      console.log(`📊 [RaffleService] ${raffles.length} rifas encontradas`);
-
       const formattedRaffles = raffles.map((r: any) => ({
         uuid: r.uuid,
         name: r.name,
@@ -110,6 +149,7 @@ export const RaffleService = {
         status: r.status,
         images: r.images ?? [],
         categories: r.categories ?? [],
+        prizes: r.prizes ?? [], 
         created_by: r.created_by ?? {},
         seller: r.seller ? {
           uuid: r.seller.uuid,
@@ -118,193 +158,227 @@ export const RaffleService = {
           photo: r.seller.photo
         } : undefined
       }));
-
-      console.log(`🎯 [RaffleService] Rifas formateadas:`, formattedRaffles);
-
       return { data: formattedRaffles, meta };
     } catch (error) {
-      console.error("❌ [RaffleService] Error al obtener rifas:", error);
+      console.error("Error al obtener rifas:", error);
       throw error;
     }
   },
 
-  /**
-   * Obtiene la cantidad de tickets vendidos para una rifa específica
-   */
   async getSoldTicketsCount(raffleUuid: string): Promise<number> {
     try {
       const token = localStorage.getItem("token");
-      console.log(`🎫 [RaffleService] Obteniendo tickets vendidos para rifa: ${raffleUuid}`);
-
       const response = await apiClient.get(`/count-sold-tickets/${raffleUuid}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-
-      console.log(`📈 [RaffleService] Respuesta de tickets vendidos:`, response.data);
-
       const responseData = response.data as TicketsCountResponse;
-      
       if (responseData.success) {
-        console.log(`✅ [RaffleService] Tickets vendidos para ${raffleUuid}: ${responseData.data.count}`);
         return responseData.data.count;
       } else {
-        console.error("❌ [RaffleService] Error en la respuesta del servidor:", responseData);
         return 0;
       }
     } catch (error) {
-      console.error("❌ [RaffleService] Error al obtener cantidad de tickets vendidos:", error);
+      console.error("Error al obtener cantidad de tickets vendidos:", error);
       throw error;
     }
   },
+  
   async getSoldTickets(raffleUuid: string, page = 1, perPage = 100): Promise<number[]> {
     try {
       const token = localStorage.getItem("token");
-      console.log(`🎫 [RaffleService] INICIANDO - Obteniendo tickets vendidos para: ${raffleUuid}`);
-
-      // ✅ VERIFICACIÓN: ¿Se está ejecutando esta línea?
-      console.log(`🔍 [RaffleService] URL que se intentará: /sold-tickets/${raffleUuid}`);
-      console.log(`🔍 [RaffleService] Token disponible: ${!!token}`);
-      console.log(`🔍 [RaffleService] Parámetros: page=${page}, per_page=${perPage}`);
-
       const response = await apiClient.get(`/sold-tickets/${raffleUuid}`, {
         params: { page, per_page: perPage },
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-
-      console.log(`📋 [RaffleService] RESPUESTA CRUDA:`, response);
-      console.log(`📋 [RaffleService] Status: ${response.status}`);
-      console.log(`📋 [RaffleService] Headers:`, response.headers);
-
       const responseData = response.data;
-      
       if (responseData.success) {
         const soldTickets: number[] = [];
         const data = responseData.data;
-        
         for (const key in data) {
           if (/^\d+$/.test(key)) {
             const ticketNumber = parseInt(data[key], 10);
-            if (!isNaN(ticketNumber)) {
-              soldTickets.push(ticketNumber);
-            } else {
-              console.warn(`⚠️ [RaffleService] Número de ticket inválido: ${data[key]}`);
-            }
+            if (!isNaN(ticketNumber)) soldTickets.push(ticketNumber);
           }
         }
-
-        console.log(`✅ [RaffleService] COMPLETADO - ${soldTickets.length} tickets procesados`);
         return soldTickets;
       } else {
-        console.error("❌ [RaffleService] ERROR - Respuesta no exitosa:", responseData);
         return [];
       }
     } catch (error: any) {
-      console.error("❌ [RaffleService] ERROR - Excepción:", error);
-      console.error("❌ [RaffleService] Mensaje de error:", error.message);
-      console.error("❌ [RaffleService] Stack:", error.stack);
-      
-      if (error.response) {
-        console.error("❌ [RaffleService] Respuesta de error:", {
-          status: error.response.status,
-          data: error.response.data,
-          headers: error.response.headers
-        });
-      } else if (error.request) {
-        console.error("❌ [RaffleService] No se recibió respuesta:", error.request);
-      }
-      
+      console.error("ERROR en getSoldTickets:", error);
       throw error;
     }
   },
 
-async searchSoldTickets(raffleUuid: string, numbers: number[]): Promise<number[]> {
-  try {
-    const token = localStorage.getItem("token");
-
-    // Convertimos a formato "0003,0005,9999"
-    const formatted = numbers.map(n => String(n).padStart(4, "0")).join(",");
-
-    console.log(`🔍 [RaffleService] Buscando tickets vendidos:`, formatted);
-
-    const response = await apiClient.get(`/sold-tickets/${raffleUuid}/searchNumber=${formatted}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    console.log(`📋 [RaffleService] Respuesta searchSoldTickets:`, response.data);
-
-    const data = response.data?.data ?? {};
-    const soldTickets: number[] = [];
-
-    for (const key in data) {
-      if (/^\d+$/.test(key)) {
-        const ticket = parseInt(data[key], 10);
-        if (!isNaN(ticket)) soldTickets.push(ticket);
+  async searchSoldTickets(raffleUuid: string, numbers: number[]): Promise<number[]> {
+    try {
+      const token = localStorage.getItem("token");
+      const formatted = numbers.map(n => String(n).padStart(4, "0")).join(",");
+      const response = await apiClient.get(`/sold-tickets/${raffleUuid}/searchNumber=${formatted}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = response.data?.data ?? {};
+      const soldTickets: number[] = [];
+      for (const key in data) {
+        if (/^\d+$/.test(key)) {
+          const ticket = parseInt(data[key], 10);
+          if (!isNaN(ticket)) soldTickets.push(ticket);
+        }
       }
+      return soldTickets;
+    } catch (error) {
+      console.error("Error en searchSoldTickets:", error);
+      return [];
     }
+  },
 
-    console.log(`✅ [RaffleService] Tickets vendidos encontrados:`, soldTickets);
-    return soldTickets;
-  } catch (error) {
-    console.error("❌ [RaffleService] Error en searchSoldTickets:", error);
-    return [];
-  }
-},
-
-  /**
-   * Obtiene los detalles de un premio específico
-   */
   async getPrizeDetails(prizeUuid: string): Promise<Prize> {
     try {
       const token = localStorage.getItem("token");
-
       const response = await apiClient.get(`/prizes/${prizeUuid}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-
       return response.data.data || response.data;
     } catch (error) {
-      console.error("❌ Error al obtener detalles del premio:", error);
+      console.error("Error al obtener detalles del premio:", error);
+      throw error;
+    }
+  },
+
+  async getRaffleGrid(raffleId: string, page = 1, perPage = 50): Promise<PaginatedGridResponse> {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await apiClient.get(`/get-raffle-grid/${raffleId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        params: { page, perPage}
+      });
+
+      const apiData = response.data.data;
+
+      const formattedResponse: PaginatedGridResponse = {
+        data: apiData.grid,
+        meta: {
+          current_page: apiData.current_page,
+          last_page: apiData.last_page,
+          per_page: apiData.per_page,
+          total: apiData.total_numbers
+        }
+      };
+      
+      return formattedResponse;
+    } catch (error) {
+      console.error(`Error al obtener la grilla paginada de la rifa:`, error);
+      throw error;
+    }
+  },
+
+  async getAvailableTickets(raffleId: string) {
+      try {
+      const token = localStorage.getItem("token");
+      const response = await apiClient.get(`/get-tickets-available/${raffleId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+
+      const apiData = response.data.data;
+
+      
+      return apiData;
+    } catch (error) {
+      console.error(`Error al obtener la grilla paginada de la rifa:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Reserva uno o más tickets para un usuario.
+   * @param raffleId - El UUID de la rifa.
+   * @param documentType - Tipo de documento del usuario (ej: "V").
+   * @param documentNumber - Número de documento del usuario.
+   * @param ticketNumbers - Un array de strings con los números a reservar.
+   */
+  async bookTickets(raffleId: string, documentType: string, documentNumber: string, ticketNumbers: string[]): Promise<any> {
+    const payload = {
+      document_type: documentType,
+      document_number: documentNumber,
+      book_numbers: ticketNumbers,
+    };
+    const { data } = await apiClient.post(`/raffles/${raffleId}/book-tickets`, payload, 
+      { headers: { 'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+     }}
+     ) ;
+    return data;
+  },
+
+  /**
+   * Libera la reserva de uno o más tickets.
+   */
+ async unbookTickets(raffleId: string, docType: string, docNumber: string, ticketNumbers: string[]): Promise<any> {
+    const payload = {
+      document_type: docType,
+      document_number: docNumber,
+      book_numbers: ticketNumbers,
+    };
+
+    const { data } = await apiClient.post(`/raffles/${raffleId}/unbook-tickets`, payload, {
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (data?.status === false) {
+      throw new Error(`Los siguientes tickets no pudieron ser liberados: ${data.data.join(', ')}`);
+    }
+    return data;
+  }
+};
+
+
+export const PrizeService = {
+  async getRafflePrizes(raffleUuid: string): Promise<Prize[]> {
+    try {
+      const response = await apiClient.get(`/raffles/${raffleUuid}/prizes`);
+      const responseData = response.data as PrizeResponse;
+      if (responseData.status === "success") {
+        return responseData.data || [];
+      } else {
+        console.error("Error en la respuesta del servidor:", responseData);
+        return [];
+      }
+    } catch (error) {
+      console.error("Error al obtener premios del sorteo:", error);
+      throw error;
+    }
+  },
+
+  async getPrizeDetails(prizeUuid: string): Promise<Prize> {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await apiClient.get(`/prizes/${prizeUuid}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error("Error al obtener detalles del premio:", error);
       throw error;
     }
   },
 };
 
-export const PrizeService = {
-  /**
-   * Obtiene todos los premios de un sorteo específico
-   */
-  async getRafflePrizes(raffleUuid: string): Promise<Prize[]> {
+// Servicio para obtener el perfil público del usuario
+export const UserService = {
+  async getPublicProfile(userId: string): Promise<UserProfile> {
     try {
-      const response = await apiClient.get(`/raffles/${raffleUuid}/prizes`);
-
-      const responseData = response.data as PrizeResponse;
-      
-      if (responseData.status === "success") {
-        return responseData.data || [];
+      const response = await apiClient.get(`/users/public/${userId}`);
+      const responseData = response.data as UserProfileResponse;
+      if (responseData.success) {
+        return responseData.data;
       } else {
-        console.error("❌ Error en la respuesta del servidor:", responseData);
-        return [];
+        throw new Error(responseData.message);
       }
     } catch (error) {
-      console.error("❌ Error al obtener premios del sorteo:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Obtiene los detalles de un premio específico
-   */
-  async getPrizeDetails(prizeUuid: string): Promise<Prize> {
-    try {
-      const token = localStorage.getItem("token");
-
-      const response = await apiClient.get(`/prizes/${prizeUuid}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-
-      return response.data.data || response.data;
-    } catch (error) {
-      console.error("❌ Error al obtener detalles del premio:", error);
+      console.error("Error al obtener el perfil público:", error);
       throw error;
     }
   },
