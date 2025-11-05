@@ -162,7 +162,7 @@
           <!-- Usando ProductCard para las rifas populares -->
           <div v-else class="w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
             <ProductCard
-              v-for="product in filteredPopularRaffles"
+              v-for="product in popularRaffles"
               :key="product.uuid"
               :product="product"
               @view-details="openDetails(product)"
@@ -201,8 +201,7 @@
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="filteredUserRaffles.length === 0" class="text-center py-8">
-
+        <div v-else-if="userRafflesAsProducts.length === 0" class="text-center py-8">
           <i class="fas fa-ticket-alt text-3xl text-gray-500 mb-4"></i>
           <p class="text-gray-400">Este usuario no tiene rifas activas</p>
         </div>
@@ -210,7 +209,7 @@
         <!-- Rifas Grid -->
         <div v-else class="w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
           <ProductCard
-            v-for="product in filteredUserRaffles"
+            v-for="product in userRafflesAsProducts"
             :key="product.uuid"
             :product="product"
             @view-details="openDetails(product)"
@@ -460,18 +459,6 @@ const fullName = computed(() => {
   // Fallback al store si no hay perfil cargado
   const userData = userStore.getUserById(route.params.id as string);
   return userData?.name || 'Usuario';
-});
-
-const filteredPopularRaffles = computed(() => {
-  return popularRaffles.value.filter(
-    (r) => r.status?.toLowerCase() === "aprobada"
-  );
-});
-
-const filteredUserRaffles = computed(() => {
-  return userRafflesAsProducts.value.filter(
-    (raffle) => raffle.status?.toLowerCase() === "aprobada"
-  );
 });
 
 // Transformar las rifas del usuario al formato de Product que espera ProductCard
