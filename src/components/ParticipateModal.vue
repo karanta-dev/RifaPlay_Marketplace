@@ -109,7 +109,8 @@
                 <p v-if="form.metodoPago === 'zelle'" class="flex items-center gap-2"><span class="text-cyan-400">⚡</span> Zelle - usuario@ejemplo.com</p>
               </div>
               <label class="font-semibold text-white text-lg">💱 Moneda</label>
-              <select v-model="selectedCurrencyId" :disabled="loadingCurrencies" class="select-custom"><option v-for="c in currencies" :key="c.uuid" :value="c.uuid">{{ c.name }} ({{ c.short_name }})</option></select>
+              <select v-model="selectedCurrencyId" :disabled="loadingCurrencies" class="select-custom">
+                <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">{{ c.name }} ({{ c.short_name }})</option></select>
               <p v-if="!loadingCurrencies && currencies.length === 0" class="text-red-400 text-sm">No hay monedas disponibles.</p>
             </div>
 
@@ -192,7 +193,9 @@ import { useTicketStore } from '@/stores/useTicketStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useGridStore } from '@/stores/useGridStore';
 import { RaffleService } from '@/services/RaffleService';
-import { PaymentFlowService, type Currency, type PaymentMethod, type Bank } from '@/services/PaymentFlow';
+import { PaymentFlowService, type Currency}
+  from '@/services/PaymentFlow';
+import { usePaymentStore } from '@/stores/usePaymentStore';
 import { useBookingTimer } from '@/composables/useBookingTimer';
 import { useToast } from '@/composables/useToast';
 import TicketGrid from './TicketGrid.vue';
@@ -202,6 +205,8 @@ const { showToast } = useToast();
 const ticketStore = useTicketStore();
 const authStore = useAuthStore();
 const gridStore = useGridStore();
+const paymentStore = usePaymentStore();
+const { paymentMethods, banks, currencies } = storeToRefs(paymentStore);
 const { selectedProduct, isParticipateModalOpen } = storeToRefs(gridStore);
 const verifyingPagoMovil = ref(false);
 const pagoMovilVerifyResult = ref<{ success: boolean; message: string; status?: string } | null>(null);
@@ -209,16 +214,16 @@ const pagoMovilNeedsReverify = ref(false)
 const showReverifyModal = ref(false)
 const reverifySubmitting = ref(false)
 const reverifyForm = ref({ fecha: '', referencia: '', banco: '', prefix: '0414', telefono: '', cedula: '', monto: '' })
-const banks = ref<Bank[]>([])
+// const banks = ref<Bank[]>([])
 const loadingBanks = ref(false)
 const selectionMode = ref<'auto' | 'manual'>('auto')
 const selectedManualTickets = ref<number[]>([])
 const pagoMovilMode = ref<'manual' | 'automatico'>('manual')
-const bcvRate = ref(0)
-const loadingBcv = ref(false)
-const paymentMethods = ref<PaymentMethod[]>([])
+const bcvRate = computed(() => paymentStore.bcvRate);
+const loadingBcv = computed(() => paymentStore.loadingBcv);
+// const paymentMethods = ref<PaymentMethod[]>([])
 const loadingMethods = ref(false)
-const currencies = ref<Currency[]>([])
+// const currencies = ref<Currency[]>([])
 const loadingCurrencies = ref(false)
 const selectedCurrencyId = ref<string | undefined>(undefined)
 const initialTicketsCount = ref(0)
@@ -769,16 +774,16 @@ async function handleSubmitReverify() {
   }
 }
 
-async function loadBanks() {
-  loadingBanks.value = true;
-  try {
-    banks.value = await PaymentFlowService.fetchBanks();
-  } catch (error: any) {
-    console.error('Error al cargar los bancos:', error);
-  } finally {
-    loadingBanks.value = false;
-  }
-}
+// async function loadBanks() {
+//   loadingBanks.value = true;
+//   try {
+//     banks.value = await PaymentFlowService.fetchBanks();
+//   } catch (error: any) {
+//     console.error('Error al cargar los bancos:', error);
+//   } finally {
+//     loadingBanks.value = false;
+//   }
+// }
 
 function triggerFileDialog() {
   fileInput.value?.click();
@@ -801,46 +806,46 @@ watch(() => form.comprobante, (newFile) => {
 });
 
 
-async function loadPaymentMethods() {
-  loadingMethods.value = true;
-  try {
-    paymentMethods.value = await PaymentFlowService.fetchPaymentMethods();
-  } catch (error) {
-    console.error('Error al cargar los métodos de pago:', error);
-  } finally {
-    loadingMethods.value = false;
-  }
-}
+// async function loadPaymentMethods() {
+//   loadingMethods.value = true;
+//   try {
+//     paymentMethods.value = await PaymentFlowService.fetchPaymentMethods();
+//   } catch (error) {
+//     console.error('Error al cargar los métodos de pago:', error);
+//   } finally {
+//     loadingMethods.value = false;
+//   }
+// }
 
-async function fetchBcvRate() {
-  loadingBcv.value = true;
-  try {
-    const response = await fetch('https://bcv-api.karanta.dev/rates/');
-    const data = await response.json();
-    bcvRate.value = data.bcv || 0;
-  } catch (error) {
-    console.error('Error fetching BCV rate:', error);
-  } finally {
-    loadingBcv.value = false;
-  }
-}
+// async function fetchBcvRate() {
+//   loadingBcv.value = true;
+//   try {
+//     const response = await fetch('https://bcv-api.karanta.dev/rates/');
+//     const data = await response.json();
+//     bcvRate.value = data.bcv || 0;
+//   } catch (error) {
+//     console.error('Error fetching BCV rate:', error);
+//   } finally {
+//     loadingBcv.value = false;
+//   }
+// }
 
 onMounted(() => {
-  console.log('🔴 Componente montado - cargando datos UNA SOLA VEZ')
+  console.log('✅ ParticipateModal montado - usando datos ya cargados en App.vue')
   
-  // Cargar los datos cuando el componente se monte
-  fetchBcvRate()
-  loadPaymentMethods()
-  loadBanks()
+  // // Cargar los datos cuando el componente se monte
+  // fetchBcvRate()
+  // loadPaymentMethods()
+  // loadBanks()
   
-  loadingCurrencies.value = true
-  PaymentFlowService.fetchCurrencies().then(result => {
-    const currs = result?.currencies ?? []
-    currencies.value = currs
-    selectedCurrencyId.value = result?.defaultCurrencyId || currs[0]?.uuid
-  }).finally(() => {
-    loadingCurrencies.value = false
-  })
+  // loadingCurrencies.value = true
+  // PaymentFlowService.fetchCurrencies().then(result => {
+  //   const currs = result?.currencies ?? []
+  //   currencies.value = currs
+  //   selectedCurrencyId.value = result?.defaultCurrencyId || currs[0]?.uuid
+  // }).finally(() => {
+  //   loadingCurrencies.value = false
+  // })
 })
 
 const handleConfirm = async () => {
