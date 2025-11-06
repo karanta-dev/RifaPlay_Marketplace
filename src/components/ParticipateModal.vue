@@ -97,7 +97,8 @@
                   <h3 class="font-semibold text-cyan-300 text-lg">Ingrese los datos de pago móvil</h3>
                   <input v-model="form.pagoMovilCedula" type="text" placeholder="🔢 Número de cédula" class="input-custom" maxlength="8" />
                   <input v-model="form.pagoMovilTelefono" type="tel" placeholder="📞 Número de teléfono" class="input-custom" maxlength="11" />
-                  <select v-model="form.pagoMovilBanco" class="input-custom" :disabled="loadingBanks"><option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option><option v-for="bank in banks" :key="bank.uuid" :value="bank.uuid">{{ bank.name }}</option></select>
+                  <select v-model="form.pagoMovilBanco" class="input-custom" :disabled="loadingBanks"><option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
+                    <option v-for="bank in banks" :key="bank.uuid" :value="bank.uuid">{{ bank.name }}</option></select>
                   <p v-if="!loadingBanks && banks.length === 0" class="text-red-400 text-sm mt-1">No se pudieron cargar los bancos.</p>
                 </div>
               </div>
