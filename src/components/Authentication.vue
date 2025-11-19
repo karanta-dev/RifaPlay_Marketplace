@@ -1,9 +1,13 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
+  <div class="fixed inset-0 backdrop-blur-md backdrop-saturate-150 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden p-6 animate-fade-in">
       
-      <!-- Cerrar -->
-      <button @click="$emit('close')" class="absolute top-3 right-3 text-gray-600 hover:text-red-500">
+      <!-- Cerrar - Solo mostrar si está autenticado -->
+      <button 
+        v-if="isAuthenticated" 
+        @click="$emit('close')" 
+        class="absolute top-3 right-3 text-gray-600 hover:text-red-500"
+      >
         ✕
       </button>
 
@@ -16,14 +20,20 @@
       <transition name="fade" mode="out-in">
         <div v-if="mode === 'login'" key="login">
           <h2 class="text-xl font-bold text-center mb-4">Iniciar sesión</h2>
-            <form class="flex flex-col gap-4" @submit.prevent="handleLogin">
-                <input v-model="email" type="email" placeholder="Correo electrónico" class="input" />
-                <input v-model="password" type="password" placeholder="Contraseña" class="input" />
-                <button type="submit" class="btn-primary">Iniciar sesión</button>
+            <form class="flex flex-col gap-4 " @submit.prevent="handleLogin">
+                <input v-model="email" type="email" placeholder="Correo electrónico" class=" border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                <input v-model="password" type="password" placeholder="Contraseña" class=" border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                <button 
+                  type="submit" 
+                  :disabled="isLoading"
+                  class="bg-blue-900 text-white font-bold py-2 rounded-lg hover:bg-yellow-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {{ isLoading ? 'Iniciando sesión...' : 'Iniciar sesión' }}
+                </button>
             </form>
           <div class="flex justify-between mt-4 text-sm">
             <a href="#" class="text-blue-600 hover:underline">Olvidé mi contraseña</a>
-            <button @click="mode = 'register'" class="text-blue-600 hover:underline">Registrarse</button>
+            <!-- <button @click="mode = 'register'" class="text-blue-600 hover:underline">Registrarse</button> -->
           </div>
         </div>
 
@@ -75,7 +85,13 @@
             </select>
             
             <input v-model="promoCode" type="text" placeholder="Promo Code (opcional)" class="input" />
-            <button type="submit" class="btn-primary">Registrarse</button>
+            <button 
+              type="submit" 
+              :disabled="isLoading"
+              class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ isLoading ? 'Registrando...' : 'Registrarse' }}
+            </button>
             </form>
 
           <p class="text-sm text-center mt-3">
@@ -90,13 +106,16 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthStore } from "../stores/useAuthStore";
 import { useToast } from "vue-toastification";
 
 const toast = useToast();
 const mode = ref<"login" | "register">("login");
 const authStore = useAuthStore();
-const emit = defineEmits(["close"]);
+const emit = defineEmits(["close", "login-success"]);
+
+// Computed para verificar autenticación
+const isAuthenticated = computed(() => authStore.isAuthenticated);
 
 // Formularios
 const email = ref("");
@@ -134,7 +153,13 @@ const handleLogin = async () => {
       toast.success("✅ Sesión iniciada correctamente", {
         toastClassName: "bg-blue-900 text-white font-bold rounded-lg shadow-lg",
       });
-      emit("close");
+      
+      // ✅ RECARGAR LA PÁGINA COMPLETA DESPUÉS DE UN LOGIN EXITOSO
+      // Esto asegura que todos los servicios se recarguen con el token de autenticación
+      setTimeout(() => {
+        window.location.reload();
+      }, 10); // Pequeño delay para que el usuario vea el mensaje de éxito
+      
     } else {
       toast.error("❌ Error al iniciar sesión. Verifica tus credenciales", {
         toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
@@ -150,7 +175,7 @@ const handleLogin = async () => {
 };
 
 const handleRegister = async () => {
-  // Validaciones mejoradas
+  // Validaciones
   if (!name.value || !last_name.value || !email.value || !password.value || 
       !confirmPassword.value || !phone.value || !document_number.value || !birth_date.value) {
     toast.error("❌ Por favor completa todos los campos obligatorios", {
@@ -209,7 +234,19 @@ const handleRegister = async () => {
       toast.success("🎉 Registro exitoso. ¡Ya puede iniciar sesión!", {
         toastClassName: "bg-blue-900 text-white font-bold rounded-lg shadow-lg",
       });
-      emit("close");
+      
+      // Cambiar a modo login después del registro exitoso
+      mode.value = "login";
+      
+      // Limpiar formulario de registro
+      name.value = "";
+      last_name.value = "";
+      confirmPassword.value = "";
+      phone.value = "";
+      document_number.value = "";
+      birth_date.value = "";
+      promoCode.value = "";
+      
     } else {
       toast.error("❌ Error en el registro. Intenta nuevamente", {
         toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
@@ -224,13 +261,9 @@ const handleRegister = async () => {
   }
 };
 </script>
+
 <style scoped>
-.input {
-  @apply border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none;
-}
-.btn-primary {
-  @apply bg-blue-900 text-white font-bold py-2 rounded-lg hover:bg-yellow-500 transition;
-}
+/* Estilos mantienen igual */
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.4s ease;
 }

@@ -39,6 +39,7 @@
           <!-- Nombre del usuario -->
           <h2 class="text-3xl font-bold text-white mb-2 drop-shadow-lg">{{ user?.name || 'Usuario' }}</h2>
           <p class="text-gray-300 text-lg">{{ user?.email || 'usuario@ejemplo.com' }}</p>
+          <p class="text-gray-400 text-md mt-1">{{ user?.phone || 'Teléfono no disponible' }}</p>
           
           <!-- Indicador de carga -->
           <div v-if="uploadingAvatar" class="mt-2">

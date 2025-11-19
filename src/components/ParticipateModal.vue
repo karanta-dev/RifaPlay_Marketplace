@@ -6,9 +6,9 @@
   <transition name="scale-fade">
     <div v-if="isParticipateModalOpen" class="fixed inset-0 z-50" @click.self="close">
       <div
-        class="bg-gradient-to-br from-blue-900 to-purple-800 relative transition-all duration-300 border-purple-400/30 flex flex-col w-screen h-screen p-4 sm:p-6"
+        class="bg-gradient-to-br from-blue-900 to-gray-800 relative transition-all duration-300 border-purple-400/30 flex flex-col w-screen h-screen p-4 sm:p-6"
       >
-<button
+        <button
           v-if="authStore.isAuthenticated"
           class="absolute top-4 right-4 z-30 bg-transparent border-none p-1"
           @click="close"
@@ -16,10 +16,10 @@
         >
           <XMarkIcon class="h-5 w-5 text-white/70 hover:text-white transition-colors" />
         </button>
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-</svg>
 
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
 
         <div class="relative z-10 mb-4 flex-shrink-0 flex items-center justify-between gap-2">   
           <div class="flex items-center justify-left gap-3">
@@ -60,15 +60,67 @@
               </label>
             </div>
 
-            <div v-if="selectionMode === 'auto'" class="p-5 bg-black/30 rounded-xl border border-cyan-500/30">
-              <label class="font-semibold text-cyan-300 mb-3 block text-lg">🎲 Cantidad de tickets (Automático)</label>
-              <div class="flex items-center gap-3">
-                <input v-model.number="form.tickets" type="number" min="1" :max="maxAvailable === null ? undefined : maxAvailable" placeholder="Cantidad de tickets" class="input-custom flex-grow" :required="selectionMode === 'auto'"/>
-                <div class="text-sm text-white whitespace-nowrap">Disponibles: <strong class="text-yellow-400">{{ maxAvailable }}</strong></div>
+            <div v-if="selectionMode === 'auto'" class="space-y-4">
+              <div class="p-5 bg-black/30 rounded-xl border border-cyan-500/30">
+                <label class="font-semibold text-cyan-300 mb-3 block text-lg">🎲 Cantidad de tickets (Automático)</label>
+                <div class="flex items-center gap-3">
+                  <input v-model.number="form.tickets" type="number" min="1" :max="maxAvailable === null ? undefined : maxAvailable" placeholder="Cantidad de tickets" class="input-custom flex-grow" :required="selectionMode === 'auto'"/>
+                  <div class="text-sm text-white whitespace-nowrap">Disponibles: <strong class="text-yellow-400">{{ maxAvailable }}</strong></div>
+                </div>
+                
+                <!-- Botón para obtener tickets aleatorios -->
+                <button 
+                  type="button" 
+                  @click="fetchRandomTickets"
+                  :disabled="loadingRandomTickets || !form.tickets || form.tickets < 1"
+                  class="w-full mt-4 py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-purple-400/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span v-if="loadingRandomTickets">🔄 Obteniendo tickets...</span>
+                  <span v-else>🎯 Obtener Tickets Aleatorios</span>
+                </button>
+              </div>
+
+              <!-- Resultado de tickets aleatorios -->
+              <div v-if="randomTicketsResult" class="p-4 bg-black/40 rounded-xl border border-green-500/30">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="font-semibold text-green-400 text-lg">Tickets Reservados</h3>
+                  <div v-if="randomTicketsTimeLeft > 0" class="flex items-center gap-2 bg-green-500/20 px-3 py-1 rounded-lg">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span class="text-green-400 font-mono text-sm">{{ formattedRandomTime }}</span>
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-4 gap-2 mb-3">
+                  <div 
+                    v-for="ticket in randomTicketsResult.successful" 
+                    :key="ticket.number"
+                    class="bg-green-500/20 border border-green-400/50 rounded-lg p-2 text-center"
+                  >
+                    <span class="text-green-300 font-bold text-sm">{{ String(ticket.number).padStart(4, '0') }}</span>
+                  </div>
+                </div>
+                
+                <p class="text-green-300 text-sm">
+                  Se han reservado <strong>{{ randomTicketsResult.successful.length }}</strong> tickets aleatoriamente. 
+                  Tienes 1 minuto para completar la compra.
+                </p>
+              </div>
+
+              <!-- Mostrar tickets fallidos si los hay -->
+              <div v-if="randomTicketsResult?.failed?.length" class="p-4 bg-black/40 rounded-xl border border-orange-500/30">
+                <h3 class="font-semibold text-orange-400 text-lg mb-2">⚠️ Tickets No Disponibles</h3>
+                <p class="text-orange-300 text-sm">
+                  Algunos tickets no pudieron ser reservados. Intenta con una cantidad menor.
+                </p>
               </div>
             </div>
-       
             <TicketGrid v-if="selectionMode === 'manual' && selectedProduct" :raffleId="selectedProduct.uuid" @update:selected="handleSelectionUpdate" />
+              
+            <label class="font-semibold text-white text-lg">💱 Moneda</label>
+              <select v-model="selectedCurrencyId" :disabled="loadingCurrencies" class="select-custom">
+                <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">{{ c.name }} ({{ c.short_name }})</option>
+              </select>
+              <p v-if="!loadingCurrencies && currencies.length === 0" class="text-red-400 text-sm">No hay monedas disponibles.</p>
 
             <div class="space-y-4">
               <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
@@ -77,46 +129,148 @@
                 <option v-for="method in paymentMethods" :key="method.uuid" :value="method.slug">{{ method.name }}</option>
               </select>
               <p v-if="!loadingMethods && paymentMethods.length === 0" class="text-red-400 text-sm">No se pudieron cargar métodos de pago.</p>
+              
+
+              <!-- Sección de Pago Móvil -->
               <div v-if="form.metodoPago === 'pago-movil'" class="mt-4">
                 <div class="flex flex-col sm:flex-row bg-black/30 rounded-xl p-1 border border-cyan-500/30 shadow-lg">
-                  <button type="button" @click="pagoMovilMode = 'manual'" :class="{'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'manual', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'manual'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-cyan-500/30"><div class="flex items-center justify-center gap-2"><span class="text-lg">👤</span><span>Manual</span></div></button>
-                  <button type="button" @click="pagoMovilMode = 'automatico'" :class="{'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'automatico', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'automatico'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-emerald-500/30"><div class="flex items-center justify-center gap-2"><span class="text-lg">⚡</span><span>Automático</span></div></button>
+                  <button type="button" @click="pagoMovilMode = 'manual'" :class="{'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'manual', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'manual'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-cyan-500/30">
+                    <div class="flex items-center justify-center gap-2">
+                      <span class="text-lg">👤</span>
+                      <span>Manual</span>
+                    </div>
+                  </button>
+                  <button type="button" @click="pagoMovilMode = 'automatico'" :class="{'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'automatico', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'automatico'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-emerald-500/30">
+                    <div class="flex items-center justify-center gap-2">
+                      <span class="text-lg">⚡</span>
+                      <span>Automático</span>
+                    </div>
+                  </button>
                 </div>
+                
+                <!-- Modo Manual - Mostrar información del rifero -->
                 <div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30 relative">
                   <div class="flex justify-between items-start mb-2">
-                    <p class="flex items-center gap-2 text-cyan-400 font-semibold"><span>📱</span> Datos para Pago Móvil</p>
-                    <button type="button" @click="copyPagoMovilData($event)" class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all duration-200 text-xs border border-cyan-400/30" title="Copiar datos al portapapeles"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> Copiar</button>
+                    <p class="flex items-center gap-2 text-cyan-400 font-semibold">
+                      <span>📱</span> Datos para Pago Móvil del Rifero
+                    </p>
+                    <button type="button" @click="copyPagoMovilData($event)" class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all duration-200 text-xs border border-cyan-400/30" title="Copiar datos al portapapeles">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg> 
+                      Copiar
+                    </button>
                   </div>
-                  <div class="space-y-1">
-                    <p class="flex items-center gap-2"><span class="text-cyan-400">🏦</span> Banco: <strong>(0169) R4 (Mi Banco)</strong></p>
-                    <p class="flex items-center gap-2"><span class="text-cyan-400">📋</span> C.I: <strong>{{ authStore.user?.natural_profile?.document_number || 'N/A' }}</strong></p>
-                    <p class="flex items-center gap-2"><span class="text-cyan-400">📞</span> Teléfono: <strong>0414-1908656</strong></p>
+                  
+                  <!-- Mostrar información específica del rifero -->
+                  <div v-if="paymentMethods.length > 0">
+                    <div v-for="method in paymentMethods.filter(m => m.slug === 'pago-movil')" :key="method.uuid" class="space-y-2 mb-4 p-3 bg-cyan-500/10 rounded-lg">
+                      <div class="flex items-center justify-between">
+                        <p class="font-semibold text-cyan-300">{{ method.name }}</p>
+                        <span v-if="method.is_default" class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">Principal</span>
+                      </div>
+                      <div class="space-y-1 text-sm">
+                        <p class="flex items-center gap-2">
+                          <span class="text-cyan-400">🏦</span> 
+                          Banco: <strong>{{ method.bank_name }} ({{ method.bank_code }})</strong>
+                        </p>
+                        <p class="flex items-center gap-2">
+                          <span class="text-cyan-400">📋</span> 
+                          C.I: <strong>{{ method.document_number }}</strong>
+                        </p>
+                        <p class="flex items-center gap-2">
+                          <span class="text-cyan-400">👤</span> 
+                          Titular: <strong>{{ method.holder_name }}</strong>
+                        </p>
+                        <p class="flex items-center gap-2">
+                          <span class="text-cyan-400">📞</span> 
+                          Teléfono: <strong>{{ method.account_number }}</strong>
+                        </p>
+                        <p v-if="method.description" class="flex items-center gap-2 text-cyan-200/80">
+                          <span class="text-cyan-400">📝</span> 
+                          Observación: {{ method.description }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="text-yellow-400 text-sm">
+                    ⚠️ No se encontraron métodos de pago móvil configurados por el rifero
                   </div>
                 </div>
+                
+                <!-- Modo Automático -->
                 <div v-else-if="pagoMovilMode === 'automatico'" class="space-y-4">
                   <h3 class="font-semibold text-cyan-300 text-lg">Ingrese los datos de pago móvil</h3>
                   <input v-model="form.pagoMovilCedula" type="text" placeholder="🔢 Número de cédula" class="input-custom" maxlength="8" />
                   <input v-model="form.pagoMovilTelefono" type="tel" placeholder="📞 Número de teléfono" class="input-custom" maxlength="11" />
-                  <select v-model="form.pagoMovilBanco" class="input-custom" :disabled="loadingBanks"><option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option><option v-for="bank in banks" :key="bank.uuid" :value="bank.uuid">{{ bank.name }}</option></select>
+                  <select v-model="form.pagoMovilBanco" class="input-custom" :disabled="loadingBanks">
+                    <option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
+                    <option v-for="bank in banks" :key="bank.uuid" :value="bank.uuid">{{ bank.name }}</option>
+                  </select>
                   <p v-if="!loadingBanks && banks.length === 0" class="text-red-400 text-sm mt-1">No se pudieron cargar los bancos.</p>
                 </div>
               </div>
-              <div v-else-if="form.metodoPago" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
-                <p v-if="form.metodoPago === 'tarjeta'" class="flex items-center gap-2"><span class="text-cyan-400">🔒</span> Número: 4111-1111-1111-1111</p>
-                <p v-if="form.metodoPago === 'transferencia'" class="flex items-center gap-2"><span class="text-cyan-400">🏦</span> Banco Ejemplo - Cuenta: 0102-123456789</p>
-                <p v-if="form.metodoPago === 'kontigo'" class="flex items-center gap-2"><span class="text-cyan-400">⚡</span> Kontigo - usuario@ejemplo.com</p>
-                <p v-if="form.metodoPago === 'binance'" class="flex items-center gap-2"><span class="text-cyan-400">⚡</span> Binance - usuario@ejemplo.com</p>
-                <p v-if="form.metodoPago === 'zelle'" class="flex items-center gap-2"><span class="text-cyan-400">⚡</span> Zelle - usuario@ejemplo.com</p>
+              
+              <!-- Para otros métodos de pago, mostrar la información específica del rifero -->
+              <div v-else-if="form.metodoPago && form.metodoPago !== 'pago-movil'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
+                <div v-for="method in paymentMethods.filter(m => m.slug === form.metodoPago)" :key="method.uuid" class="space-y-2">
+                  <p class="font-semibold text-cyan-400 mb-2">{{ method.name }}</p>
+                  
+                  <div v-if="method.slug === 'transferencia'" class="space-y-1">
+                    <p class="flex items-center gap-2">
+                      <span class="text-cyan-400">🏦</span> 
+                      Banco: <strong>{{ method.bank_name }} ({{ method.bank_code }})</strong>
+                    </p>
+                    <p class="flex items-center gap-2">
+                      <span class="text-cyan-400">📋</span> 
+                      Número de Cuenta: <strong>{{ method.account_number }}</strong>
+                    </p>
+                    <p class="flex items-center gap-2">
+                      <span class="text-cyan-400">👤</span> 
+                      Titular: <strong>{{ method.holder_name }}</strong>
+                    </p>
+                    <p class="flex items-center gap-2">
+                      <span class="text-cyan-400">📋</span> 
+                      C.I: <strong>{{ method.document_number }}</strong>
+                    </p>
+                  </div>
+                  
+                  <div v-else class="space-y-1">
+                    <p class="flex items-center gap-2" v-if="method.account_number">
+                      <span class="text-cyan-400">🔢</span> 
+                      Cuenta/Usuario: <strong>{{ method.account_number }}</strong>
+                    </p>
+                    <p class="flex items-center gap-2" v-if="method.holder_name">
+                      <span class="text-cyan-400">👤</span> 
+                      Titular: <strong>{{ method.holder_name }}</strong>
+                    </p>
+                    <p class="flex items-center gap-2" v-if="method.bank_name">
+                      <span class="text-cyan-400">🏦</span> 
+                      Banco: <strong>{{ method.bank_name }}</strong>
+                    </p>
+                    <p class="flex items-center gap-2" v-if="method.description">
+                      <span class="text-cyan-400">📝</span> 
+                      Observación: {{ method.description }}
+                    </p>
+                  </div>
+                </div>
+                
+                <!-- Mensaje si no hay métodos específicos configurados -->
+                <div v-if="paymentMethods.filter(m => m.slug === form.metodoPago).length === 0" class="text-yellow-400 text-sm">
+                  ⚠️ El rifero no tiene configurado este método de pago específicamente
+                </div>
               </div>
-              <label class="font-semibold text-white text-lg">💱 Moneda</label>
-              <select v-model="selectedCurrencyId" :disabled="loadingCurrencies" class="select-custom">
-                <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">{{ c.name }} ({{ c.short_name }})</option></select>
-              <p v-if="!loadingCurrencies && currencies.length === 0" class="text-red-400 text-sm">No hay monedas disponibles.</p>
+              
+            
             </div>
 
             <div class="space-y-4">
               <div v-if="form.metodoPago === 'pago-movil' && pagoMovilMode === 'manual'" class="mt-2">
-                <button type="button" class="w-full py-2 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30 font-semibold" @click="pagoMovilNeedsReverify ? (showReverifyModal = true) : handleVerifyPagoMovil()" :disabled="verifyingPagoMovil || reverifySubmitting"><span v-if="verifyingPagoMovil">Verificando...</span><span v-else-if="pagoMovilNeedsReverify">Volver a verificar</span><span v-else>Ya pagué</span></button>
+                <button type="button" class="w-full py-2 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30 font-semibold" @click="pagoMovilNeedsReverify ? (showReverifyModal = true) : handleVerifyPagoMovil()" :disabled="verifyingPagoMovil || reverifySubmitting">
+                  <span v-if="verifyingPagoMovil">Verificando...</span>
+                  <span v-else-if="pagoMovilNeedsReverify">Volver a verificar</span>
+                  <span v-else>Ya pagué</span>
+                </button>
                 <p v-if="pagoMovilVerifyResult" :class="{'text-green-400': pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente', 'text-yellow-400': pagoMovilVerifyResult.status === 'pendiente', 'text-red-400': !pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente'}" class="mt-2 text-sm">{{ pagoMovilVerifyResult.message }}</p>
               </div>
               <div v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')">
@@ -128,14 +282,29 @@
               </div>
             </div>
 
-            <div class="pt-4 border-t border-white/20 mt-6 ">
+            <!-- Sección de precios -->
+            <div class="pt-4 border-t border-white/20 mt-6">
               <div class="flex flex-col items-end gap-1">
-                <p class="text-lg font-bold text-white">Precio: <strong class="text-2xl text-yellow-400 ml-2">{{ loadingBcv ? 'Cargando...' : `${totalPriceBs} Bs` }}</strong></p>
-                <span v-if="!loadingBcv && bcvRate > 0" class="text-sm text-gray-400">(Tasa BCV: {{ bcvRate.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }} Bs/USD)</span>
+                <p class="text-lg font-bold text-white">
+                  Precio: <strong class="text-2xl text-yellow-400 ml-2">{{ displayPrice.text }}</strong>
+                </p>
+                <span 
+                  v-if="displayPrice.showUsdRate && displayPrice.rate" 
+                  class="text-sm text-gray-400"
+                >
+                  (Tasa: {{ displayPrice.rate.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }} {{ displayPrice.rateCurrency }})
+                </span>
               </div>
-              <div class="text-right space-y-2">
-                <p class="text-lg font-bold text-white">Precio: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span></p>
-                <p v-if="currentQty > 0" class="text-sm text-cyan-300">Tickets a comprar: <strong class="text-white">{{ currentQty }}</strong></p>
+              
+              <!-- Mostrar precio en USD como referencia solo si no es la moneda principal -->
+              <div v-if="displayPrice.showUsdPrice" class="text-right space-y-2">
+                <p class="text-lg font-bold text-white">
+                  Precio: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span>
+                </p>
+              </div>
+              
+              <div v-if="currentQty > 0" class="text-right space-y-2">
+                <p class="text-sm text-cyan-300">Tickets a comprar: <strong class="text-white">{{ currentQty }}</strong></p>
               </div>
             </div>
 
@@ -143,7 +312,10 @@
 
             <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6">
               <button type="button" @click="close" class="w-full sm:w-auto px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-300 transform hover:scale-105 border border-gray-500/30">Cancelar</button>
-              <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-green-400/30" :disabled="currentQty === 0 || submitting"><span v-if="submitting">Procesando...</span><span v-else>🎉 {{ authStore.isAuthenticated ? 'Participar' : 'Confirmar' }}</span></button>
+              <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-bold rounded-xl hover:from-yellow-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-yellow-400/30" :disabled="currentQty === 0 || submitting">
+                <span v-if="submitting">Procesando...</span>
+                <span v-else> {{ authStore.isAuthenticated ? 'Participar' : 'Confirmar' }}</span>
+              </button>
             </div>
           </template>
         </form>
@@ -153,7 +325,7 @@
             <div v-if="showReverifyModal" class="fixed inset-0 z-[9999] flex items-center justify-center px-4">
               <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showReverifyModal = false"></div>
               <div class="relative z-[10000] w-full max-w-xl mx-auto">
-                <div class="bg-gradient-to-br from-blue-900 to-purple-800 rounded-2xl shadow-2xl p-6 border border-purple-400/30">
+                <div class="bg-gradient-to-br from-blue-900 to-gray-800 rounded-2xl shadow-2xl p-6 border border-purple-400/30">
                   <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-bold text-white">Verificación de Pago - Manual</h3>
                     <button @click="showReverifyModal = false" class="text-white/70 hover:text-white bg-purple-500">✖</button>
@@ -161,10 +333,19 @@
                   <div class="space-y-3">
                     <input v-model="reverifyForm.referencia" type="text" placeholder="🔖 Número de referencia" class="input-custom" />
                     <input v-model="reverifyForm.fecha" type="date" placeholder="Fecha del pago" class="input-custom" />
-                    <select v-model="reverifyForm.banco" class="input-custom" :disabled="loadingBanks"><option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option><option v-for="bank in banks" :key="bank.uuid" :value="bank.uuid">{{ bank.name }}</option></select>
+                    <select v-model="reverifyForm.banco" class="input-custom" :disabled="loadingBanks">
+                      <option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
+                      <option v-for="bank in banks" :key="bank.uuid" :value="bank.uuid">{{ bank.name }}</option>
+                    </select>
                     <p v-if="!loadingBanks && banks.length === 0" class="text-red-400 text-sm mt-1">No se pudieron cargar los bancos.</p>
                     <div class="flex gap-3 items-center">
-                      <select v-model="reverifyForm.prefix" class="select-prefix flex-shrink-0"><option value="0412">0412</option><option value="0414">0414</option><option value="0424">0424</option><option value="0416">0416</option><option value="0422">0422</option></select>
+                      <select v-model="reverifyForm.prefix" class="select-prefix flex-shrink-0">
+                        <option value="0412">0412</option>
+                        <option value="0414">0414</option>
+                        <option value="0424">0424</option>
+                        <option value="0416">0416</option>
+                        <option value="0422">0422</option>
+                      </select>
                       <input v-model="reverifyForm.telefono" type="tel" placeholder="📞 Teléfono" class="input-custom flex-1" />
                     </div>
                     <input v-model="reverifyForm.cedula" type="tel" placeholder="🔢 Cédula" class="input-custom" />
@@ -172,7 +353,10 @@
                   </div>
                   <div class="flex justify-end gap-3 mt-4">
                     <button @click="showReverifyModal = false" type="button" class="px-4 py-2 bg-gray-600 text-white rounded-xl">Cancelar</button>
-                    <button @click="handleSubmitReverify" :disabled="reverifySubmitting" type="button" class="px-4 py-2 bg-emerald-600 text-white rounded-xl"><span v-if="reverifySubmitting">Enviando...</span><span v-else>Enviar y verificar</span></button>
+                    <button @click="handleSubmitReverify" :disabled="reverifySubmitting" type="button" class="px-4 py-2 bg-emerald-600 text-white rounded-xl">
+                      <span v-if="reverifySubmitting">Enviando...</span>
+                      <span v-else>Enviar y verificar</span>
+                    </button>
                   </div>
                   <p v-if="pagoMovilVerifyResult" :class="{'text-green-400': pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente', 'text-yellow-400': pagoMovilVerifyResult.status === 'pendiente', 'text-red-400': !pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente'}" class="mt-2 text-sm">{{ pagoMovilVerifyResult.message }}</p>
                 </div>
@@ -186,21 +370,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { XMarkIcon } from '@heroicons/vue/24/outline';
 import { useTicketStore } from '@/stores/useTicketStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useGridStore } from '@/stores/useGridStore';
 import { RaffleService } from '@/services/RaffleService';
-import { PaymentFlowService, type Currency}
-  from '@/services/PaymentFlow';
+import { PaymentFlowService, type Currency} from '@/services/PaymentFlow';
 import { usePaymentStore } from '@/stores/usePaymentStore';
 import { useBookingTimer } from '@/composables/useBookingTimer';
 import { useToast } from '@/composables/useToast';
 import TicketGrid from './TicketGrid.vue';
-const emit = defineEmits(['confirmed', 'time-expired']); 
+defineProps<{
+  open: boolean;
+}>();
 
+const emit = defineEmits(['close', 'confirmed', 'time-expired']);
 const { showToast } = useToast();
 const ticketStore = useTicketStore();
 const authStore = useAuthStore();
@@ -208,6 +394,11 @@ const gridStore = useGridStore();
 const paymentStore = usePaymentStore();
 const { paymentMethods, banks, currencies } = storeToRefs(paymentStore);
 const { selectedProduct, isParticipateModalOpen } = storeToRefs(gridStore);
+const loadingRandomTickets = ref(false);
+const randomTicketsResult = ref<{
+  successful: { number: number; expires_in_seconds: number }[];
+  failed: any[];
+} | null>(null);
 const verifyingPagoMovil = ref(false);
 const pagoMovilVerifyResult = ref<{ success: boolean; message: string; status?: string } | null>(null);
 const pagoMovilNeedsReverify = ref(false)
@@ -220,7 +411,8 @@ const selectionMode = ref<'auto' | 'manual'>('auto')
 const selectedManualTickets = ref<number[]>([])
 const pagoMovilMode = ref<'manual' | 'automatico'>('manual')
 const bcvRate = computed(() => paymentStore.bcvRate);
-const loadingBcv = computed(() => paymentStore.loadingBcv);
+const loadingRates = computed(() => paymentStore.loadingRates);
+const copRate = computed(() => paymentStore.copRate);
 // const paymentMethods = ref<PaymentMethod[]>([])
 const loadingMethods = ref(false)
 // const currencies = ref<Currency[]>([])
@@ -232,7 +424,111 @@ const form = ticketStore.formData
 const previewUrl = ref<string | null>(null)
 const error = ref<string | null>(null)
 const submitting = ref(false)
+// Timer para la reserva automática
+const randomTicketsTimer = ref<number | null>(null);
+const randomTicketsTimeLeft = ref(0);
 
+// Método para obtener tickets aleatorios
+const fetchRandomTickets = async () => {
+  if (!selectedProduct.value || !authStore.user?.natural_profile?.document_number) {
+    error.value = 'No se puede obtener tickets aleatorios. Verifica tu información.';
+    return;
+  }
+
+  const quantity = Math.max(1, Number(form.tickets ?? 1));
+  
+  if (quantity > (maxAvailable.value ?? 0)) {
+    error.value = `Solo quedan ${maxAvailable.value} tickets disponibles`;
+    return;
+  }
+
+  loadingRandomTickets.value = true;
+  error.value = null;
+  randomTicketsResult.value = null;
+
+  try {
+    const result = await RaffleService.getRandomTickets(
+      selectedProduct.value.uuid,
+      "V", // Tipo de documento (siempre "V" para Venezuela)
+      authStore.user.natural_profile.document_number,
+      quantity
+    );
+
+    console.log('Respuesta de tickets aleatorios:', result); // Para debugging
+
+    // Verificar si result tiene la estructura correcta
+    if (result && result.successful && Array.isArray(result.successful) && result.successful.length > 0) {
+      randomTicketsResult.value = result;
+      
+      // Iniciar timer de reserva
+      const expiresIn = result.successful[0]?.expires_in_seconds || 60;
+      startRandomTicketsTimer(expiresIn);
+      
+      // Actualizar la selección manual con los números obtenidos
+      selectedManualTickets.value = result.successful.map(item => item.number);
+      
+      showToast(`✅ Se han reservado ${result.successful.length} tickets aleatoriamente`, 'success');
+    } else {
+      console.error('Estructura de respuesta inválida:', result);
+      error.value = 'No se pudieron obtener tickets aleatorios. La respuesta del servidor es inválida.';
+    }
+  } catch (err: any) {
+    console.error('Error obteniendo tickets aleatorios:', err);
+    error.value = err?.message || 'Error al obtener tickets aleatorios';
+  } finally {
+    loadingRandomTickets.value = false;
+  }
+};
+
+// Timer para la reserva automática
+const startRandomTicketsTimer = (seconds: number) => {
+  clearRandomTicketsTimer();
+  randomTicketsTimeLeft.value = seconds;
+  
+  randomTicketsTimer.value = setInterval(() => {
+    randomTicketsTimeLeft.value--;
+    
+    if (randomTicketsTimeLeft.value <= 0) {
+      clearRandomTicketsTimer();
+      randomTicketsResult.value = null;
+      selectedManualTickets.value = [];
+      showToast('⏰ El tiempo de reserva para los tickets aleatorios ha expirado', 'warning');
+    }
+  }, 1000);
+};
+
+const clearRandomTicketsTimer = () => {
+  if (randomTicketsTimer.value) {
+    clearInterval(randomTicketsTimer.value);
+    randomTicketsTimer.value = null;
+  }
+};
+
+// Formatear tiempo para mostrar
+const formattedRandomTime = computed(() => {
+  const minutes = Math.floor(randomTicketsTimeLeft.value / 60);
+  const seconds = randomTicketsTimeLeft.value % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+});
+
+// Liberar tickets aleatorios al cerrar
+const freeRandomTickets = async () => {
+  if (randomTicketsResult.value && selectedManualTickets.value.length > 0 && selectedProduct.value) {
+    try {
+      const user = authStore.user;
+      if (user?.natural_profile?.document_number) {
+        await RaffleService.unbookTickets(
+          selectedProduct.value.uuid, 
+          "V", 
+          user.natural_profile.document_number, 
+          selectedManualTickets.value.map(t => t.toString())
+        );
+      }
+    } catch (error) {
+      console.error('Error liberando tickets aleatorios:', error);
+    }
+  }
+};
 const totalPrice = ref('0.00');
 const totalPriceBs = ref('0,00');
 const { 
@@ -274,6 +570,57 @@ watch(isExpired, (expired) => {
     handleTimeExpired();
   }
 });
+// Computed para el precio a mostrar según la moneda seleccionada
+const displayPrice = computed(() => {
+  if (loadingRates.value) {
+    return { 
+      text: 'Cargando...', 
+      showUsdRate: false,
+      showUsdPrice: false // Nueva propiedad
+    };
+  }
+
+  const selectedCurrency = currencies.value.find(c => c.uuid === selectedCurrencyId.value);
+  if (!selectedCurrency) {
+    return { 
+      text: `${totalPrice.value} USD`, 
+      showUsdRate: false,
+      showUsdPrice: false // Ya estamos mostrando USD
+    };
+  }
+
+  const currencyName = selectedCurrency.name.toLowerCase();
+  const totalUsd = parseFloat(totalPrice.value);
+
+  if (currencyName.includes('bolívar') || selectedCurrency.short_name === 'VES') {
+    // Moneda VES - mostrar en Bs con tasa USD
+    const totalBs = totalUsd * bcvRate.value;
+    return {
+      text: `${totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs`,
+      showUsdRate: true,
+      rate: bcvRate.value,
+      rateCurrency: '/ USD',
+      showUsdPrice: true // Mostrar precio USD como referencia
+    };
+  } else if (currencyName.includes('peso colombiano') || selectedCurrency.short_name === 'COP') {
+    // Moneda COP - mostrar en COP con tasa USD
+    const totalCop = totalUsd * copRate.value;
+    return {
+      text: `${totalCop.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} COP`,
+      showUsdRate: true,
+      rate: copRate.value,
+      rateCurrency: '/ USD',
+      showUsdPrice: true // Mostrar precio USD como referencia
+    };
+  } else {
+    // Por defecto USD - solo mostrar precio
+    return {
+      text: `${totalUsd.toFixed(2)} USD`,
+      showUsdRate: false,
+      showUsdPrice: false // No mostrar duplicado
+    };
+  }
+});
 
 const handleTimeExpired = async () => {
   showToast('⏰ El tiempo para completar la compra ha expirado. Los tickets han sido liberados.', 'error', 5000);
@@ -303,6 +650,11 @@ const handleTimeExpired = async () => {
     emit('time-expired');
   }, 3000);
 };
+// Computed para obtener el método de pago actual
+// const currentPaymentMethod = computed(() => {
+//   if (!form.metodoPago) return null;
+//   return paymentMethods.value.find(method => method.slug === form.metodoPago);
+// });
 
 function handleSelectionUpdate(newSelection: number[]) {
   selectedManualTickets.value = newSelection;
@@ -333,10 +685,17 @@ const close = () => {
     freeAllBookedTickets();
   }
   
+  // Liberar tickets aleatorios si existen
+  if (selectionMode.value === 'auto' && randomTicketsResult.value) {
+    freeRandomTickets();
+  }
+  
   bookingTimerStarted.value = false;
   clearTimer();
   resetTimer();
+  clearRandomTicketsTimer();
   selectedManualTickets.value = [];
+  randomTicketsResult.value = null;
   gridStore.closeParticipateModal();
 };
 
@@ -372,10 +731,15 @@ watch(selectionMode, (newMode) => {
 
 const maxAvailable = computed(() => gridStore.availableTickets)
 const currentQty = computed(() => {
-  return selectionMode.value === 'manual'
-    ? selectedManualTickets.value.length
-    : Number(form.tickets || 0);
-})
+  if (selectionMode.value === 'manual') {
+    return selectedManualTickets.value.length;
+  } else {
+    // En modo automático, usar los tickets aleatorios si existen, sino la cantidad del form
+    return randomTicketsResult.value 
+      ? randomTicketsResult.value.successful.length 
+      : Number(form.tickets || 0);
+  }
+});
 
 watch([currentQty, bcvRate, selectedProduct], ([qty, rate, product]) => {
   if (!product || typeof product.ticketPrice === 'undefined') {
@@ -681,7 +1045,20 @@ const buildSalePayload = (verificationData: any = null) => {
 };
 
 const copyPagoMovilData = async (event: Event) => {
-  const pagoMovilData = `0191\n507080994\n04141908656`;
+  // Buscar el método de pago móvil del rifero
+  const pagoMovilMethod = paymentMethods.value.find(method => 
+    method.slug === 'pago-movil' && method.is_default
+  ) || paymentMethods.value.find(method => 
+    method.slug === 'pago-movil'
+  );
+
+  if (!pagoMovilMethod) {
+    showToast('No se encontró información de pago móvil del rifero', 'error');
+    return;
+  }
+
+  const pagoMovilData = `${pagoMovilMethod.bank_code || ''}\n${pagoMovilMethod.document_number || ''}\n${pagoMovilMethod.account_number || ''}`;
+  
   try {
     await navigator.clipboard.writeText(pagoMovilData);
     const button = event?.currentTarget as HTMLElement;
@@ -697,6 +1074,7 @@ const copyPagoMovilData = async (event: Event) => {
     }
   } catch (err) {
     console.error('Error al copiar al portapapeles:', err);
+    showToast('Error al copiar datos', 'error');
   }
 };
 
@@ -805,6 +1183,22 @@ watch(() => form.comprobante, (newFile) => {
   }
 });
 
+watch(selectionMode, (newMode) => {
+  if (newMode === 'auto') {
+    // Limpiar selección manual y timers
+    if (selectedManualTickets.value.length > 0) {
+      freeAllBookedTickets();
+      selectedManualTickets.value = [];
+    }
+    bookingTimerStarted.value = false;
+    clearTimer();
+    resetTimer();
+    
+    // Limpiar tickets aleatorios
+    clearRandomTicketsTimer();
+    randomTicketsResult.value = null;
+  }
+});
 
 // async function loadPaymentMethods() {
 //   loadingMethods.value = true;
@@ -832,8 +1226,8 @@ watch(() => form.comprobante, (newFile) => {
 
 onMounted(() => {
   console.log('✅ ParticipateModal montado - usando datos ya cargados en App.vue')
-  
-  // // Cargar los datos cuando el componente se monte
+
+  // // Cargar los datos desde App.vue
   // fetchBcvRate()
   // loadPaymentMethods()
   // loadBanks()
@@ -848,10 +1242,24 @@ onMounted(() => {
   // })
 })
 
+onUnmounted(() => {
+  clearRandomTicketsTimer();
+});
 const handleConfirm = async () => {
   error.value = null;
   let ticketsToBuy: number[] | undefined = undefined;
   let quantity: number;
+
+  // Validación para modo automático
+  if (selectionMode.value === 'auto') {
+    if (!randomTicketsResult.value || randomTicketsResult.value.successful.length === 0) {
+      error.value = 'Debes obtener tickets aleatorios primero';
+      return;
+    }
+    ticketsToBuy = randomTicketsResult.value.successful.map(t => t.number);
+    quantity = ticketsToBuy.length;
+  } 
+
   if (selectionMode.value === 'manual') {
     ticketsToBuy = selectedManualTickets.value;
     quantity = ticketsToBuy.length;
@@ -992,6 +1400,8 @@ const handleConfirm = async () => {
     submitting.value = false;
   }
 }
+
+
 </script>
 
 <style scoped>

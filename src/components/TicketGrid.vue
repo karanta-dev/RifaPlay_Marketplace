@@ -1,19 +1,19 @@
 <template>
-  <div class="bg-black/20 rounded-xl border border-white/10 p-4">
-    <div v-if="isLoading" class="flex justify-center items-center h-64">
+  <div class="bg-black/20 rounded-lg sm:rounded-xl border border-white/10 p-3 sm:p-4">
+    <div v-if="isLoading" class="flex justify-center items-center h-60 sm:h-72 md:h-80">
       <div class="grid-spinner"></div>
     </div>
 
     <div v-else>
-      <!-- GRILLA CON COLUMNAS ADAPTATIVAS -->
-      <div class="grid gap-2 p-4 bg-gray-800/50 rounded-lg max-h-96 overflow-y-auto"
+      <!-- GRILLA MÁS ALTA - AUMENTADA LA ALTURA MÁXIMA -->
+      <div class="grid gap-1 sm:gap-2 p-2 sm:p-3 md:p-4 bg-gray-800/50 rounded-lg max-h-[400px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto"
            :class="gridColumnsClass">
         <button
           v-for="ticket in tickets"
           :key="ticket.number"
           :disabled="ticket.status !== 'available'"
           type="button"
-          class="w-12 h-4 flex items-center justify-center rounded text-xs  font-mono font-bold transition-all focus:outline-none focus:ring-2 focus:ring-yellow-500"
+          class="min-w-8 h-8 sm:min-w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center rounded text-xs font-mono font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95"
           :class="getTicketClasses(ticket)"
           @click="toggleTicket(ticket)"
         >
@@ -21,18 +21,29 @@
         </button>
       </div>
 
-      <!-- PAGINACIÓN -->
-      <div class="flex justify-between items-center mt-4 text-white">
-        <div class="font-semibold">
-          Seleccionados: <span class="ml-2 px-3 py-1 bg-green-800 rounded-full">{{ selectedTickets.length }}</span>
+      <!-- PAGINACIÓN MEJORADA -->
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0 mt-4 text-white">
+        <div class="font-semibold text-sm sm:text-base flex items-center gap-2">
+          <span>Seleccionados:</span>
+          <span class="px-3 py-1 bg-green-800 rounded-full text-xs sm:text-sm">{{ selectedTickets.length }}</span>
         </div>
         
-        <div class="flex gap-2">
-          <button @click="prevPage" :disabled="currentPage === 1" class="px-3 py-1 bg-blue-800 rounded disabled:opacity-40">
+        <div class="flex items-center gap-2">
+          <button 
+            @click="prevPage" 
+            :disabled="currentPage === 1" 
+            class="px-3 py-2 sm:px-4 sm:py-2 bg-blue-800 hover:bg-blue-700 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm sm:text-base min-w-12"
+          >
             ◀
           </button>
-          <span class="px-3 py-1">Pág {{ currentPage }}</span>
-          <button @click="nextPage" :disabled="currentPage === totalPages" class="px-3 py-1 bg-blue-800 rounded disabled:opacity-40">
+          <span class="px-3 py-1 text-sm sm:text-base min-w-20 text-center">
+            Pág {{ currentPage }} de {{ totalPages }}
+          </span>
+          <button 
+            @click="nextPage" 
+            :disabled="currentPage === totalPages" 
+            class="px-3 py-2 sm:px-4 sm:py-2 bg-blue-800 hover:bg-blue-700 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm sm:text-base min-w-12"
+          >
             ▶
           </button>
         </div>
@@ -43,7 +54,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
-import { RaffleService, type RaffleGridTicket, type PaginationMeta } from '@/services/RaffleService';
+import { RaffleService, type RaffleGridTicket, type PaginationMeta } from '../services/RaffleService';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useToast } from '@/composables/useToast';
 
@@ -63,9 +74,12 @@ const currentPage = ref(1);
 
 const totalPages = computed(() => paginationMeta.value?.last_page || 1);
 
-// COLUMNAS ADAPTATIVAS
+// AUMENTAR EL NÚMERO DE TICKETS POR PÁGINA
+const TICKETS_PER_PAGE = 252; // Aumentado de 50 a 100
+
+// COLUMNAS MEJORADAS PARA MÓVILES
 const gridColumnsClass = computed(() => {
-  return 'grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12';
+  return 'grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12';
 });
 
 // FUNCIONES DE PAGINACIÓN
@@ -86,7 +100,7 @@ function prevPage() {
 async function fetchTicketGrid(page: number) {
   isLoading.value = true;
   try {
-    const response = await RaffleService.getRaffleGrid(props.raffleId, page, 50);
+    const response = await RaffleService.getRaffleGrid(props.raffleId, page, TICKETS_PER_PAGE);
     tickets.value = response.data;
     paginationMeta.value = response.meta;
   } catch (error) {
@@ -99,13 +113,13 @@ async function fetchTicketGrid(page: number) {
 
 function getTicketClasses(ticket: RaffleGridTicket) {
   if (selectedTickets.value.includes(parseInt(ticket.number))) {
-    return 'bg-green-500 text-white scale-110 shadow-lg';
+    return 'bg-green-500 text-white scale-105 shadow-lg ring-2 ring-green-300';
   }
   
   switch (ticket.status) {
     case 'sold': return 'bg-red-700 text-gray-400 cursor-not-allowed opacity-70';
     case 'reserved': return 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-80';
-    case 'available': return 'bg-white text-black hover:bg-yellow-300 cursor-pointer';
+    case 'available': return 'bg-white text-black hover:bg-yellow-300 cursor-pointer hover:scale-105';
     default: return 'bg-gray-800 text-gray-400';
   }
 }
@@ -157,12 +171,48 @@ watch(() => props.raffleId, () => {
 
 <style scoped>
 .grid-spinner {
-  width: 3rem;
-  height: 3rem;
-  border: 4px solid rgba(255, 255, 255, 0.2);
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid rgba(255, 255, 255, 0.2);
   border-top-color: #f3b243;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes spin { 
+  to { transform: rotate(360deg); } 
+}
+
+/* Breakpoint personalizado para móviles muy pequeños */
+@media (max-width: 360px) {
+  .xs\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* Mejoras de touch para móviles */
+@media (max-width: 640px) {
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Scrollbar personalizado para mejor visualización */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
 </style>

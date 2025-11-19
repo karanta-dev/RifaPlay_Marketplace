@@ -1,7 +1,8 @@
 import { defineStore } from "pinia";
 import { ref, computed, watch } from "vue";
 import { AuthService } from "@/services/AuthService";
-import axios from "axios";
+// import axios from "axios";
+import apiClient from "@/services/api"; // ✅ AÑADIR (asumiendo que esta es la ruta a tu api.ts)
 
 // Función auxiliar para obtener el usuario de forma segura...
 const getInitialUser = () => {
@@ -27,7 +28,7 @@ export const useAuthStore = defineStore("auth", () => {
 
   // Ensure axios default header is set on startup if token exists
   if (token.value) {
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
+    apiClient.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
   }
 
   // ✅ Login mejorado con más logs
@@ -51,7 +52,7 @@ export const useAuthStore = defineStore("auth", () => {
       if (responseToken) {
         token.value = responseToken;
         localStorage.setItem("token", token.value as string);
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
+        apiClient.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
       }
 
       // Save user (strip token if present)
@@ -126,7 +127,7 @@ export const useAuthStore = defineStore("auth", () => {
       // If backend returns token, log the user in
       if (responseToken) {
         token.value = responseToken;
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
+        apiClient.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
         localStorage.setItem("token", token.value as string);
       }
 
@@ -158,35 +159,33 @@ export const useAuthStore = defineStore("auth", () => {
   };
 
   // Resto del código permanece igual...
-  const loadUserProfile = async () => {
-    if (!token.value) return;
-    try {
-      // 1. Renombrar 'profile' a 'response' para más claridad
-      const response = await AuthService.getUserProfile(); 
-      
-      // 2. Asignar solo la data del usuario (como en tu JSON)
-      const userProfile = response.data; 
+const loadUserProfile = async () => {
+  if (!token.value) return;
+  try {
+    // userProfileResponse ES {"success": true, "data": {...}}
+    const userProfileResponse = await AuthService.getUserProfile();
 
-      if (userProfile) {
-        // 3. (Opcional pero recomendado) Normalizar el ID como haces en login/register
-        if (!userProfile.id && userProfile.uuid) {
-            userProfile.id = userProfile.uuid;
-        }
-        
-        user.value = userProfile;
-        localStorage.setItem("user", JSON.stringify(user.value));
-      } else {
-        console.error("❌ Estructura de respuesta inesperada al cargar perfil:", response);
-        // Opcionalmente, puedes llamar a logout() si la respuesta es inválida
-        // logout(); 
+    // ✅ EXTRAE EL OBJETO DE USUARIO DENTRO DE "data"
+    const userObject = userProfileResponse?.data || userProfileResponse;
+
+    if (userObject) {
+      // Ahora userObject SÍ es { uuid: "...", name: "...", ... }
+      if (!userObject.id && userObject.uuid) {
+        userObject.id = userObject.uuid;
       }
-      
-    } catch (err) {
-      console.error("⚠️ Error al cargar perfil:", err);
+
+      user.value = userObject; // 👈 AHORA SÍ GUARDAS EL OBJETO CORRECTO
+      localStorage.setItem("user", JSON.stringify(user.value));
+    }
+  } catch (err: any) {
+    console.error("⚠️ Error al cargar perfil:", err);
+
+    if (err.response && err.response.status === 401) {
+      console.warn("Token inválido o expirado. Cerrando sesión.");
       logout();
     }
-  };
-
+  }
+};
   const logout = async () => {
     if (token.value) {
       try {
@@ -200,7 +199,7 @@ export const useAuthStore = defineStore("auth", () => {
     token.value = null;
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    delete axios.defaults.headers.common["Authorization"];
+    delete apiClient.defaults.headers.common["Authorization"];
   };
 
   const userAge = computed(() => {

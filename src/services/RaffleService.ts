@@ -331,8 +331,37 @@ export const RaffleService = {
       throw new Error(`Los siguientes tickets no pudieron ser liberados: ${data.data.join(', ')}`);
     }
     return data;
-  }
+  },
+
+  async getRandomTickets(
+    raffleId: string, 
+    documentType: string, 
+    documentNumber: string, 
+    quantity: number
+  ): Promise<{ successful: { number: number; expires_in_seconds: number }[]; failed: any[] }> {
+    const payload = {
+      document_type: documentType,
+      document_number: documentNumber,
+      quantity,
+    };
+
+    const response = await apiClient.post(`/raffles/${raffleId}/get-random-tickets`, payload, {
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    // Basado en tu respuesta: {success: true, data: {successful: [...], ...}}
+    // Necesitamos acceder a response.data.data
+    if (response.data && response.data.success) {
+      return response.data.data; // Esto devuelve {successful: [...], failed: [...]}
+    } else {
+      throw new Error(response.data?.message || 'Error al obtener tickets aleatorios');
+    }
+  },
 };
+
 
 
 export const PrizeService = {
