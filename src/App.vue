@@ -38,7 +38,8 @@ const paymentStore = usePaymentStore(); // ✅ Instancia
 
 onMounted(() => {
   paymentStore.loadPaymentDataOnce(); // ✅ Se ejecuta solo una vez en toda la app
-  paymentStore.fetchBcvRate();
+  paymentStore.fetchAllRates();
+
 });
 
 const handleModalConfirmation = (data: any) => {

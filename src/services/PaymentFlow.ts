@@ -18,10 +18,15 @@ export interface Currency {
 export interface PaymentMethod {
   uuid: string;
   name: string;
-  slug?: string;
+  slug: string;
   description?: string;
   account_number?: string;
   bank_name?: string;
+  bank_code?: string;
+  holder_name?: string;
+  document_number?: string;
+  is_default?: boolean;
+  original_data?: any; // Para mantener los datos originales
   [key: string]: any;
 }
 
@@ -95,25 +100,78 @@ async verifyPagoMovil(payload: { phone: string; monto: number; exchange_rate?: n
    * Endpoint: GET /payment-methods
    * @returns {Promise<PaymentMethod[]>} Una promesa que resuelve con la lista de métodos de pago ordenados.
    */
-  fetchPaymentMethods: async (): Promise<PaymentMethod[]> => {
-    try {
-      const response = await apiClient.get('/payment-methods', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Accept': 'application/json',
-        },
-      });
-      const data = response.data;
-      if (data.status !== 'success' || !Array.isArray(data.data)) {
-        throw new Error('Formato de respuesta de métodos de pago inválido.');
-      }
-      return data.data.sort((a: PaymentMethod, b: PaymentMethod) => a.name.localeCompare(b.name));
-    } catch (error) {
-      console.error('Error al obtener métodos de pago:', error);
-      throw new Error('No se pudieron cargar los métodos de pago.');
+fetchPaymentMethods: async (): Promise<PaymentMethod[]> => {
+  try {
+    const response = await apiClient.get('/my-payment-methods', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Accept': 'application/json',
+      },
+    });
+    
+    console.log('🔍 Respuesta de my-payment-methods:', response.data);
+    
+    const data = response.data;
+    
+    // El nuevo endpoint tiene una estructura diferente
+    if (data.success !== true || !Array.isArray(data.data)) {
+      console.error('❌ Formato de respuesta de my-payment-methods inválido:', data);
+      throw new Error('Formato de respuesta de métodos de pago inválido.');
     }
-  },
+    
+    // Mapear la nueva estructura a la interfaz PaymentMethod
+    const paymentMethods: PaymentMethod[] = data.data
+      .filter((item: any) => item.is_active) // Solo métodos activos
+      .map((item: any) => {
+        // Generar slug basado en el method_name
+        let slug = '';
+        if (item.method_name?.toLowerCase().includes('pago movil')) {
+          slug = 'pago-movil';
+        } else if (item.method_name?.toLowerCase().includes('tarjeta')) {
+          slug = 'tarjeta';
+        } else if (item.method_name?.toLowerCase().includes('transferencia')) {
+          slug = 'transferencia';
+        } else if (item.method_name?.toLowerCase().includes('kontigo')) {
+          slug = 'kontigo';
+        } else if (item.method_name?.toLowerCase().includes('binance')) {
+          slug = 'binance';
+        } else if (item.method_name?.toLowerCase().includes('zelle')) {
+          slug = 'zelle';
+        } else {
+          // Slug por defecto basado en el nombre
+          slug = item.method_name?.toLowerCase().replace(/\s+/g, '-') || 'metodo-pago';
+        }
+        
+        return {
+          uuid: item.uuid,
+          name: item.method_name || 'Método de Pago',
+          slug: slug,
+          description: item.observation,
+          account_number: item.account_number,
+          bank_name: item.bank_name,
+          bank_code: item.bank_code,
+          holder_name: item.holder_name,
+          document_number: item.document_number,
+          is_default: item.is_default,
+          // Mantener todos los campos originales por si acaso
+          original_data: item
+        };
+      })
+      .sort((a: PaymentMethod, b: PaymentMethod) => {
+        // Ordenar: primero los métodos por defecto, luego por nombre
+        if (a.is_default && !b.is_default) return -1;
+        if (!a.is_default && b.is_default) return 1;
+        return a.name.localeCompare(b.name);
+      });
+    
+    console.log('💳 Métodos de pago mapeados:', paymentMethods);
+    return paymentMethods;
+  } catch (error) {
+    console.error('❌ Error al obtener métodos de pago del rifero:', error);
+    throw new Error('No se pudieron cargar los métodos de pago del rifero.');
+  }
+},
   /**
    * Crea una venta (POST /sales).
    * payload debe seguir la estructura que el backend espera (detalle, pago, invoice_data, etc.)
