@@ -115,6 +115,12 @@
               </div>
             </div>
             <TicketGrid v-if="selectionMode === 'manual' && selectedProduct" :raffleId="selectedProduct.uuid" @update:selected="handleSelectionUpdate" />
+              
+            <label class="font-semibold text-white text-lg">💱 Moneda</label>
+              <select v-model="selectedCurrencyId" :disabled="loadingCurrencies" class="select-custom">
+                <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">{{ c.name }} ({{ c.short_name }})</option>
+              </select>
+              <p v-if="!loadingCurrencies && currencies.length === 0" class="text-red-400 text-sm">No hay monedas disponibles.</p>
 
             <div class="space-y-4">
               <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
@@ -124,6 +130,7 @@
               </select>
               <p v-if="!loadingMethods && paymentMethods.length === 0" class="text-red-400 text-sm">No se pudieron cargar métodos de pago.</p>
               
+
               <!-- Sección de Pago Móvil -->
               <div v-if="form.metodoPago === 'pago-movil'" class="mt-4">
                 <div class="flex flex-col sm:flex-row bg-black/30 rounded-xl p-1 border border-cyan-500/30 shadow-lg">
@@ -254,11 +261,7 @@
                 </div>
               </div>
               
-              <label class="font-semibold text-white text-lg">💱 Moneda</label>
-              <select v-model="selectedCurrencyId" :disabled="loadingCurrencies" class="select-custom">
-                <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">{{ c.name }} ({{ c.short_name }})</option>
-              </select>
-              <p v-if="!loadingCurrencies && currencies.length === 0" class="text-red-400 text-sm">No hay monedas disponibles.</p>
+            
             </div>
 
             <div class="space-y-4">
