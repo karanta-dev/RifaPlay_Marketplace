@@ -5,7 +5,7 @@
     <ProductGrid />
     
     <!-- Botón para ir a UserProfile2 -->
-    <div class="mt-8">
+    <!-- <div class="mt-8">
       <router-link 
         :to="{ name: 'user-profile-juan', params: { id: '123' } }" 
         class="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
@@ -15,7 +15,7 @@
         </svg>
         <span>Ir a Perfil de Usuario</span>
       </router-link>
-    </div>
+    </div> -->
   </div>
 </template>
 
