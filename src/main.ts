@@ -8,6 +8,7 @@ import { router } from './router';
 import Toast from "vue-toastification";
 import "vue-toastification/dist/index.css";
 import "@fortawesome/fontawesome-free/css/all.min.css"
+import "./echo"
 
 import apiClient from './services/api';
 import { useAuthStore } from './stores/useAuthStore';
