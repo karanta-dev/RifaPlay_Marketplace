@@ -8,7 +8,7 @@ window.Pusher = Pusher;
 window.Echo = new Echo({
     broadcaster: 'reverb', // Usa Reverb como broadcaster
     key: '27frrudim8hyah2rd0i4', // API Key de tu aplicación (cambiar en producción)
-    wsHost: 'api-rifplay.karanta.dev', // Host de tu servidor WebSockets
+    wsHost: 'rifplay-api.karanta.dev', // Host de tu servidor WebSockets
     wsPort: 443, // Puerto WebSocket seguro
     wssPort: 443,
     forceTLS: true, // Forzar conexión segura
