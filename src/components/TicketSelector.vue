@@ -301,7 +301,7 @@ const onTicketClick = async (ticket: TicketStatus) => {
     selectedTickets.value.splice(idx, 1)
     // NUEVO: Liberar ticket del servidor
     try {
-      const user = {}; // Aquí deberías obtener el usuario de tu auth store
+      // const user = {}; // Aquí deberías obtener el usuario de tu auth store
       // await RaffleService.unbookTickets(props.product?.uuid, "V", user.document_number, [ticket.number]);
       gridStore.clearReservedTickets([ticket.number.toString()]);
     } catch (err) {
@@ -343,7 +343,7 @@ const onTicketClick = async (ticket: TicketStatus) => {
       
       // NUEVO: Reservar ticket en el servidor
       try {
-        const user = {}; // Obtener del auth store
+        // const user = {}; // Obtener del auth store
         // await RaffleService.bookTickets(raffleUuid, "V", user.document_number, [ticket.number.toString().padStart(4, '0')]);
         // El WebSocket actualizará automáticamente el estado
       } catch (err) {
