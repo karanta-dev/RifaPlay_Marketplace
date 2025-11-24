@@ -5,7 +5,9 @@
       
       <div class="nav-content">
         <div class="logo-container">
-           <div class="logo-text">Bolidos Rifas</div>
+          <router-link :to="{ name: 'user-profile-tech', params: { id: 1 } }" class="logo-text">
+            Bolidos Rifas
+          </router-link>
         </div>
 
         <ul class="nav-links hidden-mobile">
@@ -55,7 +57,18 @@
         <button class="btn-boletos">LISTA DE BOLETOS</button>
       </div>
     </nav>
-
+    <!-- Contador de precio flotante para móviles -->
+    <div v-if="selectedTicketsCount > 0" class="floating-price-counter">
+      <div class="floating-price-content">
+        <div class="floating-price-info">
+          <span class="floating-price-text">Total:</span>
+          <span class="floating-price-amount">${{ totalPrice }} USD</span>
+        </div>
+        <div class="floating-price-badge">
+          <span class="floating-price-count">{{ selectedTicketsCount }}</span>
+        </div>
+      </div>
+    </div>
     <div class="main-content">
       <div class="date-header">
         <div class="date-item">
@@ -73,20 +86,20 @@
         </div>
       </div>
 
-      <div class="progress-container">
-        <div class="progress-bar-gradient" style="width: 32.5%;"></div>
-        <span class="progress-text">32.5%</span>
-      </div>
+     <div class="progress-container">
+  <div class="progress-bar-gradient" :style="{ width: progressWidth + '%' }"></div>
+  <span class="progress-text">{{ Math.round(progressWidth) }}%</span>
+</div>
 
       <h1 class="main-title">LA TANQUETA DE<br>BÓLIDOS 2.0</h1>
 
       <div class="content-grid">
         <div class="image-column">
           <div class="image-wrapper">
-            <img src="https://via.placeholder.com/600x400/8B0000/FFFFFF?text=Toyota+Tanqueta+1" alt="Camioneta vista lateral" class="product-image">
+            <img src="https://www.reporteextra.com/wp-content/uploads/2020/10/toyota-rojo-1024x681.jpg" alt="Camioneta vista lateral" class="product-image">
           </div>
           <div class="image-wrapper">
-            <img src="https://via.placeholder.com/600x400/8B0000/FFFFFF?text=Toyota+Tanqueta+2" alt="Camioneta vista frontal" class="product-image">
+            <img src="https://paultan.org/image/2016/03/2016-Toyota-Hilux-preview.jpg" alt="Camioneta vista frontal" class="product-image">
           </div>
         </div>
 
@@ -133,6 +146,7 @@
         </button>
       </div>
 
+
       <div class="tickets-grid-wrapper">
         <div class="tickets-inner-scroll">
           <div class="tickets-pagination-header">
@@ -149,7 +163,9 @@
 
           <!-- Malla de boletos optimizada para móvil -->
           <div class="tickets-grid-layout">
-            <div v-for="n in 120" :key="n" :class="getTicketClass(n)">
+            <div v-for="n in 120" :key="n" 
+                :class="getTicketClass(n)"
+                @click="toggleTicketSelection(n)">
               {{ 5090 + n - 1 }}
             </div>
           </div>
@@ -170,7 +186,19 @@
         </div>
       </div>
 
-              
+              <!-- Contador móvil para boletos seleccionados -->
+        <div v-if="selectedTicketsCount > 0" class="mobile-ticket-counter">
+          <div class="counter-content">
+            <div class="counter-info">
+              <span class="counter-text">Boletos seleccionados:</span>
+              <span class="counter-number">{{ selectedTicketsCount }}</span>
+            </div>
+            <button class="btn-continuar" @click="scrollToPersonalData">
+              CONTINUAR
+            </button>
+          </div>
+        </div>
+        
               <div class="section-divider">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 4.5C7.52 4.5 4 8.02 4 12.5S7.52 20.5 12 20.5 20 16.98 20 12.5 16.48 4.5 12 4.5zm0 2c1.78 0 3.3.73 4.4 1.95L15 9.5l.7-.7c.36-.36.85-.56 1.35-.56s.99.2 1.35.56l.7.7-1.4 1.4c.78.78 1.25 1.83 1.25 3.03 0 2.45-1.99 4.44-4.44 4.44-1.2 0-2.25-.47-3.03-1.25l-1.4 1.4-.7-.7c-.36-.36-.56-.85-.56-1.35s.2-1 .56-1.35l.7-.7-1.4-1.4c-1.22 1.1-1.95 2.62-1.95 4.4 0 2.45 1.99 4.44 4.44 4.44 1.2 0 2.25-.47 3.03-1.25l1.4 1.4.7-.7c.36-.36.56-.85.56-1.35s-.2-1-.56-1.35l-.7-.7 1.4-1.4c-1.22 1.1-1.95 2.62-1.95 4.4 0 2.45 1.99 4.44 4.44 4.44 1.2 0 2.25-.47 3.03-1.25l1.4 1.4.7-.7c.36-.36.56-.85.56-1.35s-.2-1-.56-1.35l-.7-.7z"/>
@@ -433,41 +461,102 @@
   
 </template>
 
-<script>
-export default {
-  name: 'LgtanguetaDeBolidos',
-  data() {
-    return {
-      // Opciones de métodos de pago
-      paymentMethods: [
-        { name: 'Zelle', logoUrl: 'https://via.placeholder.com/60x30/232426/FFFFFF?text=Zelle' },
-        { name: 'Paypal', logoUrl: 'https://via.placeholder.com/60x30/0070BA/FFFFFF?text=PayPal' },
-        { name: 'Banesco', logoUrl: 'https://via.placeholder.com/60x30/F58220/FFFFFF?text=Banesco' },
-        { name: 'Binance', logoUrl: 'https://via.placeholder.com/60x30/F0B90B/000000?text=Binance' },
-        { name: 'Mercantil', logoUrl: 'https://via.placeholder.com/60x30/F0F0F0/000000?text=Mercantil' },
-        { name: 'PagoMovil', logoUrl: 'https://via.placeholder.com/60x30/231F20/FFFFFF?text=PagoMovil' },
-      ],
-    }
-  },
-  methods: {
-    // Lógica para determinar el estilo de cada boleto
-    getTicketClass(n) {
-      // Simula boletos seleccionados (color verde) y vendidos (gris)
-      if (n === 1) return 'ticket-box selected'; // Boleto 5090 (ejemplo)
-      if (n >= 20 && n <= 30) return 'ticket-box sold'; // Boletos 5109 a 5119 (ejemplo)
-      return 'ticket-box available';
-    },
-    // Lógica para determinar el estilo del método de pago (ejemplo: Zelle seleccionado)
-    getPaymentMethodClass(method) {
-      const base = 'payment-method-box';
-      // Simula que Zelle está seleccionado
-      if (method.name === 'Zelle') {
-        return base + ' selected-payment';
-      }
-      return base + ' available-payment';
-    }
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+
+// Estado reactivo
+const selectedTickets = ref<number[]>([5090])
+const ticketPrice = ref<number>(35)
+const progressWidth = ref<number>(0)
+const targetProgress = ref<number>(32.5)
+const animationDuration = ref<number>(2000)
+
+// Opciones de métodos de pago
+const paymentMethods = ref([
+  { name: 'Zelle', logoUrl: 'https://via.placeholder.com/60x30/232426/FFFFFF?text=Zelle' },
+  { name: 'Paypal', logoUrl: 'https://via.placeholder.com/60x30/0070BA/FFFFFF?text=PayPal' },
+  { name: 'Banesco', logoUrl: 'https://via.placeholder.com/60x30/F58220/FFFFFF?text=Banesco' },
+  { name: 'Binance', logoUrl: 'https://via.placeholder.com/60x30/F0B90B/000000?text=Binance' },
+  { name: 'Mercantil', logoUrl: 'https://via.placeholder.com/60x30/F0F0F0/000000?text=Mercantil' },
+  { name: 'PagoMovil', logoUrl: 'https://via.placeholder.com/60x30/231F20/FFFFFF?text=PagoMovil' },
+])
+
+// Computed properties
+const selectedTicketsCount = computed(() => selectedTickets.value.length)
+const totalPrice = computed(() => selectedTicketsCount.value * ticketPrice.value)
+
+// Métodos
+const getTicketClass = (n: number) => {
+  const ticketNumber = 5090 + n - 1
+  
+  if (selectedTickets.value.includes(ticketNumber)) {
+    return 'ticket-box selected'
+  }
+  
+  if (n >= 20 && n <= 30) {
+    return 'ticket-box sold'
+  }
+  
+  return 'ticket-box available'
+}
+
+const getPaymentMethodClass = (method: any) => {
+  const base = 'payment-method-box'
+  return method.name === 'Zelle' 
+    ? base + ' selected-payment' 
+    : base + ' available-payment'
+}
+
+const scrollToPersonalData = () => {
+  const personalDataSection = document.querySelector('.section-divider')
+  if (personalDataSection) {
+    personalDataSection.scrollIntoView({ behavior: 'smooth' })
   }
 }
+
+const toggleTicketSelection = (n: number) => {
+  const ticketNumber = 5090 + n - 1
+  const index = selectedTickets.value.indexOf(ticketNumber)
+  
+  if (index > -1) {
+    selectedTickets.value.splice(index, 1)
+  } else {
+    selectedTickets.value.push(ticketNumber)
+  }
+}
+
+// Animación de la barra de progreso
+const animateProgressBar = () => {
+  const startTime = Date.now()
+  const startValue = 0
+  const endValue = targetProgress.value
+  
+  const animate = () => {
+    const currentTime = Date.now()
+    const elapsed = currentTime - startTime
+    const progress = Math.min(elapsed / animationDuration.value, 1)
+    
+    // Easing function para animación suave
+    const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+    
+    progressWidth.value = startValue + (endValue - startValue) * easeOutQuart
+    
+    if (progress < 1) {
+      requestAnimationFrame(animate)
+    }
+  }
+  
+  animate()
+}
+
+// Lifecycle hooks
+onMounted(() => {
+  // Iniciar animación después de que el componente esté montado
+  setTimeout(() => {
+    animateProgressBar()
+  }, 300)
+})
 </script>
 
 <style scoped>
@@ -610,7 +699,7 @@ export default {
   border: 2px solid #333; /* Borde negro grueso */
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 15px rgba(0,0,0,0.5);
 }
 
 .progress-bar-gradient {
@@ -618,6 +707,7 @@ export default {
   /* Degradado de rosa claro a rosa intenso */
   background: linear-gradient(90deg, #ff8fa3 0%, #ff4757 100%);
   border-radius: 18px 0 0 18px;
+  box-shadow: 0 2px 15px rgba(0,0,0,2.5);
 }
 
 .progress-text {
@@ -911,6 +1001,172 @@ p {
     font-size: 0.875rem;
     font-weight: 700;
     color: #4b5563;
+}
+
+/* Contador de precio flotante para móviles - POSICIÓN CORREGIDA */
+.floating-price-counter {
+  position: fixed;
+  top: 80px; /* Debajo del navbar */
+  right: 20px;
+  background: linear-gradient(135deg, #ff3366, #ff6b9c);
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(255, 51, 102, 0.3);
+  z-index: 99; /* Por debajo del navbar pero por encima del contenido */
+  padding: 12px 16px;
+  min-width: 150px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: none; /* Oculto por defecto, se mostrará solo en móvil */
+}
+
+.floating-price-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.floating-price-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.floating-price-text {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.9;
+  margin-bottom: 2px;
+}
+
+.floating-price-amount {
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.floating-price-badge {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.floating-price-count {
+  font-size: 14px;
+  font-weight: 900;
+  color: white;
+}
+
+/* Mostrar el contador flotante solo en dispositivos móviles */
+@media (max-width: 768px) {
+  .floating-price-counter {
+    display: block;
+    animation: slideInDown 0.3s ease-out;
+  }
+}
+
+/* Animación de entrada */
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Efecto hover para el contador flotante */
+.floating-price-counter:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 51, 102, 0.4);
+  transition: all 0.3s ease;
+}
+
+/* Contador móvil para boletos seleccionados */
+.mobile-ticket-counter {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border-top: 2px solid #ff3366;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  padding: 12px 16px;
+  display: none; /* Oculto por defecto, se mostrará solo en móvil */
+}
+
+.counter-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 100%;
+}
+
+.counter-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.counter-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.counter-number {
+  font-size: 18px;
+  font-weight: 900;
+  color: #ff3366;
+}
+
+.btn-continuar {
+  background-color: #ff3366;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  box-shadow: 0 2px 8px rgba(255, 51, 102, 0.4);
+}
+
+.btn-continuar:hover {
+  background-color: #e62e5c;
+}
+
+/* Mostrar el contador solo en dispositivos móviles */
+@media (max-width: 768px) {
+  .mobile-ticket-counter {
+    display: block;
+  }
+  
+  /* Ajuste para evitar que el contador tape el contenido */
+  .raffle-tickets-section {
+    padding-bottom: 80px;
+  }
+}
+
+/* Añadir funcionalidad de clic a los boletos disponibles */
+.ticket-box.available {
+  cursor: pointer;
+}
+
+.ticket-box.available:hover {
+  background-color: #e5e7eb;
+  transform: scale(1.05);
 }
 
 /* Estilos de Seccion / Divider */
