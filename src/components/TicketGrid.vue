@@ -11,21 +11,30 @@
         <button
           v-for="ticket in tickets"
           :key="ticket.number"
-          :disabled="ticket.status !== 'available'"
+          :disabled="ticket.status !== 'available' || isTicketReservedByOthers(ticket.number)"
           type="button"
-          class="min-w-8 h-8 sm:min-w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center rounded text-xs font-mono font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95"
+          class="min-w-8 h-8 sm:min-w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center rounded text-xs font-mono font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 relative"
           :class="getTicketClasses(ticket)"
           @click="toggleTicket(ticket)"
         >
           {{ ticket.number }}
+          <!-- NUEVO: Indicador de reserva en tiempo real -->
+          <div v-if="isTicketReservedByOthers(ticket.number) && !isSelected(ticket.number)" 
+               class="absolute top-0 right-0 w-2 h-2 bg-yellow-500 rounded-full animate-pulse ring-1 ring-yellow-200">
+          </div>
         </button>
       </div>
 
-      <!-- PAGINACIÓN MEJORADA -->
+      <!-- PAGINACIÓN MEJORADA CON WEBSOCKETS -->
       <div class="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0 mt-4 text-white">
         <div class="font-semibold text-sm sm:text-base flex items-center gap-2">
           <span>Seleccionados:</span>
           <span class="px-3 py-1 bg-green-800 rounded-full text-xs sm:text-sm">{{ selectedTickets.length }}</span>
+          <!-- NUEVO: Indicador de reservas en tiempo real -->
+          <span v-if="realTimeReservedCount > 0" class="px-3 py-1 bg-yellow-600 rounded-full text-xs sm:text-sm flex items-center gap-1">
+            <div class="w-2 h-2 bg-yellow-300 rounded-full animate-pulse"></div>
+            {{ realTimeReservedCount }} reservando
+          </span>
         </div>
         
         <div class="flex items-center gap-2">
@@ -53,9 +62,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import { RaffleService, type RaffleGridTicket, type PaginationMeta } from '../services/RaffleService';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useGridStore } from '@/stores/useGridStore';
 import { useToast } from '@/composables/useToast';
 
 const props = defineProps<{
@@ -65,24 +75,40 @@ const props = defineProps<{
 const emit = defineEmits(['update:selected', 'reservation-started']);
 
 const authStore = useAuthStore();
+const gridStore = useGridStore();
 const { showToast } = useToast();
 const isLoading = ref(true);
 const tickets = ref<RaffleGridTicket[]>([]);
-const selectedTickets = ref<number[]>([]);
+// CAMBIO: Cambiar a string[] para que coincida con ticket.number
+const selectedTickets = ref<string[]>([]);
 const paginationMeta = ref<PaginationMeta | null>(null);
 const currentPage = ref(1);
 
 const totalPages = computed(() => paginationMeta.value?.last_page || 1);
+const TICKETS_PER_PAGE = 252;
 
-// AUMENTAR EL NÚMERO DE TICKETS POR PÁGINA
-const TICKETS_PER_PAGE = 252; // Aumentado de 50 a 100
-
-// COLUMNAS MEJORADAS PARA MÓVILES
 const gridColumnsClass = computed(() => {
   return 'grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12';
 });
 
-// FUNCIONES DE PAGINACIÓN
+// CORRECCIÓN: Ahora funciona porque ambos son strings
+const realTimeReservedCount = computed(() => {
+  return tickets.value.filter(ticket => 
+    isTicketReservedByOthers(ticket.number) && 
+    !isSelected(ticket.number)
+  ).length;
+});
+
+// CORRECCIÓN: Cambiar parámetro a string
+function isSelected(ticketNumber: string): boolean {
+  return selectedTickets.value.includes(ticketNumber);
+}
+
+function isTicketReservedByOthers(ticketNumber: string): boolean {
+  return gridStore.isTicketReserved(ticketNumber) && 
+         !isSelected(ticketNumber);
+}
+
 function nextPage() {
   if (currentPage.value < totalPages.value) {
     currentPage.value++;
@@ -111,11 +137,21 @@ async function fetchTicketGrid(page: number) {
   }
 }
 
+// CORRECCIÓN: Actualizar lógica para usar strings
 function getTicketClasses(ticket: RaffleGridTicket) {
-  if (selectedTickets.value.includes(parseInt(ticket.number))) {
+  // Ya no necesitamos parseInt porque trabajamos con strings
+  
+  // Si está seleccionado por el usuario
+  if (isSelected(ticket.number)) {
     return 'bg-green-500 text-white scale-105 shadow-lg ring-2 ring-green-300';
   }
   
+  // Si está reservado por otros en tiempo real
+  if (isTicketReservedByOthers(ticket.number)) {
+    return 'bg-yellow-600 text-white cursor-not-allowed opacity-80';
+  }
+  
+  // Estados normales
   switch (ticket.status) {
     case 'sold': return 'bg-red-700 text-gray-400 cursor-not-allowed opacity-70';
     case 'reserved': return 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-80';
@@ -124,8 +160,13 @@ function getTicketClasses(ticket: RaffleGridTicket) {
   }
 }
 
+// CORRECCIÓN: Actualizar para trabajar con strings
 async function toggleTicket(ticket: RaffleGridTicket) {
-  if (ticket.status !== 'available') return;
+  // No hacer nada si no está disponible o está reservado por otros
+  if (ticket.status !== 'available' || isTicketReservedByOthers(ticket.number)) {
+    console.log(`Ticket ${ticket.number} no disponible: vendido=${ticket.status !== 'available'}, reservado=${isTicketReservedByOthers(ticket.number)}`);
+    return;
+  }
 
   const user = authStore.user;
   if (!user?.natural_profile?.document_number) {
@@ -133,17 +174,21 @@ async function toggleTicket(ticket: RaffleGridTicket) {
     return;
   }
 
-  const ticketNumber = parseInt(ticket.number);
+  const ticketNumber = ticket.number; // Ya es string, no necesitamos parseInt
   const index = selectedTickets.value.indexOf(ticketNumber);
 
   if (index > -1) {
+    // Liberar ticket
     selectedTickets.value.splice(index, 1);
     try {
       await RaffleService.unbookTickets(props.raffleId, "V", user.natural_profile.document_number, [ticket.number]);
+      gridStore.clearReservedTickets([ticket.number]);
     } catch (err) {
       console.error('Error liberando ticket:', err);
+      showToast('Error al liberar ticket', 'error');
     }
   } else {
+    // Reservar ticket
     selectedTickets.value.push(ticketNumber);
     
     if (selectedTickets.value.length === 1) {
@@ -161,11 +206,21 @@ async function toggleTicket(ticket: RaffleGridTicket) {
   emit('update:selected', selectedTickets.value);
 }
 
-onMounted(() => fetchTicketGrid(1));
+onMounted(() => {
+  fetchTicketGrid(1);
+  gridStore.startListeningToTickets(props.raffleId);
+});
+
+onUnmounted(() => {
+  gridStore.stopListeningToTickets();
+});
+
 watch(() => props.raffleId, () => {
   selectedTickets.value = [];
   currentPage.value = 1;
   fetchTicketGrid(1);
+  gridStore.stopListeningToTickets();
+  gridStore.startListeningToTickets(props.raffleId);
 });
 </script>
 
@@ -214,5 +269,10 @@ watch(() => props.raffleId, () => {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
+}
+
+/* NUEVO: Estilos para mejor visualización de los indicadores */
+.relative {
+  position: relative;
 }
 </style>
