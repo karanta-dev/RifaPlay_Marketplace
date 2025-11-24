@@ -23,14 +23,14 @@
 import Banner from '../components/Banner.vue'
 import ProductGrid from '../components/ProductGrid.vue'
 import TopProductsCarousel from '../components/TopProductsCarousel.vue'
-import { useRouter } from 'vue-router'
+// import { useRouter } from 'vue-router'
 
-const router = useRouter()
+// const router = useRouter()
 
 // Opcional: método programático para navegar
-const goToUserProfile = () => {
-  router.push({ name: 'user-profile-juan', params: { id: '123' } })
-}
+// const goToUserProfile = () => {
+//   router.push({ name: 'user-profile-juan', params: { id: '123' } })
+// }
 </script>
 
 <style scoped>
