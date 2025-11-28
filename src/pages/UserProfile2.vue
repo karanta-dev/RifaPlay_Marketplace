@@ -132,48 +132,67 @@
               <span class="tickets-count">{{ selectedTicketsCount }}</span>
               <span class="tickets-total">Total: USD {{ totalPrice.toFixed(2) }}</span>
             </div>
-            <button class="btn-suerte" @click="selectRandomTickets">
+              <div v-if="bookingTimerStarted" class="flex items-center justify-center mt-3">
+                <div class="flex items-center gap-2 rounded-lg px-4 py-2 transition-all duration-300" :class="timerClasses">
+                  <div class="w-3 h-3 rounded-full animate-pulse" :class="pulseClass"></div>
+                  <span class="font-mono text-base sm:text-lg font-bold" :class="timerTextClass">{{ formattedTime }}</span>
+                </div>
+              </div>
+              <button class="btn-suerte" @click="selectionMode = 'auto'">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1 -mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9.42 14l1.52 3.82 2.39-1.39-2.09-2.09.84-1.05 1.52 1.51 1.05-.84-1.51-1.52 1.05-1.05-1.52-1.51-1.05.84-2.39-2.39L12 6.07c3.95.49 7 3.85 7 7.93 0 1.25-.33 2.44-.92 3.51l-4.59-4.59.84-1.05L12 11.93l-1.05 1.05-1.52 1.52-1.05-.84L9.42 14l-.84 1.05 4.59 4.59c.28-.51.5-1.05.64-1.63z"/>
               </svg>
               ELEGIR A LA SUERTE
             </button>
           </div>
+            <!-- Bloque para selección automática (elegir a la suerte) -->
+            <div v-if="selectionMode === 'auto'" class="mt-4 p-4 bg-gray-50 rounded-lg border">
+              <label class="block font-semibold mb-2">🎲 Cantidad de tickets (Automático)</label>
+              <div class="flex items-center gap-3 mb-3">
+                <button class="px-3 py-1 rounded-l bg-gray-200" @click.prevent="formAuto.tickets = Math.max(1, formAuto.tickets - 1)">-</button>
+                <input type="number" v-model.number="formAuto.tickets" min="1" :max="maxAvailable ?? undefined" class="input-field text-center" style="width:80px" />
+                <button class="px-3 py-1 rounded-r bg-gray-200" @click.prevent="formAuto.tickets = Math.min((maxAvailable || 9999), formAuto.tickets + 1)">+</button>
+                <div class="text-sm text-gray-600">Disponibles: <strong class="text-red-600 ml-1">{{ maxAvailable }}</strong></div>
+              </div>
 
-          <!-- Malla de boletos -->
+              <div class="flex gap-2">
+                <button type="button" @click="fetchRandomTickets" :disabled="loadingRandomTickets || !formAuto.tickets || formAuto.tickets < 1" class="btn-suerte">
+                  <span v-if="loadingRandomTickets">🔄 Obteniendo tickets...</span>
+                  <span v-else>🎯 Obtener Tickets Aleatorios</span>
+                </button>
+                <button type="button" class="btn-suerte bg-gray-300 text-black" @click="cancelAutoSelection">Cancelar</button>
+              </div>
+
+              <!-- Resultado de tickets aleatorios -->
+              <div v-if="randomTicketsResult" class="mt-4 p-3 bg-white rounded border">
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="font-semibold">Tickets Reservados</h4>
+                  <div v-if="randomTicketsTimeLeft > 0" class="flex items-center gap-2 text-sm bg-green-100 px-2 py-1 rounded">
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span class="font-mono">{{ formattedRandomTime }}</span>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-8 gap-2 mb-2">
+                  <div v-for="t in randomTicketsResult.successful" :key="t.number" class="p-2 border rounded text-center bg-green-50">
+                    <span class="font-bold text-sm">{{ String(t.number).padStart(4, '0') }}</span>
+                  </div>
+                </div>
+
+                <p class="text-sm text-gray-700">Se han reservado <strong>{{ randomTicketsResult.successful.length }}</strong> tickets aleatoriamente. Tienes {{ formattedRandomTime }} para completar la compra.</p>
+              </div>
+            </div>
+
+          <!-- Reemplazado por TicketSelector (componente reutilizable) -->
           <div class="tickets-grid-wrapper">
             <div class="tickets-inner-scroll">
-              <div class="tickets-pagination-header">
-                <span>Pag: {{ currentTicketPage }} / {{ totalTicketPages }}</span>
-                <div class="tickets-nav-buttons">
-                  <button class="tickets-nav-btn" :disabled="currentTicketPage === 1" @click="prevTicketPage">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                  </button>
-                  <button class="tickets-nav-btn" :disabled="currentTicketPage === totalTicketPages" @click="nextTicketPage">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                  </button>
-                </div>
-              </div>
+              <TicketGrid
+                v-if="gridStore.selectedProduct"
+                :raffleId="gridStore.selectedProduct.uuid"
+                @update:selected="handleSelectionUpdate"
+              />
 
-              <div class="tickets-grid-layout">
-                <div v-for="n in paginatedTickets" :key="n" 
-                    :class="getTicketClass(n)"
-                    @click="toggleTicketSelection(n)">
-                  {{ n }}
-                </div>
-              </div>
-
-              <div class="tickets-pagination-footer">
-                <button class="tickets-nav-btn-mobile" :disabled="currentTicketPage === 1" @click="prevTicketPage">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <span class="tickets-page-info">Pag: {{ currentTicketPage }} / {{ totalTicketPages }}</span>
-                <button class="tickets-nav-btn-mobile" :disabled="currentTicketPage === totalTicketPages" @click="nextTicketPage">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                </button>
-              </div>
-              
-              <div class="tickets-selected-count">
+              <div class="tickets-selected-count mt-3">
                 SELECCIONADOS
                 <span class="text-green-600 ml-1">{{ selectedTicketsCount }}</span> de <span class="text-red-600">{{ maxTickets }}</span>
               </div>
@@ -194,15 +213,15 @@
           </div>
 
           <!-- Sección de datos personales -->
-          <div class="section-divider" id="personal-data">
+          <!-- <div class="section-divider" id="personal-data">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 4.5C7.52 4.5 4 8.02 4 12.5S7.52 20.5 12 20.5 20 16.98 20 12.5 16.48 4.5 12 4.5zm0 2c1.78 0 3.3.73 4.4 1.95L15 9.5l.7-.7c.36-.36.85-.56 1.35-.56s.99.2 1.35.56l.7.7-1.4 1.4c.78.78 1.25 1.83 1.25 3.03 0 2.45-1.99 4.44-4.44 4.44-1.2 0-2.25-.47-3.03-1.25l-1.4 1.4-.7-.7c-.36-.36-.56-.85-.56-1.35s.2-1 .56-1.35l.7-.7-1.4-1.4c-1.22 1.1-1.95 2.62-1.95 4.4 0 2.45 1.99 4.44 4.44 4.44 1.2 0 2.25-.47 3.03-1.25l1.4 1.4.7-.7c.36-.36.56-.85.56-1.35s-.2-1-.56-1.35l-.7-.7 1.4-1.4c-1.22 1.1-1.95 2.62-1.95 4.4 0 2.45 1.99 4.44 4.44 4.44 1.2 0 2.25-.47 3.03-1.25l1.4 1.4.7-.7c.36-.36.56-.85.56-1.35s-.2-1-.56-1.35l-.7-.7z"/>
             </svg>
             <h3 class="section-title text-green-600">DATOS PERSONALES</h3>
-          </div>
+          </div> -->
 
           <!-- Formulario de datos personales -->
-          <div class="form-grid">
+          <!-- <div class="form-grid">
             <div>
               <label class="input-label" for="nombre">Nombres y Apellidos *</label>
               <input type="text" id="nombre" class="input-field" placeholder="">
@@ -238,7 +257,7 @@
               <label class="input-label" for="cuenta">Titular de la Cuenta</label>
               <input type="text" id="cuenta" class="input-field" placeholder="">
             </div>
-          </div>
+          </div> -->
 
           <!-- Sección de métodos de pago -->
           <div class="section-divider">
@@ -251,9 +270,9 @@
           <p class="text-sm text-gray-500 mb-6 text-center">Selecciona una opción</p>
 
           <div class="payment-methods-wrapper">
-            <div v-for="method in paymentMethods" :key="method.name" :class="getPaymentMethodClass(method)">
-              <img :src="method.logoUrl" :alt="method.name" class="w-full h-full object-contain">
-              <svg v-if="method.name === 'Zelle'" class="check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+            <div v-for="method in paymentMethods" :key="method.uuid || method.name" :class="getPaymentMethodClass(method)" @click="selectedPaymentMethod = method">
+              <img :src="getPaymentLogo(method)" :alt="method.name" class="w-full h-full object-contain">
+              <svg v-if="selectedPaymentMethod && (selectedPaymentMethod.uuid === method.uuid || selectedPaymentMethod.name === method.name)" class="check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
             </div>
           </div>
           
@@ -269,14 +288,37 @@
               </span>
             </div>
             
-            <div class="account-info">
-              <p><strong>TITULAR:</strong> {{ sellerName }}</p>
-              <p><strong>CORREO:</strong> {{ sellerEmail }}</p>
-            </div>
-            
-            <div class="account-total">
-              Total: <span class="text-red-600">${{ totalPrice.toFixed(2) }} USD</span> ({{ selectedTicketsCount }} boleto{{ selectedTicketsCount !== 1 ? 's' : '' }})
-            </div>
+              <div class="account-info">
+                <p><strong>TITULAR:</strong> {{ sellerName }}</p>
+                <!-- <p><strong>CORREO:</strong> {{ sellerEmail }}</p> -->
+              </div>
+
+              <!-- Mostrar campos dinámicos del método de pago seleccionado -->
+              <div v-if="selectedPaymentMethod && structuredFields.length > 0" class="payment-structured-data mt-4">
+                <h4 class="text-sm font-semibold text-gray-700 mb-2">Metodo seleccionado</h4>
+                <div class="text-sm text-gray-800 mb-2">{{ selectedPaymentVariable || 'Ninguno seleccionado' }}</div>
+                <h4 class="text-sm font-semibold text-gray-700 mb-2">Detalles del método seleccionado</h4>
+                <div v-for="field in structuredFields" :key="field.key || field.label" class="mb-2">
+                  <label class="block text-xs text-gray-800 mb-1">{{ field.label || field.key }}:</label>
+                  <div class="text-sm text-gray-800">{{ field.value }}</div>
+                </div>
+              </div>
+
+              <!-- Currency selector -->
+              <div class="mb-4">
+                <label class="input-label" for="currency-select">Moneda</label>
+                <select id="currency-select" v-model="selectedCurrencyId" class="input-field">
+                  <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">
+                    {{ c.name }} ({{ c.short_name }})
+                  </option>
+                </select>
+              </div>
+              <div class="account-total">
+                Total: <span class="text-red-600">{{ displayPrice.text }}</span>
+                <span v-if="displayPrice.showUsdRate && displayPrice.rate" class="text-xs text-gray-500"> (Tasa: {{ displayPrice.rate.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }} {{ displayPrice.rateCurrency }})</span>
+                <span v-if="displayPrice.showUsdPrice" class="text-xs text-gray-500"> (Referencia: ${{ totalPrice.toFixed(2) }} USD)</span>
+                ({{ selectedTicketsCount }} boleto{{ selectedTicketsCount !== 1 ? 's' : '' }})
+              </div>
           </div>
 
           <!-- Sección de comprobante de pago -->
@@ -301,6 +343,11 @@
                 </div>
                 <p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
               </div>
+            </div>
+            <!-- Referencia de pago (4 últimos dígitos / número) -->
+            <div class="mb-4">
+              <label class="input-label" for="referencia-pago">Referencia de Pago</label>
+              <input id="referencia-pago" v-model="referenciaPago" type="text" placeholder="🔖 Número de referencia" class="input-field" />
             </div>
           </div>
           
@@ -342,7 +389,7 @@
       </div>
 
       <!-- Sección de verificador de boletos -->
-      <div class="additional-section">
+      <!-- <div class="additional-section">
         <div class="section-header-centered">
           <h2 class="section-title-large">VERIFICADOR DE BOLETOS</h2>
           <p class="section-subtitle">Ingresa tu número de teléfono para verificar tus boletos adquiridos.</p>
@@ -364,7 +411,7 @@
             VERIFICAR
           </button>
         </div>
-      </div>
+      </div> -->
 
       <!-- Sección de preguntas frecuentes -->
       <div class="additional-section">
@@ -463,12 +510,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { usePaymentStore } from '@/stores/usePaymentStore'
 import { useRoute } from 'vue-router'
-// Importar servicios (ajusta las rutas según tu estructura)
 import { RaffleService, PrizeService, type Raffle, type Prize } from '@/services/RaffleService'
+import { PaymentFlowService, type PaymentMethod } from '@/services/PaymentFlow'
+import apiClient from '@/services/api'
+import { useGridStore } from '@/stores/useGridStore'
+import { useAuthStore } from '@/stores/useAuthStore'
+import TicketGrid from '@/components/TicketGrid.vue'
+import { useBookingTimer } from '@/composables/useBookingTimer'
+import { useToast } from '@/composables/useToast'
 
 const route = useRoute()
+const gridStore = useGridStore()
+const { showToast } = useToast()
+const authStore = useAuthStore()
 
 // Estados
 const raffle = ref<Raffle | null>(null)
@@ -478,16 +536,119 @@ const selectedTickets = ref<number[]>([])
 const progressWidth = ref<number>(0)
 const targetProgress = ref<number>(32.5)
 const animationDuration = ref<number>(2000)
+const maxTickets = computed(() => raffle.value?.end_range || 100)
 
-// Opciones de métodos de pago
-const paymentMethods = ref([
-  { name: 'Zelle', logoUrl: 'https://via.placeholder.com/60x30/232426/FFFFFF?text=Zelle' },
-  { name: 'Paypal', logoUrl: 'https://via.placeholder.com/60x30/0070BA/FFFFFF?text=PayPal' },
-  { name: 'Banesco', logoUrl: 'https://via.placeholder.com/60x30/F58220/FFFFFF?text=Banesco' },
-  { name: 'Binance', logoUrl: 'https://via.placeholder.com/60x30/F0B90B/000000?text=Binance' },
-  { name: 'Mercantil', logoUrl: 'https://via.placeholder.com/60x30/F0F0F0/000000?text=Mercantil' },
-  { name: 'PagoMovil', logoUrl: 'https://via.placeholder.com/60x30/231F20/FFFFFF?text=PagoMovil' },
-])
+// Ticket pagination and ranges
+const ticketsPerPage = ref<number>(200)
+const currentTicketPage = ref<number>(1)
+
+// Métodos de pago provenientes del backend
+const paymentMethods = ref<PaymentMethod[]>([])
+const selectedPaymentMethod = ref<PaymentMethod | null>(null)
+const loadingPaymentMethods = ref(false)
+
+// Exponer el nombre/variable del método seleccionado para mostrar en UI fácilmente
+const selectedPaymentVariable = computed(() => {
+  const m = selectedPaymentMethod.value
+  if (!m) return ''
+  // preferimos la propiedad explicitamente mapeada, luego el nombre legible
+  return (m as any).variable_name || (m as any).method_name || m.name || ''
+})
+
+// Referencia de pago ingresada por el usuario (campo de comprobante)
+const referenciaPago = ref('')
+
+// Selección manual (igual que ParticipateModal)
+const selectedManualTickets = ref<number[]>([])
+
+// Modo de selección: 'manual' | 'auto' (elegir a la suerte)
+const selectionMode = ref<'auto' | 'manual'>('manual')
+
+// Formulario mínimo para modo automático
+const formAuto = ref({ tickets: 1 })
+
+// Estado para la reserva automática (tickets aleatorios)
+const loadingRandomTickets = ref(false)
+const randomTicketsResult = ref<null | { successful: { number: number; expires_in_seconds?: number }[]; failed?: any[] }>(null)
+const randomTicketsTimer = ref<number | null>(null)
+const randomTicketsTimeLeft = ref(0)
+// Estado para tickets vendidos (provenientes del backend) y carga
+const soldTickets = ref<number[]>([])
+const loadingTickets = ref(false)
+const maxAvailable = computed(() => gridStore.availableTickets)
+
+// --- Currency selection and price logic (use centralized payment store like ParticipateModal) ---
+const paymentStore = usePaymentStore()
+const { currencies, defaultCurrencyId, bcvRate, copRate, loadingRates } = storeToRefs(paymentStore)
+const loadingCurrencies = ref(false)
+const selectedCurrencyId = ref<string | undefined>(undefined)
+
+const displayPrice = computed(() => {
+  if (loadingRates.value) {
+    return { text: 'Cargando...', showUsdRate: false, showUsdPrice: false }
+  }
+
+  const selectedCurrency = (currencies?.value ?? []).find((c: any) => c.uuid === selectedCurrencyId.value)
+  if (!selectedCurrency) {
+    return { text: `${totalPrice.value} USD`, showUsdRate: false, showUsdPrice: false }
+  }
+
+  const currencyName = (selectedCurrency.name || '').toLowerCase()
+  const totalUsd = Number(totalPrice.value)
+
+  if (currencyName.includes('bolívar') || selectedCurrency.short_name === 'VES') {
+    const totalBs = totalUsd * (bcvRate.value ?? 1)
+    return {
+      text: `${totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs`,
+      showUsdRate: true,
+      rate: bcvRate.value,
+      rateCurrency: '/ USD',
+      showUsdPrice: true
+    }
+  } else if (currencyName.includes('peso colombiano') || selectedCurrency.short_name === 'COP') {
+    const totalCop = totalUsd * (copRate.value ?? 1)
+    return {
+      text: `${totalCop.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} COP`,
+      showUsdRate: true,
+      rate: copRate.value,
+      rateCurrency: '/ USD',
+      showUsdPrice: true
+    }
+  } else {
+    return { text: `${totalUsd.toFixed(2)} USD`, showUsdRate: false, showUsdPrice: false }
+  }
+})
+
+// Valores para los campos dinámicos de structured_data
+// structuredFields devuelve un array de { key, label, value } para mostrar como texto (no editables)
+const structuredFieldValues = ref<Record<string, any>>({})
+
+const structuredFields = computed(() => {
+  const method = selectedPaymentMethod.value
+  const raw = method?.structured_data || method?.original_data?.structured_data || null
+  if (!raw) return []
+
+  if (Array.isArray(raw)) {
+    return raw.map((f: any) => ({
+      key: f.key || f.name || f.label,
+      label: f.label || f.name || f.key,
+      value: f.value ?? f.default ?? f.example ?? ''
+    }))
+  }
+
+  if (typeof raw === 'object') {
+    // Puede ser un objeto con pares primitivos: {"BINANCE":"41213411"}
+    return Object.keys(raw).map(k => {
+      const v = raw[k]
+      if (v !== null && (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')) {
+        return { key: k, label: k, value: String(v) }
+      }
+      return { key: k, label: raw[k]?.label || k, value: raw[k]?.value ?? raw[k]?.default ?? '' }
+    })
+  }
+
+  return []
+})
 
 // Computed properties
 const sellerName = computed(() => {
@@ -512,12 +673,22 @@ const ticketPrice = computed(() => {
   return raffle.value?.ticket_price != null ? Number(raffle.value.ticket_price) : 35
 })
 
-const selectedTicketsCount = computed(() => selectedTickets.value.length)
-const totalPrice = computed(() => selectedTicketsCount.value * ticketPrice.value)
+// Número actual de tickets a comprar (respeta modo manual/auto)
+const currentQty = computed(() => {
+  // si estamos en modo manual, usar la selección manual
+  if (typeof selectionMode !== 'undefined' && selectionMode.value === 'manual') {
+    return selectedManualTickets.value.length
+  }
+  // modo automático: si hay resultado aleatorio usar su cantidad, sino usar el valor del formulario
+  if (randomTicketsResult && randomTicketsResult.value) {
+    return Array.isArray(randomTicketsResult.value.successful) ? randomTicketsResult.value.successful.length : 0
+  }
+  return Number((typeof formAuto !== 'undefined' ? formAuto.value.tickets : 0) || 0)
+})
 
-// Ticket pagination and ranges
-const ticketsPerPage = ref<number>(200)
-const currentTicketPage = ref<number>(1)
+const selectedTicketsCount = computed(() => currentQty.value)
+const totalPrice = computed(() => currentQty.value * ticketPrice.value)
+
 
 const totalTickets = computed(() => {
   if (!raffle.value) return 100
@@ -543,7 +714,146 @@ const paginatedTickets = computed(() => {
   return fullTicketList.value.slice(startIndex, endIndex)
 })
 
-const maxTickets = computed(() => raffle.value?.end_range || 100)
+const formattedRandomTime = computed(() => {
+  const minutes = Math.floor(randomTicketsTimeLeft.value / 60)
+  const seconds = randomTicketsTimeLeft.value % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+})
+
+const startRandomTicketsTimer = (seconds: number) => {
+  clearRandomTicketsTimer()
+  randomTicketsTimeLeft.value = seconds
+  randomTicketsTimer.value = setInterval(() => {
+    randomTicketsTimeLeft.value--
+    if (randomTicketsTimeLeft.value <= 0) {
+      clearRandomTicketsTimer()
+      randomTicketsResult.value = null
+        selectedManualTickets.value = []
+        selectedTickets.value = []
+      showToast('⏰ El tiempo de reserva para los tickets aleatorios ha expirado', 'warning')
+    }
+  }, 1000) as unknown as number
+}
+
+const clearRandomTicketsTimer = () => {
+  if (randomTicketsTimer.value) {
+    clearInterval(randomTicketsTimer.value)
+    randomTicketsTimer.value = null
+  }
+}
+
+const freeRandomTickets = async () => {
+  if (randomTicketsResult.value && selectedManualTickets.value.length > 0 && raffle.value) {
+    try {
+      const user = authStore.user
+      if (user?.natural_profile?.document_number) {
+        await RaffleService.unbookTickets(
+          raffle.value.uuid,
+          'V',
+          user.natural_profile.document_number,
+          selectedManualTickets.value.map(t => String(t))
+        )
+      }
+    } catch (e) {
+      console.error('Error liberando random tickets:', e)
+    }
+  }
+}
+
+const fetchRandomTickets = async () => {
+  if (!raffle.value) return
+  if (!authStore.user?.natural_profile?.document_number) {
+    showToast('Necesitas tener tu cédula en el perfil para usar selección automática', 'error')
+    return
+  }
+
+  const quantity = Math.max(1, Number(formAuto.value.tickets ?? 1))
+  if (quantity > (maxAvailable.value ?? 0)) {
+    showToast(`Solo quedan ${maxAvailable.value} tickets disponibles`, 'error')
+    return
+  }
+
+  loadingRandomTickets.value = true
+  randomTicketsResult.value = null
+  try {
+    const result = await RaffleService.getRandomTickets(
+      raffle.value.uuid,
+      'V',
+      authStore.user.natural_profile.document_number,
+      quantity
+    )
+
+    if (result && result.successful && Array.isArray(result.successful) && result.successful.length > 0) {
+      randomTicketsResult.value = result
+      const expiresIn = result.successful[0]?.expires_in_seconds || 60
+      startRandomTicketsTimer(expiresIn)
+      selectedManualTickets.value = result.successful.map((r: any) => r.number)
+      // mantener consistencia con selectedTickets usado en el resto de la página
+      selectedTickets.value = selectedManualTickets.value.slice()
+      showToast(`✅ Se han reservado ${result.successful.length} tickets aleatoriamente`, 'success')
+    } else {
+      showToast('No se pudieron obtener tickets aleatorios', 'error')
+    }
+  } catch (err: any) {
+    console.error('Error obteniendo tickets aleatorios:', err)
+    showToast(err?.message || 'Error al obtener tickets aleatorios', 'error')
+  } finally {
+    loadingRandomTickets.value = false
+  }
+}
+const bookingTimerStarted = ref(false)
+const { timeLeft, formattedTime, isExpired, startTimer, clearTimer, resetTimer } = useBookingTimer(10)
+
+watch(isExpired, (expired) => {
+  if (expired) {
+    // cuando expira, limpiar selección
+    selectedManualTickets.value = []
+    bookingTimerStarted.value = false
+    clearTimer()
+    resetTimer()
+    showToast('⏰ El tiempo para completar la selección ha expirado. Los tickets han sido liberados.', 'error')
+  }
+})
+
+const timerClasses = computed(() => {
+  if (timeLeft.value > 300) {
+    return 'bg-green-500/80 border border-green-400/50'
+  } else if (timeLeft.value > 120) {
+    return 'bg-yellow-500/80 border border-yellow-400/50'
+  } else if (timeLeft.value > 60) {
+    return 'bg-orange-500/80 border border-orange-400/50'
+  } else {
+    return 'bg-red-600/90 border border-red-400/50 animate-pulse'
+  }
+})
+
+const pulseClass = computed(() => {
+  if (timeLeft.value > 300) return 'bg-green-500'
+  if (timeLeft.value > 120) return 'bg-yellow-500'
+  if (timeLeft.value > 60) return 'bg-orange-500'
+  return 'bg-red-500'
+})
+
+const timerTextClass = computed(() => 'text-white')
+
+// Handler igual que ParticipateModal: recibe la selección desde TicketGrid
+function handleSelectionUpdate(newSelection: number[]) {
+  selectedManualTickets.value = newSelection
+
+  // Mantener compatibilidad con selectedTickets usado en esta página
+  selectedTickets.value = Array.isArray(newSelection) ? [...newSelection] : []
+
+  if (newSelection.length === 1 && !bookingTimerStarted.value) {
+    bookingTimerStarted.value = true
+    startTimer()
+  }
+
+  if (newSelection.length === 0 && bookingTimerStarted.value) {
+    bookingTimerStarted.value = false
+    clearTimer()
+    resetTimer()
+  }
+}
 
 // Métodos
 const formatDate = (dateString: string) => dateString ? new Date(dateString).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Fecha por definir'
@@ -576,15 +886,74 @@ const getTicketClass = (n: number) => {
 
 const getPaymentMethodClass = (method: any) => {
   const base = 'payment-method-box'
-  return method.name === 'Zelle' 
-    ? base + ' selected-payment' 
-    : base + ' available-payment'
+  const isSelected = selectedPaymentMethod.value && (selectedPaymentMethod.value.uuid === method.uuid || selectedPaymentMethod.value.name === method.name)
+  return isSelected ? `${base} selected-payment` : `${base} available-payment`
 }
 
 const getPrizeImage = (prize: Prize) => {
   // Acceso seguro a images (puede ser undefined)
   return prize.images?.[0]?.url || 'https://via.placeholder.com/300x200/4CAF50/FFFFFF?text=Premio'
 }
+
+// Obtener URL absoluta del logo del método de pago
+const getPaymentLogo = (method: any) => {
+  const candidate = method?.logoUrl || method?.original_data?.icon || method?.original_data?.logo_url || method?.original_data?.image || null
+  const placeholder = '/default.png'
+  if (!candidate) return placeholder
+  try {
+    if (typeof candidate === 'string') {
+      if (candidate.startsWith('http://') || candidate.startsWith('https://')) return candidate
+      if (candidate.startsWith('/')) return `${apiClient.defaults.baseURL?.replace(/\/$/, '')}${candidate}`
+      return `${apiClient.defaults.baseURL?.replace(/\/$/, '')}/${candidate}`
+    }
+    return placeholder
+  } catch (e) {
+    return String(candidate) || placeholder
+  }
+}
+
+// Cargar métodos de pago desde el backend
+const loadPaymentMethods = async () => {
+  loadingPaymentMethods.value = true
+  try {
+    const methods = await PaymentFlowService.fetchPaymentMethods()
+    paymentMethods.value = methods
+    // Preseleccionar el método por defecto si existe
+    const def = methods.find(m => m.is_default) || methods[0]
+    if (def) selectedPaymentMethod.value = def
+  } catch (err) {
+    console.warn('No se pudieron cargar métodos de pago:', err)
+  } finally {
+    loadingPaymentMethods.value = false
+  }
+}
+
+// Inicializar valores de structured fields cuando cambia el método seleccionado
+watch(selectedPaymentMethod, (newVal) => {
+  structuredFieldValues.value = {}
+  if (!newVal) return
+
+  const raw = newVal.structured_data || newVal.original_data?.structured_data || null
+  if (!raw) return
+
+  if (Array.isArray(raw)) {
+    for (const f of raw) {
+      const key = f.key || f.name || f.label
+      structuredFieldValues.value[key] = f.value ?? f.default ?? ''
+    }
+  } else if (typeof raw === 'object') {
+    for (const k of Object.keys(raw)) {
+      const v = raw[k]
+      // Si el valor es un primitivo (string/number), usarlo directamente
+      if (v !== null && (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')) {
+        structuredFieldValues.value[k] = v
+      } else {
+        structuredFieldValues.value[k] = v?.value ?? v?.default ?? ''
+      }
+    }
+  }
+
+}, { immediate: true })
 
 const scrollToPersonalData = () => {
   const personalDataSection = document.getElementById('personal-data')
@@ -608,21 +977,28 @@ const toggleTicketSelection = (n: number) => {
 }
 
 const selectRandomTickets = () => {
-  const availableTickets: number[] = []
-  for (const n of fullTicketList.value) {
-    if (!selectedTickets.value.includes(n) && n % 7 !== 0) { // Excluir vendidos
-      availableTickets.push(n)
+  // Abrir la UI de selección automática (el usuario escoge la cantidad y obtiene tickets)
+  selectionMode.value = 'auto'
+}
+
+// Cancelar la selección automática: liberar tickets reservados, limpiar timers y volver a modo manual
+const cancelAutoSelection = async () => {
+  try {
+    // si hay tickets aleatorios reservados, liberarlos en backend
+    if (randomTicketsResult.value && selectedManualTickets.value.length > 0) {
+      await freeRandomTickets()
     }
+  } catch (err) {
+    console.error('Error liberando tickets al cancelar:', err)
   }
 
-  // Seleccionar 5 boletos aleatorios
+  // limpiar estados locales
+  clearRandomTicketsTimer()
+  randomTicketsResult.value = null
+  selectedManualTickets.value = []
   selectedTickets.value = []
-  for (let i = 0; i < Math.min(5, availableTickets.length); i++) {
-    const randomIndex = Math.floor(Math.random() * availableTickets.length)
-    const chosen = availableTickets[randomIndex]
-    if (chosen !== undefined) selectedTickets.value.push(chosen)
-    availableTickets.splice(randomIndex, 1)
-  }
+  loadingRandomTickets.value = false
+  selectionMode.value = 'manual'
 }
 
 const prevTicketPage = () => {
@@ -657,6 +1033,7 @@ const animateProgressBar = () => {
   animate()
 }
 
+
 // Cargar datos de la rifa
 const loadRaffleData = async () => {
   const raffleId = route.params.id as string
@@ -668,11 +1045,51 @@ const loadRaffleData = async () => {
   try {
     // Cargar datos de la rifa
     const raffleResponse = await RaffleService.getByUuid(raffleId)
+    if (!raffleResponse) {
+      loading.value = false
+      return
+    }
     raffle.value = raffleResponse
+
+    // Establecer la rifa cargada como selectedProduct en gridStore (igual que ParticipateModal)
+    try {
+      const gridStore = useGridStore()
+      const productObj = {
+        uuid: raffleResponse.uuid,
+        title: raffleResponse.name,
+        description: raffleResponse.description || '',
+        ticketsMax: raffleResponse.end_range || 100,
+        drawDate: raffleResponse.raffle_date,
+        ticketPrice: Number(raffleResponse.ticket_price) || 0,
+        rifero: raffleResponse.seller ? `${raffleResponse.seller.name} ${raffleResponse.seller.last_name || ''}`.trim() : 'Rifero',
+        images: raffleResponse.images?.map((i: any) => i.url) ?? [],
+        categories: [],
+        status: raffleResponse.status,
+        ticketsVendidos: raffleResponse.tickets_sold ?? null,
+        isProgressLoading: false,
+      }
+      gridStore.selectedProduct = productObj
+      // también solicitar disponibles
+      gridStore.fetchAvailableTickets(productObj.uuid)
+    } catch (e) {
+      console.warn('No se pudo setear gridStore.selectedProduct:', e)
+    }
 
     // Cargar premios de la rifa
     const prizesResponse = await PrizeService.getRafflePrizes(raffleId)
     prizes.value = prizesResponse
+
+    // Cargar boletos vendidos desde el backend para mostrar en el selector
+    try {
+      loadingTickets.value = true
+      const sold = await RaffleService.getSoldTickets(raffleId)
+      soldTickets.value = Array.isArray(sold) ? sold : []
+    } catch (err) {
+      console.warn('No se pudieron cargar los tickets vendidos:', err)
+      soldTickets.value = []
+    } finally {
+      loadingTickets.value = false
+    }
 
   } catch (error) {
     console.error('Error cargando datos de la rifa:', error)
@@ -684,7 +1101,25 @@ const loadRaffleData = async () => {
 // Lifecycle hooks
 onMounted(() => {
   loadRaffleData()
-  
+  // cargar métodos de pago
+  loadPaymentMethods()
+
+  // Cargar monedas y tasas desde el paymentStore (igual que ParticipateModal)
+  try {
+    paymentStore.loadPaymentDataOnce()
+    paymentStore.fetchAllRates()
+  } catch (e) {
+    console.warn('No se pudieron cargar datos de pago desde paymentStore:', e)
+  }
+
+  // Si las monedas se cargan después, seleccionar la por defecto
+  const stopWatch = watch(currencies, (val) => {
+    if (val && val.length && !selectedCurrencyId.value) {
+      selectedCurrencyId.value = (defaultCurrencyId?.value as string) || val[0].uuid
+      stopWatch()
+    }
+  })
+
   // Iniciar animación después de que el componente esté montado
   setTimeout(() => {
     animateProgressBar()

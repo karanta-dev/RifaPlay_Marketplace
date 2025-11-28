@@ -149,9 +149,13 @@ export const RaffleService = {
         end_range: r.end_range ?? 0,
         raffle_date: r.raffle_date,
         status: r.status,
-        images: r.images ?? [],
-        categories: r.categories ?? [],
-        prizes: r.prizes ?? [], 
+        images: (Array.isArray(r.images) && r.images.length) ? r.images : (
+          Array.isArray(r.prizes) && r.prizes.length && Array.isArray(r.prizes[0].images) && r.prizes[0].images.length
+            ? [r.prizes[0].images[0]]
+            : []
+        ),
+  categories: r.categories ?? [],
+  prizes: r.prizes ?? [], 
         created_by: r.created_by ?? {},
         seller: r.seller ? {
           uuid: r.seller.uuid,
@@ -192,10 +196,14 @@ export const RaffleService = {
         end_range: r.end_range ?? 0,
         raffle_date: r.raffle_date,
         status: r.status,
-        images: r.images ?? [],
-        categories: r.categories ?? [],
-        prizes: r.prizes ?? [],
-        created_by: r.created_by ?? {},
+  images: (Array.isArray(r.images) && r.images.length) ? r.images : (
+    Array.isArray(r.prizes) && r.prizes.length && Array.isArray(r.prizes[0].images) && r.prizes[0].images.length
+      ? [r.prizes[0].images[0]]
+      : []
+  ),
+  categories: r.categories ?? [],
+  prizes: r.prizes ?? [],
+    created_by: r.created_by ?? {},
         seller: r.seller ? {
           uuid: r.seller.uuid,
           name: r.seller.name,
