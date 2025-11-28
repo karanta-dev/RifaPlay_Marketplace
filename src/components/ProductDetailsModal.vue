@@ -171,7 +171,7 @@ import { computed, ref, watch } from 'vue'
 // import { useTicketStore } from '@/stores/useTicketStore'
 import { useUserStore } from '@/stores/useUserStore'
 import { useRouter } from 'vue-router'
-import { PrizeService, type Prize } from '@/services/RaffleService'
+import { PrizeService, RaffleService, type Prize } from '@/services/RaffleService'
 
 const props = defineProps<{ open: boolean; product: any | null }>()
 const emit = defineEmits(['close', 'buy'])
@@ -219,13 +219,40 @@ const loadPrizes = async () => {
     console.log('✅ Premios cargados:', prizes.value)
     
     // 🎯 OBTENER EL created_by_id DEL PRIMER PREMIO (con optional chaining)
+    let foundId: string | null = null
+
     if (prizes.value.length > 0 && prizes.value[0]?.created_by_id) {
-      riferoId.value = prizes.value[0].created_by_id
-      console.log('🎯 ID del rifero encontrado:', riferoId.value)
+      foundId = prizes.value[0].created_by_id
+      console.log('🎯 ID del rifero obtenido desde prizes[0].created_by_id:', foundId)
+    }
+
+    // Si no se obtuvo, intentar campos comunes en el objeto product
+    if (!foundId) {
+      foundId = props.product?.created_by_id ?? props.product?.seller?.uuid ?? props.product?.user_id ?? null
+      if (foundId) console.log('🔎 ID del rifero obtenido desde product fallback:', foundId)
+    }
+
+    // Si aún no hay ID, intentar consultar la rifa completa para encontrar seller/created_by
+    if (!foundId && props.product?.uuid) {
+      try {
+        const raffleFull = await RaffleService.getByUuid(props.product.uuid)
+        if (raffleFull) {
+          foundId = raffleFull.created_by?.name ? raffleFull.created_by?.name : foundId // not ideal but keep
+          // Prefer seller uuid when available
+          if (!foundId && raffleFull.seller?.uuid) foundId = raffleFull.seller.uuid
+          if (foundId) console.log('🔁 ID del rifero obtenido desde RaffleService.getByUuid:', foundId)
+        }
+      } catch (err) {
+        console.warn('Warning: no se pudo obtener rifa completa como fallback para riferoId', err)
+      }
+    }
+
+    if (foundId) {
+      riferoId.value = foundId
     } else {
-      console.warn('⚠️ No se encontró created_by_id en los premios')
+      console.warn('⚠️ No se encontró created_by_id en los premios ni en product ni en el fallback')
       // Fallback: buscar por nombre en el store (solo para datos mock)
-      const userFromStore = userStore.getUserByName(props.product.rifero)
+      const userFromStore = userStore.getUserByName(props.product?.rifero)
       riferoId.value = userFromStore?.id || null
     }
   } catch (error) {

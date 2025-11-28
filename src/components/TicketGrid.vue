@@ -11,16 +11,18 @@
         <button
           v-for="ticket in tickets"
           :key="ticket.number"
-          :disabled="ticket.status !== 'available' || isTicketReservedByOthers(ticket.number)"
+          :disabled="isTicketDisabled(ticket)"
           type="button"
-          class="min-w-8 h-8 sm:min-w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center rounded text-xs font-mono font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 relative"
+          class="min-w-8 h-8 sm:min-w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center rounded text-xs font-mono font-bold transition-all duration-200 focus:outline-none relative"
           :class="getTicketClasses(ticket)"
           @click="toggleTicket(ticket)"
         >
           {{ ticket.number }}
           <!-- NUEVO: Indicador de reserva en tiempo real -->
-          <div v-if="isTicketReservedByOthers(ticket.number) && !isSelected(ticket.number)" 
-               class="absolute top-0 right-0 w-2 h-2 bg-yellow-500 rounded-full animate-pulse ring-1 ring-yellow-200">
+          <div v-if="isReservedBySomeoneElse(ticket.number)" 
+            class="absolute -top-1 -right-1 flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
           </div>
         </button>
       </div>
@@ -91,6 +93,29 @@ const gridColumnsClass = computed(() => {
   return 'grid-cols-4 xs:grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12';
 });
 
+// 1. Verifica si YO lo tengo seleccionado
+function isSelectedByMe(ticketNumber: string): boolean {
+  return selectedTickets.value.includes(ticketNumber);
+}
+
+// 2. Verifica si el Websocket dice que está ocupado Y NO soy yo quien lo tiene
+function isReservedBySomeoneElse(ticketNumber: string): boolean {
+  const isReservedInSocket = gridStore.isTicketReserved(ticketNumber);
+  const doIHaveIt = isSelectedByMe(ticketNumber);
+  
+  // Solo devolver TRUE si el socket dice ocupado Y yo NO lo tengo seleccionado.
+  // Esto previene que mi propia selección se vuelva roja.
+  return isReservedInSocket && !doIHaveIt;
+}
+
+// 3. Define si el botón está deshabilitado
+function isTicketDisabled(ticket: RaffleGridTicket): boolean {
+  // Deshabilitar si:
+  // - Está vendido en base de datos (status != available)
+  // - O está reservado por ALGUIEN MÁS (Websocket)
+  return ticket.status !== 'available' || isReservedBySomeoneElse(ticket.number);
+}
+
 // CORRECCIÓN: Ahora funciona porque ambos son strings
 const realTimeReservedCount = computed(() => {
   return tickets.value.filter(ticket => 
@@ -137,59 +162,59 @@ async function fetchTicketGrid(page: number) {
   }
 }
 
-// CORRECCIÓN: Actualizar lógica para usar strings
+// 4. Clases CSS 
 function getTicketClasses(ticket: RaffleGridTicket) {
-  // Ya no necesitamos parseInt porque trabajamos con strings
-  
-  // Si está seleccionado por el usuario
-  if (isSelected(ticket.number)) {
-    return 'bg-green-500 text-white scale-105 shadow-lg ring-2 ring-green-300';
+  // Prioridad 1: Mi selección (VERDE)
+  if (isSelectedByMe(ticket.number)) {
+    return 'bg-green-600 text-white scale-105 shadow-lg ring-2 ring-green-400 z-10';
   }
   
-  // Si está reservado por otros en tiempo real
-  if (isTicketReservedByOthers(ticket.number)) {
-    return 'bg-yellow-600 text-white cursor-not-allowed opacity-80';
+  // Prioridad 2: Reservado por otro en tiempo real (ROJO)
+  if (isReservedBySomeoneElse(ticket.number)) {
+    return 'bg-red-600/90 text-white cursor-not-allowed opacity-90 border border-red-500';
   }
   
-  // Estados normales
+  // Prioridad 3: Estados de base de datos
   switch (ticket.status) {
-    case 'sold': return 'bg-red-700 text-gray-400 cursor-not-allowed opacity-70';
+    case 'sold': return 'bg-red-800 text-gray-400 cursor-not-allowed opacity-60';
     case 'reserved': return 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-80';
-    case 'available': return 'bg-white text-black hover:bg-yellow-300 cursor-pointer hover:scale-105';
+    case 'available': return 'bg-white/90 text-gray-900 hover:bg-yellow-400 cursor-pointer hover:scale-110 shadow-sm';
     default: return 'bg-gray-800 text-gray-400';
   }
 }
 
 // CORRECCIÓN: Actualizar para trabajar con strings
 async function toggleTicket(ticket: RaffleGridTicket) {
-  // No hacer nada si no está disponible o está reservado por otros
-  if (ticket.status !== 'available' || isTicketReservedByOthers(ticket.number)) {
-    console.log(`Ticket ${ticket.number} no disponible: vendido=${ticket.status !== 'available'}, reservado=${isTicketReservedByOthers(ticket.number)}`);
-    return;
-  }
+  // Bloquear clic si ya no está disponible
+  if (isTicketDisabled(ticket)) return;
 
   const user = authStore.user;
   if (!user?.natural_profile?.document_number) {
-    showToast('Error: Usuario no encontrado', 'error');
+    showToast('Inicia sesión para seleccionar tickets', 'warning');
     return;
   }
 
-  const ticketNumber = ticket.number; // Ya es string, no necesitamos parseInt
+  const ticketNumber = ticket.number;
   const index = selectedTickets.value.indexOf(ticketNumber);
 
   if (index > -1) {
-    // Liberar ticket
+    // DESELECCIONAR
     selectedTickets.value.splice(index, 1);
+    
+    // Importante: Liberar visualmente en el store local inmediatamente para evitar lag
+    gridStore.clearReservedTickets([ticketNumber]); 
+    
     try {
       await RaffleService.unbookTickets(props.raffleId, "V", user.natural_profile.document_number, [ticket.number]);
-      gridStore.clearReservedTickets([ticket.number]);
     } catch (err) {
       console.error('Error liberando ticket:', err);
-      showToast('Error al liberar ticket', 'error');
     }
   } else {
-    // Reservar ticket
+    // SELECCIONAR
     selectedTickets.value.push(ticketNumber);
+    
+    // Importante: Marcar como reservado localmente de inmediato
+    // Esto asegura que si llega el evento WS, ya lo tengamos en "isSelectedByMe"
     
     if (selectedTickets.value.length === 1) {
       emit('reservation-started');
@@ -198,8 +223,10 @@ async function toggleTicket(ticket: RaffleGridTicket) {
     try {
       await RaffleService.bookTickets(props.raffleId, "V", user.natural_profile.document_number, [ticket.number]);
     } catch (err) {
-      selectedTickets.value.splice(selectedTickets.value.indexOf(ticketNumber), 1);
-      showToast('Error reservando ticket', 'error');
+      // Revertir si falla la API
+      const idx = selectedTickets.value.indexOf(ticketNumber);
+      if (idx > -1) selectedTickets.value.splice(idx, 1);
+      showToast('No se pudo reservar el ticket', 'error');
     }
   }
 
