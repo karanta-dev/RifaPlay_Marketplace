@@ -1028,6 +1028,9 @@ const buildSalePayload = (verificationData: any = null) => {
         referencia_verificada: verificationData.referencia,
         status: verificationData.status
       } : undefined
+      ,
+      // Indicar al backend si esta venta proviene de una verificación (pago móvil verificado)
+      is_verify: !!verificationData
     },
     invoice_data: {
       document_id: authStore.user?.natural_profile?.document_number,
@@ -1312,10 +1315,20 @@ const handleConfirm = async () => {
       payment_date: new Date().toISOString(),
       transaction_id: form.referencia || `TX-${Date.now()}`,
       entity: form.metodoPago === 'pago-movil' ? form.pagoMovilBanco : undefined,
-      idempotency_key: idempotencyKey
+      idempotency_key: idempotencyKey,
+      // Monto original (en USD) requerido por la API
+      original_amount: (function(){
+        const n = parseFloat(totalPrice.value || '0');
+        return isNaN(n) ? 0 : n;
+      })()
+      ,
+      // Indicar al backend si esta venta proviene de una verificación (pago móvil verificado)
+      is_verify: (pagoMovilVerifyResult.value && pagoMovilVerifyResult.value.status && pagoMovilVerifyResult.value.status !== 'pendiente') ? true : false
     },
     invoice_data: {
-      document_id: authStore.user?.natural_profile?.document_number,
+      // La API espera `document_number` y `document_type`.
+  document_number: authStore.user?.natural_profile?.document_number || form.pagoMovilCedula || null,
+      document_type: authStore.user?.natural_profile?.document_type || 'V',
       name: form.nombre || authStore.user?.name || 'Comprador',
       phone,
       address: authStore.user?.natural_profile?.address || 'Direccion',
@@ -1400,6 +1413,40 @@ const handleConfirm = async () => {
     submitting.value = false;
   }
 }
+
+// Método público para uso externo: permite que otra página/component
+// (por ejemplo `UserProfile2.vue`) invoque la compra reutilizando la
+// misma lógica de `handleConfirm` sin duplicarla.
+async function externalBuy(options: {
+  selectionMode?: 'auto' | 'manual',
+  selectedManualTickets?: number[],
+  formOverrides?: Record<string, any>,
+  selectedCurrencyId?: string
+} = {}) {
+  try {
+    if (typeof options.selectionMode !== 'undefined') {
+      selectionMode.value = options.selectionMode
+    }
+    if (Array.isArray(options.selectedManualTickets)) {
+      selectedManualTickets.value = options.selectedManualTickets.slice()
+    }
+    if (options.formOverrides && typeof options.formOverrides === 'object') {
+      Object.assign(form, options.formOverrides)
+    }
+    if (options.selectedCurrencyId) {
+      selectedCurrencyId.value = options.selectedCurrencyId
+    }
+
+    // Llamar a la función interna que maneja la compra
+    await handleConfirm()
+  } catch (err) {
+    console.error('Error en externalBuy:', err)
+    throw err
+  }
+}
+
+// Exponer API pública mínima para ser invocada desde otras páginas
+defineExpose({ externalBuy })
 
 
 </script>

@@ -150,24 +150,46 @@ fetchPaymentMethods: async (): Promise<PaymentMethod[]> => {
           slug = item.method_name?.toLowerCase().replace(/\s+/g, '-') || 'metodo-pago';
         }
         
-        // Intentar extraer una URL de ícono/logo desde varias posibles propiedades
-        let rawIcon = item.logo_url || item.icon || (item.images && Array.isArray(item.images) && item.images[0] && (item.images[0].url || item.images[0].path)) || item.image || null;
-        let logoUrl = null as string | null
+        // Intentar extraer una URL de ícono/logo desde varias posibles propiedades.
+        // El backend puede devolver:
+        // - una URL absoluta (https://...)
+        // - una ruta relativa que empieza con '/' (ej: '/48.../icon.png')
+        // - un path relativo sin slash (ej: '48.../icon.png')
+        // - un objeto images: [{ url, path }]
+        // Normalizamos y construimos una `logoUrl` absoluta usando `apiClient.defaults.baseURL` cuando haga falta.
+        let rawIcon: any = item.logo_url || item.icon || (item.images && Array.isArray(item.images) && item.images[0] && (item.images[0].url || item.images[0].path)) || item.image || null;
+        let logoUrl = null as string | null;
         if (rawIcon) {
-          // Si ya es una URL absoluta, usarla; si es un path relativo (empieza con '/'), prefix con baseURL
           try {
+            // Si viene como objeto con { url } o { path }
+            if (typeof rawIcon === 'object' && rawIcon !== null) {
+              rawIcon = rawIcon.url || rawIcon.path || String(rawIcon);
+            }
+
             if (typeof rawIcon === 'string') {
-              if (rawIcon.startsWith('http://') || rawIcon.startsWith('https://')) {
-                logoUrl = rawIcon
-              } else if (rawIcon.startsWith('/')) {
-                logoUrl = `${apiClient.defaults.baseURL?.replace(/\/$/, '')}${rawIcon}`
+              rawIcon = rawIcon.trim();
+              // Si es una URL absoluta, usarla tal cual
+              if (/^https?:\/\//i.test(rawIcon)) {
+                logoUrl = rawIcon;
               } else {
-                // valor relativo sin slash: también prefix con baseURL + '/'
-                logoUrl = `${apiClient.defaults.baseURL?.replace(/\/$/, '')}/${rawIcon}`
+                // Construir URL absoluta relativa a apiClient.defaults.baseURL
+                const base = apiClient.defaults.baseURL || '';
+                try {
+                  // normalizar entradas como 'path/to/file' o '/path/to/file'
+                  // new URL manejará correctamente la concatenación
+                  logoUrl = new URL(rawIcon.replace(/^\/*/, '/'), base).toString();
+                } catch (err) {
+                  // Fallback manual conservador
+                  const baseTrim = (base || '').replace(/\/$/, '');
+                  logoUrl = rawIcon.startsWith('/') ? `${baseTrim}${rawIcon}` : `${baseTrim}/${rawIcon}`;
+                }
               }
+            } else {
+              // cualquier otro tipo, forzar a string
+              logoUrl = String(rawIcon);
             }
           } catch (e) {
-            logoUrl = String(rawIcon)
+            logoUrl = String(rawIcon);
           }
         }
 

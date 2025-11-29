@@ -185,19 +185,29 @@
 
           <!-- Reemplazado por TicketSelector (componente reutilizable) -->
           <div class="tickets-grid-wrapper">
-            <div class="tickets-inner-scroll">
-              <TicketGrid
-                v-if="gridStore.selectedProduct"
-                :raffleId="gridStore.selectedProduct.uuid"
-                @update:selected="handleSelectionUpdate"
-              />
+  <div class="tickets-inner-scroll">
+    <TicketGrid
+      v-if="gridStore.selectedProduct"
+      :raffleId="gridStore.selectedProduct.uuid"
+      @update:selected="handleSelectionUpdate"
+      @reservation-started="onReservationStarted"
+    />
 
-              <div class="tickets-selected-count mt-3">
-                SELECCIONADOS
-                <span class="text-green-600 ml-1">{{ selectedTicketsCount }}</span> de <span class="text-red-600">{{ maxTickets }}</span>
-              </div>
-            </div>
-          </div>
+    <div class="tickets-selected-count mt-4 p-3 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg border border-gray-300">
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
+        <span class="font-bold text-gray-800 text-sm sm:text-base">
+          SELECCIONADOS: 
+          <span class="text-green-600 ml-1">{{ selectedTicketsCount }}</span> 
+          de 
+          <span class="text-red-600">{{ maxTickets }}</span>
+        </span>
+        <div class="text-xs text-gray-600">
+          Total: <span class="font-bold text-green-600">${{ totalPrice }} USD</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
           <!-- Contador móvil para boletos seleccionados -->
           <div v-if="selectedTicketsCount > 0" class="mobile-ticket-counter">
@@ -359,7 +369,7 @@
           </div>
           
           <div class="text-center">
-            <button class="btn-confirmar">
+            <button class="btn-confirmar" @click.prevent="confirmFromProfile">
               CONFIRMAR
             </button>
           </div>
@@ -455,7 +465,10 @@
       <router-link to="/" class="btn-confirmar mt-4 inline-block">Volver al catálogo</router-link>
     </div>
 
-    <!-- Footer -->
+  <!-- Instanciar ParticipateModal oculto para reutilizar su lógica de compra -->
+  <ParticipateModal ref="participateModalRef" :open="false" />
+
+  <!-- Footer -->
     <footer class="site-footer">
       <div class="footer-content">
         <div class="footer-text">
@@ -520,6 +533,7 @@ import apiClient from '@/services/api'
 import { useGridStore } from '@/stores/useGridStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import TicketGrid from '@/components/TicketGrid.vue'
+import ParticipateModal from '@/components/ParticipateModal.vue'
 import { useBookingTimer } from '@/composables/useBookingTimer'
 import { useToast } from '@/composables/useToast'
 
@@ -804,6 +818,9 @@ const fetchRandomTickets = async () => {
 const bookingTimerStarted = ref(false)
 const { timeLeft, formattedTime, isExpired, startTimer, clearTimer, resetTimer } = useBookingTimer(10)
 
+// Ref al componente ParticipateModal para reutilizar su método público externalBuy
+const participateModalRef = ref<any>(null)
+
 watch(isExpired, (expired) => {
   if (expired) {
     // cuando expira, limpiar selección
@@ -852,6 +869,47 @@ function handleSelectionUpdate(newSelection: number[]) {
     bookingTimerStarted.value = false
     clearTimer()
     resetTimer()
+  }
+}
+
+// Se llama cuando TicketGrid emite 'reservation-started'.
+// TicketGrid emite ese evento ANTES de emitir update:selected, por lo
+// que si solo seteamos bookingTimerStarted = true no se llamará a startTimer
+// en handleSelectionUpdate (porque bookingTimerStarted ya será true).
+// Aquí iniciamos el temporizador explícitamente para evitar ese caso.
+function onReservationStarted() {
+  if (!bookingTimerStarted.value) {
+    bookingTimerStarted.value = true
+    startTimer()
+  }
+}
+
+// Invocado desde el botón CONFIRMAR en UserProfile2: reutiliza la lógica
+// de ParticipateModal (externalBuy) para procesar la compra con la selección
+// y datos de pago actuales de esta página.
+async function confirmFromProfile() {
+  const modal = participateModalRef.value
+  if (!modal || typeof modal.externalBuy !== 'function') {
+    showToast('No se pudo procesar la compra (modal no disponible)', 'error')
+    return
+  }
+
+  const metodoPago = selectedPaymentMethod.value ? ((selectedPaymentMethod.value as any).slug || (selectedPaymentMethod.value as any).uuid || (selectedPaymentMethod.value as any).name) : undefined
+
+  try {
+    await modal.externalBuy({
+      selectionMode: selectionMode.value,
+      selectedManualTickets: selectedManualTickets.value,
+      formOverrides: {
+        referencia: referenciaPago.value,
+        metodoPago: metodoPago
+      },
+      selectedCurrencyId: selectedCurrencyId.value
+    })
+    showToast('✅ Compra iniciada desde perfil', 'success')
+  } catch (err: any) {
+    console.error('Error al confirmar desde perfil:', err)
+    showToast(err?.message || 'Error procesando la compra', 'error')
   }
 }
 
