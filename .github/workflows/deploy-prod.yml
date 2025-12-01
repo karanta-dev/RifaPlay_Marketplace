@@ -46,6 +46,8 @@ jobs:
 
       - name: Compilar proyecto
         run: pnpm run build -m pwa
+      - name: Verificar archivos generados
+        run: cat .env
 
       - name: Verificar archivos generados
         run: ls -R dist
