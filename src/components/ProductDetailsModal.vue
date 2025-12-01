@@ -297,7 +297,7 @@ function goToRiferoProfile() {
       riferoId: riferoId.value
     })
     // Opcional: mostrar mensaje al usuario
-    alert('No se puede acceder al perfil del rifero en este momento.')
+    // alert('No se puede acceder al perfil del rifero en este momento.')
   }
 }
 </script>

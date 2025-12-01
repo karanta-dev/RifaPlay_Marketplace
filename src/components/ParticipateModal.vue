@@ -128,9 +128,25 @@
                 <option value="" disabled :selected="!form.metodoPago">{{ loadingMethods ? 'Cargando métodos...' : 'Seleccionar método de pago' }}</option>
                 <option v-for="method in paymentMethods" :key="method.uuid" :value="method.slug">{{ method.name }}</option>
               </select>
+              <!-- Mostrar structured_data parseado del método seleccionado (si existe) -->
+              <div v-if="selectedMethodHasStructured && parsedStructured" class="mt-3 p-3 bg-black/20 rounded-lg text-sm text-white/90 border border-white/10">
+                <p class="font-semibold text-cyan-300 mb-2">🔎 Datos del método seleccionado</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div v-for="(v, k) in parsedStructured" :key="k" class="flex items-start gap-2">
+                    <span class="text-gray-300 font-medium">{{ k }}:</span>
+                    <span class="text-white break-all">{{ v }}</span>
+                  </div>
+                </div>
+              </div>
               <p v-if="!loadingMethods && paymentMethods.length === 0" class="text-red-400 text-sm">No se pudieron cargar métodos de pago.</p>
               
-
+                <!-- Campo de Referencia (Transaction ID) -->
+  <!-- Mostrar para todos los métodos excepto pago-movil en modo automático -->
+  <div v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')" class="mt-4">
+    <label class="font-semibold text-white text-lg">🔖 Referencia de pago</label>
+    <input v-model="form.referencia" type="text" placeholder="Ingresa el número de referencia" class="input-custom" required />
+    <p class="text-gray-400 text-sm mt-1">Número de referencia, comprobante o transacción de tu pago.</p>
+  </div>
               <!-- Sección de Pago Móvil -->
               <div v-if="form.metodoPago === 'pago-movil'" class="mt-4">
                 <div class="flex flex-col sm:flex-row bg-black/30 rounded-xl p-1 border border-cyan-500/30 shadow-lg">
@@ -211,8 +227,8 @@
                 </div>
               </div>
               
-              <!-- Para otros métodos de pago, mostrar la información específica del rifero -->
-              <div v-else-if="form.metodoPago && form.metodoPago !== 'pago-movil'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
+              <!-- Para otros métodos de pago, mostrar la información específica del rifero (solo si NO hay structured_data) -->
+              <div v-else-if="form.metodoPago && form.metodoPago !== 'pago-movil' && !selectedMethodHasStructured" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
                 <div v-for="method in paymentMethods.filter(m => m.slug === form.metodoPago)" :key="method.uuid" class="space-y-2">
                   <p class="font-semibold text-cyan-400 mb-2">{{ method.name }}</p>
                   
@@ -446,6 +462,63 @@ const selectedCurrencyId = ref<string | undefined>(undefined)
 const initialTicketsCount = ref(0)
 const fileInput = ref<HTMLInputElement | null>(null)
 const form = ticketStore.formData
+// Parsed structured_data of the selected payment method
+const parsedStructured = ref<Record<string, any> | null>(null)
+
+// Computed: método de pago actualmente seleccionado (objeto completo)
+const selectedPaymentMethod = computed(() => {
+  return paymentMethods.value.find(m => m.slug === form.metodoPago || m.uuid === form.metodoPago) || null
+})
+
+const selectedMethodHasStructured = computed(() => {
+  const m: any = selectedPaymentMethod.value
+  return !!(m && m.structured_data)
+})
+
+/**
+ * Try to map common structured_data keys into existing form fields
+ * (telefono, cedula, email, banco, account, etc.)
+ */
+function applyStructuredToForm(obj: Record<string, any> | null, methodSlug: string | undefined) {
+  if (!obj) return
+  try {
+    for (const k of Object.keys(obj)) {
+      const v = obj[k]
+      const key = String(k).toLowerCase()
+      if (!v) continue
+      // telefono / phone
+      if (key.includes('telefono') || key.includes('phone') || key.includes('tel')) {
+        // prefer pagoMovil fields when pago-movil selected
+        if (methodSlug === 'pago-movil') {
+          if (!form.pagoMovilTelefono) form.pagoMovilTelefono = String(v)
+        }
+        if (!form.telefono) form.telefono = String(v)
+      }
+      // cedula / ci / document
+      if (key.includes('cedula') || key.includes('ci') || key.includes('document')) {
+        if (methodSlug === 'pago-movil') {
+          if (!form.pagoMovilCedula) form.pagoMovilCedula = String(v)
+        }
+        if (!form.pagoMovilCedula) form.pagoMovilCedula = String(v)
+      }
+      // email (no rellenar referencia; solo dejamos el dato en parsedStructured para mostrar)
+      if (key.includes('email')) {
+        // no hacemos asignación automática a form.referencia por petición del usuario
+      }
+      // banco / bank
+      if (key.includes('banco') || key.includes('bank')) {
+        // we can't map to a bank uuid here, so store in pagoMovilBanco text field
+        if (!form.pagoMovilBanco) form.pagoMovilBanco = String(v)
+      }
+      // account / cuenta / account_number (no escribir en referencia)
+      if (key.includes('account') || key.includes('cuenta') || key.includes('account_number') || key.includes('usuario')) {
+        // dejamos en parsedStructured; no asignamos a form.referencia
+      }
+    }
+  } catch (e) {
+    console.error('Error applying structured_data to form:', e)
+  }
+}
 const previewUrl = ref<string | null>(null)
 const error = ref<string | null>(null)
 const submitting = ref(false)
@@ -752,6 +825,25 @@ watch(selectionMode, (newMode) => {
     bookingTimerStarted.value = false;
     clearTimer();
     resetTimer();
+  }
+});
+
+// Cuando cambie el método de pago, parsear structured_data si existe y aplicar valores al formulario
+watch(() => form.metodoPago, (newVal) => {
+  parsedStructured.value = null;
+  if (!newVal) return;
+  const method = paymentMethods.value.find(m => m.slug === newVal || m.uuid === newVal);
+  if (!method) return;
+  const sd = method.structured_data;
+  if (!sd) return;
+  try {
+    const parsed = typeof sd === 'string' ? JSON.parse(sd) : sd;
+    if (parsed && typeof parsed === 'object') {
+      parsedStructured.value = parsed as Record<string, any>;
+      applyStructuredToForm(parsed as Record<string, any>, method.slug);
+    }
+  } catch (e) {
+    console.warn('No se pudo parsear structured_data del método de pago:', e);
   }
 });
 
@@ -1515,18 +1607,19 @@ const handleConfirm = async () => {
   }
 
   // Resto de validaciones (método de pago, etc.)
-  if (form.metodoPago === 'pago-movil' && pagoMovilMode.value === 'automatico') {
-    if (!form.pagoMovilCedula || !form.pagoMovilTelefono || !form.pagoMovilBanco) {
-      error.value = 'Debes completar todos los campos de Pago Móvil Automático.';
-      return;
-    }
-    form.referencia = 'AUTOMATIC'; 
-    ticketStore.setComprobante(null);
-  } 
-  else if (form.metodoPago !== 'pago-movil' && (!form.metodoPago || !form.referencia)) {
-    error.value = 'Debes seleccionar un método de pago e ingresar la referencia.';
+if (form.metodoPago === 'pago-movil' && pagoMovilMode.value === 'automatico') {
+  if (!form.pagoMovilCedula || !form.pagoMovilTelefono || !form.pagoMovilBanco) {
+    error.value = 'Debes completar todos los campos de Pago Móvil Automático.';
     return;
-  } 
+  }
+  form.referencia = 'AUTOMATIC'; 
+  ticketStore.setComprobante(null);
+} 
+// Reemplaza la siguiente condición con esta:
+else if (form.metodoPago && (!form.referencia || form.referencia.trim() === '')) {
+  error.value = 'Debes ingresar la referencia de pago.';
+  return;
+}
   else if (!form.metodoPago) {
     error.value = 'Debes seleccionar un método de pago.';
     return;

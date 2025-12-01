@@ -2,7 +2,7 @@
   <transition name="fade">
     <div
       v-if="open"
-      class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
       @keydown.esc="emit('close')"
     >
       <div class="w-full max-w-md">
@@ -128,7 +128,7 @@
               class="w-full py-3 rounded-full shadow-lg text-white font-semibold text-lg"
               :class="btnTertiaryClasses"
             >
-              Vende otro Ticket
+              Comprar otro Ticket
             </button>
           </div>
 

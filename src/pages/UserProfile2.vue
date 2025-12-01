@@ -826,6 +826,14 @@ watch(isExpired, (expired) => {
   }
 })
 
+// Watch para limpiar la referencia cuando cambia el método de pago
+watch(selectedPaymentMethod, (newMethod) => {
+  if (newMethod) {
+    // Limpiar la referencia anterior cuando se cambia el método de pago
+    referenciaPago.value = ''
+  }
+})
+
 const timerClasses = computed(() => {
   if (timeLeft.value > 300) {
     return 'bg-green-500/80 border border-green-400/50'
@@ -878,6 +886,49 @@ function onReservationStarted() {
   }
 }
 
+// Función para resetear el formulario después de una compra exitosa
+function resetForm() {
+  // Limpiar selección de tickets
+  selectedManualTickets.value = []
+  selectedTickets.value = []
+  
+  // Volver al modo de selección manual
+  selectionMode.value = 'manual'
+  
+  // Resetear el formulario automático
+  formAuto.value = { tickets: 1 }
+  
+  // Limpiar resultados de tickets aleatorios
+  if (randomTicketsResult.value) {
+    clearRandomTicketsTimer()
+    randomTicketsResult.value = null
+  }
+  
+  // Limpiar temporizador de reserva manual
+  bookingTimerStarted.value = false
+  clearTimer()
+  resetTimer()
+  
+  // Limpiar método de pago seleccionado
+  selectedPaymentMethod.value = null
+  
+  // Limpiar referencia de pago
+  referenciaPago.value = ''
+  
+  // Limpiar structured fields
+  structuredFieldValues.value = {}
+  
+  // No resetear la moneda seleccionada para mantener preferencia del usuario
+  // selectedCurrencyId.value = defaultCurrencyId.value || currencies.value[0]?.uuid
+  
+  // Forzar actualización del grid si está visible
+  if (gridStore.selectedProduct) {
+    // Esto ayudará a que TicketGrid se actualice
+    gridStore.fetchAvailableTickets(gridStore.selectedProduct.uuid)
+  }
+  
+  console.log('✅ Formulario reseteado en UserProfile2.vue')
+}
 // Invocado desde el botón CONFIRMAR en UserProfile2: reutiliza la lógica
 // de ParticipateModal (externalBuy) para procesar la compra con la selección
 // y datos de pago actuales de esta página.
@@ -888,16 +939,18 @@ async function confirmFromProfile() {
     return
   }
 
-  const metodoPago = selectedPaymentMethod.value ? ((selectedPaymentMethod.value as any).slug || (selectedPaymentMethod.value as any).uuid || (selectedPaymentMethod.value as any).name) : undefined
+  const metodoPago = selectedPaymentMethod.value ? 
+    ((selectedPaymentMethod.value as any).slug || 
+     (selectedPaymentMethod.value as any).uuid || 
+     (selectedPaymentMethod.value as any).name) : 
+    undefined
 
   // ✅ CORRECCIÓN: Determinar qué tickets enviar según el modo de selección
   let ticketsToSend: number[] = []
   
   if (selectionMode.value === 'manual') {
-    // Modo manual: usar los tickets seleccionados manualmente
     ticketsToSend = selectedManualTickets.value
   } else if (selectionMode.value === 'auto' && randomTicketsResult.value) {
-    // Modo automático: usar los tickets aleatorios obtenidos
     ticketsToSend = randomTicketsResult.value.successful.map((r: any) => r.number)
   }
 
@@ -911,17 +964,46 @@ async function confirmFromProfile() {
     return
   }
 
+  // Validar que se haya seleccionado un método de pago
+  if (!metodoPago) {
+    showToast('Debes seleccionar un método de pago', 'error')
+    return
+  }
+
+  // Validar que se haya ingresado la referencia de pago
+  if (!referenciaPago.value || referenciaPago.value.trim() === '') {
+    showToast('Debes ingresar la referencia de pago', 'error')
+    return
+  }
+
+  // Validar moneda seleccionada
+  if (!selectedCurrencyId.value) {
+    showToast('Debes seleccionar una moneda', 'error')
+    return
+  }
+
+  // Validar disponibilidad de tickets
+  if (ticketsToSend.length > (maxAvailable.value || 0)) {
+    showToast(`No hay suficientes tickets disponibles. Solo quedan ${maxAvailable.value}`, 'error')
+    return
+  }
+
   try {
     await modal.externalBuy({
       selectionMode: selectionMode.value,
-      selectedManualTickets: ticketsToSend, // ✅ Pasar los tickets correctos
+      selectedManualTickets: ticketsToSend,
       formOverrides: {
         referencia: referenciaPago.value,
         metodoPago: metodoPago
       },
       selectedCurrencyId: selectedCurrencyId.value
     })
-    showToast('✅ Compra iniciada desde perfil', 'success')
+    
+    showToast('✅ Compra procesada exitosamente', 'success')
+    
+    // ✅ RESETEO DEL FORMULARIO después de una compra exitosa
+    resetForm()
+    
   } catch (err: any) {
     console.error('Error al confirmar desde perfil:', err)
     showToast(err?.message || 'Error procesando la compra', 'error')
