@@ -68,8 +68,16 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            # Crear directorio de destino si no existe, si es necesario
+            sudo mkdir -p /var/www/rifaplay/store
+
+            # Limpiar contenido anterior de /store
             sudo rm -rf /var/www/rifaplay/store/*
+
+            # Copiar archivos y luego limpiar
             sudo cp -r /tmp/rifaplay-prod_temp/* /var/www/rifaplay/store
             sudo chown -R www-data:www-data /var/www/rifaplay/store
             sudo chmod -R 755 /var/www/rifaplay/store
+
+            # Limpiar directorio temporal después de la copia exitosa
             rm -rf /tmp/rifaplay-prod_temp
