@@ -1165,39 +1165,39 @@ const buildSalePayload = (verificationData: any = null) => {
   return { payload, idempotencyKey, quantity, ticketsToBuy };
 };
 
-const copyPagoMovilData = async (event: Event) => {
-  // Buscar el método de pago móvil del rifero
-  const pagoMovilMethod = paymentMethods.value.find(method => 
-    method.slug === 'pago-movil' && method.is_default
-  ) || paymentMethods.value.find(method => 
-    method.slug === 'pago-movil'
-  );
+// const copyPagoMovilData = async (event: Event) => {
+//   // Buscar el método de pago móvil del rifero
+//   const pagoMovilMethod = paymentMethods.value.find(method => 
+//     method.slug === 'pago-movil' && method.is_default
+//   ) || paymentMethods.value.find(method => 
+//     method.slug === 'pago-movil'
+//   );
 
-  if (!pagoMovilMethod) {
-    showToast('No se encontró información de pago móvil del rifero', 'error');
-    return;
-  }
+//   if (!pagoMovilMethod) {
+//     showToast('No se encontró información de pago móvil del rifero', 'error');
+//     return;
+//   }
 
-  const pagoMovilData = `${pagoMovilMethod.bank_code || ''}\n${pagoMovilMethod.document_number || ''}\n${pagoMovilMethod.account_number || ''}`;
+//   const pagoMovilData = `${pagoMovilMethod.bank_code || ''}\n${pagoMovilMethod.document_number || ''}\n${pagoMovilMethod.account_number || ''}`;
   
-  try {
-    await navigator.clipboard.writeText(pagoMovilData);
-    const button = event?.currentTarget as HTMLElement;
-    if (button) {
-      button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> ¡Copiado!`;
-      button.classList.add('bg-green-600', 'hover:bg-green-700');
-      button.classList.remove('bg-cyan-600', 'hover:bg-cyan-700');
-      setTimeout(() => {
-        button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> Copiar`;
-        button.classList.remove('bg-green-600', 'hover:bg-green-700');
-        button.classList.add('bg-cyan-600', 'hover:bg-cyan-700');
-      }, 2000);
-    }
-  } catch (err) {
-    console.error('Error al copiar al portapapeles:', err);
-    showToast('Error al copiar datos', 'error');
-  }
-};
+//   try {
+//     await navigator.clipboard.writeText(pagoMovilData);
+//     const button = event?.currentTarget as HTMLElement;
+//     if (button) {
+//       button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> ¡Copiado!`;
+//       button.classList.add('bg-green-600', 'hover:bg-green-700');
+//       button.classList.remove('bg-cyan-600', 'hover:bg-cyan-700');
+//       setTimeout(() => {
+//         button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> Copiar`;
+//         button.classList.remove('bg-green-600', 'hover:bg-green-700');
+//         button.classList.add('bg-cyan-600', 'hover:bg-cyan-700');
+//       }, 2000);
+//     }
+//   } catch (err) {
+//     console.error('Error al copiar al portapapeles:', err);
+//     showToast('Error al copiar datos', 'error');
+//   }
+// };
 
 async function handleSubmitReverify() {
   reverifySubmitting.value = true;
