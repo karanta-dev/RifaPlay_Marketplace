@@ -55,9 +55,9 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY}}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "dist/*"
-          target: "/tmp/rifaplay-dev_temp"
+          target: "/tmp/rifaplay-prod_temp"
           strip_components: 1
           rm: true
 
@@ -69,7 +69,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             sudo rm -rf /var/www/rifaplay/store/*
-            sudo cp -r /tmp/rifaplay-dev_temp/* /var/www/rifaplay/store
+            sudo cp -r /tmp/rifaplay-prod_temp/* /var/www/rifaplay/store
             sudo chown -R www-data:www-data /var/www/rifaplay/store
             sudo chmod -R 755 /var/www/rifaplay/store
-            rm -rf /tmp/rifaplay-dev_temp
+            rm -rf /tmp/rifaplay-prod_temp
