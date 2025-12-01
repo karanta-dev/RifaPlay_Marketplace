@@ -2,7 +2,7 @@
   <!-- Mobile Navigation Bar -->
   <nav
     :class="[
-      'fixed bottom-0 left-0 w-full bg-gradient-to-r from-blue-950 via-blue-900 to-yellow-900 text-white shadow-xl sm:hidden transition-transform duration-300 z-40 casino-mobile-nav',
+      'fixed bottom-0 left-0 w-full bg-gradient-to-r from-blue-950 via-blue-900 to-purple-900 text-white shadow-xl sm:hidden transition-transform duration-300 z-40 casino-mobile-nav',
       isVisible ? 'translate-y-0' : 'translate-y-full'
     ]"
   >
@@ -49,7 +49,7 @@
           Soporte
         </button>
 
-        <!-- Menú desplegable de soporte - POSICIONAMIENTO CORREGIDO -->
+        <!-- Menú desplegable de soporte - Z-INDEX CORREGIDO -->
         <transition name="support-fade">
           <div
             v-if="supportOpen"
@@ -88,11 +88,11 @@
       </div>
     </div>
 
-    <!-- Overlay para cerrar soporte -->
+    <!-- Overlay para cerrar soporte - Z-INDEX CORREGIDO -->
     <transition name="fade">
       <div
         v-if="supportOpen"
-        class="fixed inset-0 z-30"
+        class="fixed inset-0 z-40"
         @click="supportOpen = false"
       ></div>
     </transition>

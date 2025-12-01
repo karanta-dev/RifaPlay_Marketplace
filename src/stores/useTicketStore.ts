@@ -59,214 +59,89 @@ export interface TicketForm {
   numeroId: string
   telefono: string
   correo: string
+  address: string
   tickets: number
+  selectionMode: 'auto' | 'manual'
+  selectedManualTickets: number[]
   metodoPago: string
   referencia: string
   comprobante: File | null
+  pagoMovilMode: 'manual' | 'automatico'
   pagoMovilCedula?: string
   pagoMovilTelefono?: string
   pagoMovilBanco?: string
+  totalPrice: number
+  totalPriceBs: number
+  bcvRate: number
 }
 
 // --- DEFINICIÓN DEL STORE ---
 
 export const useTicketStore = defineStore('ticket', {
     state: () => ({
-        // Datos generales de la simulación
-        ticketsVendidos: 1134283, // Total vendido en todas las rifas (simulación)
-            loading: false,
+        ticketsVendidos: 1134283,
+        loading: false,
         pagination: null as any,
-        // Estado temporal para el proceso de compra
         formData: {
-        nombre: '',
-        tipoId: '',
-        numeroId: '',
-        telefono: '',
-        correo: '',
-        tickets: 1,
-        metodoPago: '',
-        referencia: '',
-        comprobante: null,
+            nombre: '',
+            tipoId: 'V',
+            numeroId: '',
+            telefono: '',
+            correo: '',
+            address: '',
+            tickets: 1,
+            selectionMode: 'auto',
+            selectedManualTickets: [] as number[],
+            metodoPago: '',
+            referencia: '',
+            comprobante: null as File | null,
+            pagoMovilMode: 'manual',
+            pagoMovilCedula: '',
+            pagoMovilTelefono: '',
+            pagoMovilBanco: '',
+            totalPrice: 0,
+            totalPriceBs: 0,
+            bcvRate: 0,
         } as TicketForm,
         ticketNumber: null as number | null,
         lastAssignedTickets: [] as number[],
-
-        // Tickets individuales asociados a usuario/producto (Simulación de DB)
         tickets: (persisted?.tickets ?? []) as TicketRecord[],
-        ws: null as WebSocket | null, // 🔴 Guardamos la conexión WS aquí
-        // topProducts: [] as Product[],
-
-        // Lista de rifas (productos) con datos simulados (Simulación de DB)
-        topProducts: (persisted?.topProducts ?? [
-            {
-                title: 'Toyota Corolla 2025',
-                rifero: 'Juan Pérez',
-                categories: ['Autos'],
-                description: 'Un carro nuevo, directo de agencia. Incluye audio premium.',
-                images: [
-                    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80',
-                    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80'
-                ],
-                ticketPrice: 10,
-                ticketsVendidos: 723, // Vendidos simulados
-                ticketsMax: 1000, // Máximo de tickets
-                drawDate: '2025-11-25T10:00:00'
-            },
-            {
-                title: 'Meru 2025',
-                rifero: 'Juan Pérez',
-                categories: ['Autos'],
-                description: 'Un carro usado pero que se ve como nuevo, directo de agencia. Incluye audio premium.',
-                images: [
-                    'https://th.bing.com/th/id/R.5c7b5fea0c9a271bcb34bed0baa006aa?rik=c5nFsW2lrYoDng&riu=http%3a%2f%2ftopcarspecs.com%2fmanufacturers%2ftoyota%2ftoyota-meru%2ftoyota-meru-3.jpg&ehk=dtsNxgJbGz%2fh2D7vu9kkZF8nA%2b5GrkFN7pYcxOmL85U%3d&risl=&pid=ImgRaw&r=0',
-                    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80'
-                ],
-                ticketPrice: 10,
-                ticketsVendidos: 723,
-                ticketsMax: 1000,
-                drawDate: '2025-09-25T10:00:00'
-            },
-            
-              {
-                title: 'Moto Honda 2025',
-                rifero: 'Juan Pérez',
-                categories: ['Motos'],
-                description: 'Una moto usada pero que se ve como nuevo, directo de agencia. Incluye audio premium.',
-                images: [
-                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg',
-                    'https://www.motoamerica.com/wp-content/uploads/2024/10/1-3.jpg'
-                ],
-                ticketPrice: 10,
-                ticketsVendidos: 723,
-                ticketsMax: 1000,
-                drawDate: '2025-10-25T10:00:00'
-            },
-            {
-                title: 'iPhone + AirPods',
-                rifero: 'Tech Store',
-                categories: ['Electrodomésticos', 'Moviles'],
-                description: 'Paquete con iPhone desbloqueado + AirPods Pro.',
-                images: [
-                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80',
-                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80',
-                ],
-                ticketPrice: 5,
-                ticketsVendidos: 1450,
-                ticketsMax: 2000,
-                drawDate: '2025-11-28T12:30:00'
-            },
-            {
-                title: 'Viaje a París',
-                rifero: 'TravelRaffle',
-                categories: ['Viajes', 'Experiencias'],
-                description: 'Vuelo ida y vuelta + 5 noches en hotel 4 estrellas para 2 personas.',
-                images: [
-                    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80'
-                ],
-                ticketPrice: 15,
-                ticketsVendidos: 320,
-                ticketsMax: 500,
-                drawDate: '2025-12-05T09:00:00'
-            },
-            {
-                title: 'PlayStation 5 + Juegos',
-                rifero: 'Game World',
-                categories: ['Electrodomésticos', 'Gaming'],
-                description: 'Consola PS5 edición estándar + 3 juegos a elegir.',
-                images: [
-                    'https://cdn.hobbyconsolas.com/sites/navi.axelspringer.es/public/media/image/2021/10/consola-ps5-playstation-5-2497497.jpg?tf=3840x',
-                    'https://cdn.hobbyconsolas.com/sites/navi.axelspringer.es/public/media/image/2021/10/consola-ps5-playstation-5-2497497.jpg?tf=3840x'
-                ],
-                ticketPrice: 8,
-                ticketsVendidos: 900,
-                ticketsMax: 1200,
-                drawDate: '2025-11-30T18:00:00'
-            },
-            {
-                title: 'Smart TV Samsung 65"',
-                rifero: 'ElectroShop',
-                categories: ['Electrodomésticos'],
-                description: 'Pantalla 4K UHD Smart TV, ideal para cine en casa.',
-                images: [
-                    'https://images.unsplash.com/photo-1586105251261-72a756497a11?auto=format&fit=crop&w=800&q=80'
-                ],
-                ticketPrice: 6,
-                ticketsVendidos: 250,
-                ticketsMax: 400,
-                drawDate: '2025-12-02T14:00:00'
-            },
-            {
-                title: 'MacBook Air M2',
-                rifero: 'Apple Lovers',
-                categories: ['Electrodomésticos', 'Computadoras'],
-                description: 'Laptop ultraligera con chip M2 y 512GB SSD.',
-                images: [
-                    'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80'
-                ],
-                ticketPrice: 12,
-                ticketsVendidos: 1000,
-                ticketsMax: 1000,
-                drawDate: '2025-09-26T11:00:00'
-            },
-            {
-                title: 'Carro Honda CBR500R',
-                rifero: 'Carros Club',
-                categories: ['Autos'],
-                description: 'Carro deportivo, modelo 2025, lista para carretera.',
-                images: [
-                    'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=800&q=80'
-                ],
-                ticketPrice: 20,
-                ticketsVendidos: 180,
-                ticketsMax: 300,
-                drawDate: '2025-09-25T15:00:00'
-            }
-        ]) as Product[],
+        ws: null as WebSocket | null,
+        topProducts: [] as any[],
     }),
     getters: {
-
         userTicketsCount: (state) => {
-        return (userId: number | string | null) => {
-        if (!userId) return 0
-        return state.tickets.filter(t => t.userId === userId).length
-        }
-    },
-        // Calcula el progreso de venta de un producto
-        productProgress: () => {
-            return (product: { ticketsVendidos: number; ticketsMax: number }) =>
-                Math.min(100, Math.round((product.ticketsVendidos / product.ticketsMax) * 100));
+            return (userId: number | string | null) => {
+                if (!userId) return 0
+                return state.tickets.filter(t => t.userId === userId).length
+            }
         },
-
-        // Verifica si un producto está cerca de agotarse (70% o más)
+        productProgress: () => {
+            return (product: { ticketsVendidos: number; ticketsMax: number }) => {
+                if (product.ticketsVendidos === null || !product.ticketsMax || product.ticketsMax === 0) return 0;
+                return Math.min(100, Math.round((product.ticketsVendidos / product.ticketsMax) * 100));
+            }
+        },
         productAlmostSoldOut: () => {
             return (product: { ticketsVendidos: number; ticketsMax: number }) =>
                 (product.ticketsVendidos / product.ticketsMax) >= 0.7;
         },
-
-        // Filtra productos por categoría
         productsByCategory: (state) => {
             return (category: string) =>
                 state.topProducts.filter((p: Product) => p.categories.includes(category));
         },
-
-        // Extrae todas las categorías únicas disponibles
         allCategories: (state) => {
             return [...new Set(state.topProducts.flatMap((p: Product) => p.categories))];
         },
-        
-        // Obtiene la lista de números de tickets DISPONIBLES para un producto (solo números)
         availableTicketsForProduct: (state) => {
             return (productId: string): number[] => {
                 const p = state.topProducts.find((t: any) => t.title === productId);
                 if (!p) return [];
                 const ticketsMax = Number(p?.ticketsMax ?? 0);
-                // Crea un Set de los números de ticket que ya fueron vendidos
                 const usedSet = new Set<number>(state.tickets
                     .filter(t => t.productId === productId)
                     .map(t => Number(t.ticketNumber))
                 );
-
-                // Generar todos los números de ticket disponibles
                 const available: number[] = [];
                 for (let i = 1; i <= ticketsMax; i++) {
                     if (!usedSet.has(i)) {
@@ -276,19 +151,15 @@ export const useTicketStore = defineStore('ticket', {
                 return available;
             }
         },
-
-        // Obtiene la lista de TODOS los tickets para un producto con su estado (vendido o no)
         allTicketsForProduct: (state) => {
             return (productId: string): TicketStatus[] => {
                 const p = state.topProducts.find((t: any) => t.title === productId);
                 if (!p) return [];
                 const ticketsMax = Number(p?.ticketsMax ?? 0);
-
                 const soldSet = new Set<number>(state.tickets
                 .filter(t => t.productId === productId)
                 .map(t => Number(t.ticketNumber))
                 );
-
                 const all: TicketStatus[] = [];
                 for (let i = 1; i <= ticketsMax; i++) {
                 all.push({
@@ -298,172 +169,190 @@ export const useTicketStore = defineStore('ticket', {
                 }
                 return all;
             }
-            }
-
+        }
     },
     actions: {
-            // 🔴 Nuevo: conectar al WebSocket
-            
-//     connectToTicketWS() {
-//     const ws = new WebSocket("ws://localhost:3000");
+        // ✅ 1. 'loadRaffles' VUELVE A SER SÚPER RÁPIDA
+        async loadRaffles(page = 1, perPage = 16) {
+          this.loading = true;
+          try {
+            const { data, meta } = await RaffleService.getAll(page, perPage);
+            this.topProducts = data.map((r: any) => ({
+              uuid: r.uuid,
+              title: r.name,
+              description: r.description,
+              ticketsMax: r.end_range,
+              drawDate: r.raffle_date,
+              ticketPrice: parseFloat(r.ticket_price),
+              rifero: r.seller ? `${r.seller.name} ${r.seller.last_name}`.trim() : "Anónimo",
+              images: r.images?.map((img: any) => img.url) ?? [],
+              categories: r.prizes?.[0]?.category ? [r.prizes[0].category.name] : [],
+              status: r.status,
+              ticketsVendidos: null, // 'null' significa que no se ha pedido
+              isProgressLoading: false, 
+            }));
+            this.pagination = meta || null;
+          } catch (error) {
+            console.error("❌ ERROR CARGANDO LISTA:", error);
+          } finally {
+            this.loading = false;
+          }
+        },
+        async fetchAllProductsProgress() {
+            for (const product of this.topProducts) {
+                if (product.ticketsVendidos === null) {
+                    const productIndex = this.topProducts.findIndex(p => p.uuid === product.uuid);
+                    if (productIndex !== -1) {
+                        try {
+                            this.topProducts[productIndex].isProgressLoading = true;
+    
+                            const realTicketsSold = await RaffleService.getSoldTicketsCount(product.uuid);
+                            this.topProducts[productIndex].ticketsVendidos = realTicketsSold;
+                        } catch (error) {
+                            console.error(`❌ ERROR OBTENIENDO PROGRESO PARA ${product.uuid}:`, error);
+                            this.topProducts[productIndex].ticketsVendidos = 0; // Si falla, le pone 0
+                        } finally {
+                            if (this.topProducts[productIndex]) {
+                               this.topProducts[productIndex].isProgressLoading = false;
+                            }
+                        }
+                    }
+                }
+            }
+        },
 
-//     ws.onopen = () => {
-//       console.log("✅ Conectado al WebSocket de tickets");
-//     };
-
-//     ws.onmessage = (event) => {
-//       try {
-//         const data = JSON.parse(event.data);
-
-//         if (data.type === "ticket_sold" || data.type === "ticket_reserved") {
-//           const { productId, ticketNumbers, userId } = data;
-
-//           ticketNumbers.forEach((n: number) => {
-//             if (!this.tickets.find(t => t.ticketNumber === n && t.productId === productId)) {
-//               this.tickets.push({
-//                 ticketNumber: n,
-//                 productId,
-//                 userId,
-//                 createdAt: new Date().toISOString(),
-//                 isWinner: false,
-//               });
-//             }
-//           });
-
-//           const p = this.topProducts.find(p => p.title === productId);
-//           if (p) p.ticketsVendidos += ticketNumbers.length;
-
-//           this._savePersist();
-//         }
-
-//         if (data.type === "ticket_released") {
-//           const { productId, ticketNumbers } = data;
-//           this.tickets = this.tickets.filter(
-//             t => !(ticketNumbers.includes(t.ticketNumber) && t.productId === productId)
-//           );
-//           this._savePersist();
-//         }
-//       } catch (err) {
-//         console.error("❌ Error parsing WS message:", err);
-//       }
-//     };
-//   },
-  setComprobante(file: File | null) {
-  if (file) {
-    this.formData.comprobante = file
-    console.log("📄 Comprobante cargado:", file.name)
-  } else {
-    this.formData.comprobante = null
-  }
-},
-clearForm() {
-  this.formData = {
-    nombre: '',
-    tipoId: '',
-    numeroId: '',
-    telefono: '',
-    correo: '',
-    tickets: 1,
-    metodoPago: '',
-    referencia: '',
-    comprobante: null,
-    // Limpiar nuevos campos
-    pagoMovilCedula: '',
-    pagoMovilTelefono: '',
-    pagoMovilBanco: ''
-  }
-},
-    async loadRaffles(page = 1, perPage = 16) {
-      this.loading = true;
-
-      try {
-        const { data, meta } = await RaffleService.getAll(page, perPage);
-
-        // 🔹 Guardamos los productos (mapeo a tu estructura actual)
-        this.topProducts = data.map((r) => ({
-          uuid: r.uuid,
-          title: r.name,
-          rifero: r.created_by?.name ?? "Desconocido",
-          categories: r.categories?.map((c) => c.name) ?? [],
-          description: r.description,
-          images: r.images?.map((i) => i.url) ?? [],
-          ticketPrice: r.ticket_price,
-          status: r.status,
-          ticketsVendidos: r.tickets_sold,
-          ticketsMax: r.end_range,
-          drawDate: r.raffle_date,
-        }));
-
-        // 🔹 Guardamos la metadata (paginación)
-        this.pagination = meta || null;
-      } catch (error) {
-        console.error("❌ No se pudieron cargar las rifas:", error);
-      } finally {
-        this.loading = false;
-      }
-    },
-      // 🔵 Métodos para enviar mensajes al WS
-    reserveTicket(productId: string, ticketNumbers: number[], userId: number | string) {
-      this.ws?.send(JSON.stringify({
-        type: "ticket_reserved",
-        productId,
-        ticketNumbers,
-        userId,
-      }));
-    },
-
-     releaseTicket(productId: string, ticketNumbers: number[]) {
-      this.ws?.send(JSON.stringify({
-        type: "ticket_released",
-        productId,
-        ticketNumbers,
-      }));
-    },
-
-    markTicketAsSold(productTitle: string, ticket: number) {
-    if (!this.tickets.find(t => t.productId === productTitle && t.ticketNumber === ticket)) {
-        this.tickets.push({
-        ticketNumber: ticket,
-        productId: productTitle,
-        userId: null,
-        createdAt: new Date().toISOString(),
-        isWinner: false,
-        });
-        const p = this.topProducts.find(p => p.title === productTitle);
-        if (p) p.ticketsVendidos++;
-        this._savePersist();
-    }
-    },
-
+        // --- TU CÓDIGO ORIGINAL EMPIEZA AQUÍ, INTACTO ---
+        setComprobante(file: File | null) {
+            if (file) {
+                this.formData.comprobante = file
+                console.log("📄 Comprobante cargado:", file.name)
+            } else {
+                this.formData.comprobante = null
+            }
+        },
+        clearForm() {
+            this.formData = {
+                nombre: '',
+                tipoId: 'V',
+                numeroId: '',
+                telefono: '',
+                correo: '',
+                address: '',
+                tickets: 1,
+                selectionMode: 'auto',
+                selectedManualTickets: [],
+                metodoPago: '',
+                referencia: '',
+                comprobante: null,
+                pagoMovilMode: 'manual',
+                pagoMovilCedula: '',
+                pagoMovilTelefono: '',
+                pagoMovilBanco: '',
+                totalPrice: 0,
+                totalPriceBs: 0,
+                bcvRate: 0,
+            }
+        },
+        markTicketAsSold(productTitle: string, ticket: number) {
+            if (!this.tickets.find(t => t.productId === productTitle && t.ticketNumber === ticket)) {
+                this.tickets.push({
+                    ticketNumber: ticket,
+                    productId: productTitle,
+                    userId: null,
+                    createdAt: new Date().toISOString(),
+                    isWinner: false,
+                });
+                const p = this.topProducts.find(p => p.title === productTitle);
+                if (p) {
+                  if (typeof p.ticketsVendidos === 'number') {
+                    p.ticketsVendidos++;
+                  }
+                }
+                this._savePersist();
+            }
+        },
+        async updateRaffleTicketsCount(raffleUuid: string) {
+            try {
+                const realTicketsSold = await RaffleService.getSoldTicketsCount(raffleUuid);
+                const productIndex = this.topProducts.findIndex(p => p.uuid === raffleUuid);
+                if (productIndex !== -1 && this.topProducts[productIndex]) {
+                    this.topProducts[productIndex].ticketsVendidos = realTicketsSold;
+                    this._savePersist();
+                }
+                return realTicketsSold;
+            } catch (error) {
+                console.error(`❌ Error al actualizar tickets vendidos para ${raffleUuid}:`, error);
+                throw error;
+            }
+        },
+        async getSoldTicketNumbers(raffleUuid: string): Promise<number[]> {
+            try {
+                const soldTickets = await RaffleService.getSoldTickets(raffleUuid);
+                return soldTickets;
+            } catch (error) {
+                console.error(`❌ [TicketStore] Error al obtener números de tickets vendidos para ${raffleUuid}:`, error);
+                return [];
+            }
+        },
+        async getAvailableTicketNumbers(raffleUuid: string): Promise<number[]> {
+            try {
+                const product = this.topProducts.find(p => p.uuid === raffleUuid);
+                if (!product) {
+                    console.warn(`⚠️ [TicketStore] Producto con UUID ${raffleUuid} no encontrado`);
+                    return [];
+                }
+                const ticketsMax = product.ticketsMax;
+                const soldTickets = await this.getSoldTicketNumbers(raffleUuid);
+                const soldSet = new Set(soldTickets);
+                const availableTickets: number[] = [];
+                for (let i = 1; i <= ticketsMax; i++) {
+                    if (!soldSet.has(i)) {
+                        availableTickets.push(i);
+                    }
+                }
+                return availableTickets;
+            } catch (error) {
+                console.error(`❌ [TicketStore] Error al obtener tickets disponibles para ${raffleUuid}:`, error);
+                return [];
+            }
+        },
         confirmTicket(productId: string, ticketNumbers: number[], userId: number | string) {
-      this.ws?.send(JSON.stringify({
-        type: "ticket_sold",
-        productId,
-        ticketNumbers,
-        userId,
-      }));
-    },
-        // Helper: genera un número de ticket único no usado
+            this.ws?.send(JSON.stringify({
+                type: "ticket_sold",
+                productId,
+                ticketNumbers,
+                userId,
+            }));
+        },
+        reserveTicket(productId: string, ticketNumbers: number[], userId: number | string | null = 'reserved') {
+            if (!Array.isArray(ticketNumbers) || ticketNumbers.length === 0) return;
+            for (const num of ticketNumbers) {
+                const existing = this.tickets.find(t => t.productId === productId && t.ticketNumber === num);
+                if (!existing) {
+                    this.tickets.push({
+                        ticketNumber: Number(num),
+                        productId,
+                        userId: userId ?? 'reserved',
+                        createdAt: new Date().toISOString(),
+                        isWinner: false,
+                    });
+                }
+            }
+            this._savePersist();
+        },
         _generateUnique6Digit(usedSet: Set<number>, ticketsMax: number): number {
             const MAX_ATTEMPTS = 2000;
             let attempts = 0;
-            
-            // Intenta encontrar un número aleatorio no usado
             while (attempts < MAX_ATTEMPTS) {
-                const rand6 = Math.floor(1 + Math.random() * ticketsMax); // Genera un número entre 1 y ticketsMax
+                const rand6 = Math.floor(1 + Math.random() * ticketsMax);
                 if (!usedSet.has(rand6)) return rand6;
                 attempts++;
             }
-            
-            // Fallback: búsqueda lineal del primer número disponible
             for (let i = 1; i <= ticketsMax; i++) {
                 if (!usedSet.has(i)) return i;
             }
-            
             throw new Error('No ticket numbers available');
         },
-
-        // Persiste el estado mínimo a localStorage
         _savePersist() {
             try {
                 const data = {
@@ -475,35 +364,25 @@ clearForm() {
                 console.warn('Could not save to localStorage', e);
             }
         },
-
-        // Genera y registra la compra de tickets
         generateTicket(form: any, product: any, userId: number | string | null = null, selectedNumbers?: number[]) {
             this.formData = { ...form };
-            
             const p = this.topProducts.find((t: any) => t.title === (product?.title ?? product));
-            if (!p) return; // Salir si el producto no existe
-
+            if (!p) return;
             const ticketsMax = Number(p.ticketsMax ?? Infinity);
             const sold = Number(p.ticketsVendidos ?? 0);
             const available = Math.max(0, ticketsMax - sold);
-            
             const cantidadRequested = selectedNumbers?.length ?? Math.max(1, Number(form.tickets ?? 1));
             const cantidad = selectedNumbers?.length ?? Math.min(cantidadRequested, available);
-            
             if (cantidad <= 0) {
                 this.ticketNumber = null;
                 return;
             }
-
             const productId = p.title;
             const used = new Set<number>(this.tickets
                 .filter(t => t.productId === productId)
                 .map(t => Number(t.ticketNumber))
             );
-
             const assigned: number[] = [];
-
-            // 1. Intentar usar los números seleccionados manualmente
             if (Array.isArray(selectedNumbers) && selectedNumbers.length > 0) {
                 for (const num of selectedNumbers) {
                     if (assigned.length >= cantidad) break;
@@ -522,9 +401,7 @@ clearForm() {
                     }
                 }
             }
-
-            // 2. Si todavía faltan tickets (solo en modo automático), auto-generar el resto
-            if (!selectedNumbers) { // Solo si no se proporcionaron números seleccionados (modo auto)
+            if (!selectedNumbers) {
                 for (let i = assigned.length; i < cantidad; i++) {
                     try {
                         const newNum = this._generateUnique6Digit(used, ticketsMax);
@@ -541,38 +418,52 @@ clearForm() {
                         used.add(newNum);
                     } catch (error) {
                         console.error('No se pudo generar un ticket único:', error);
-                        break; // Salir si falla la generación
+                        break;
                     }
                 }
             }
-
             this.lastAssignedTickets = assigned;
             this.venderTickets(product, assigned.length);
             this._savePersist();
         },
-        
-        // Actualiza el contador de tickets vendidos
+        getAvailableNumbers(productTitle: string, quantity: number): number[] {
+            const available = this.availableTicketsForProduct(productTitle);
+            if (!Array.isArray(available)) return [];
+            if (available.length < quantity) {
+                throw new Error(`Solo quedan ${available.length} tickets disponibles`);
+            }
+            return available.slice(0, quantity);
+        },
         venderTickets(product: any, cantidad: number) {
             this.ticketsVendidos += Number(cantidad || 0);
             const p = this.topProducts.find((t: any) => t.title === (product?.title ?? product));
-            if (p) p.ticketsVendidos = (p.ticketsVendidos || 0) + Number(cantidad || 0);
+            if (p && typeof p.ticketsVendidos === 'number') {
+              p.ticketsVendidos = (p.ticketsVendidos || 0) + Number(cantidad || 0);
+            }
         },
-
-        // Resetear datos temporales
         reset() {
-        this.formData = {
-            nombre: '',
-            tipoId: '',
-            numeroId: '',
-            telefono: '',
-            correo: '',
-            tickets: 1,
-            metodoPago: '',
-            referencia: '',
-            comprobante: null,
-        }
+            this.formData = {
+                nombre: '',
+                tipoId: 'V',
+                numeroId: '',
+                telefono: '',
+                correo: '',
+                address: '',
+                tickets: 1,
+                selectionMode: 'auto',
+                selectedManualTickets: [],
+                metodoPago: '',
+                referencia: '',
+                comprobante: null,
+                pagoMovilMode: 'manual',
+                pagoMovilCedula: '',
+                pagoMovilTelefono: '',
+                pagoMovilBanco: '',
+                totalPrice: 0,
+                totalPriceBs: 0,
+                bcvRate: 0,
+            }
             this.ticketNumber = null;
         }
     }
-    
 });

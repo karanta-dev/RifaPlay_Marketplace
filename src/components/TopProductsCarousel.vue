@@ -1,10 +1,10 @@
 <template>
-  <h2 class="text-2xl sm:text-3xl font-extrabold text-yellow-400 text-center mb-2 sm:mb-6 drop-shadow casino-title">
+  <h2 class="text-sm sm:text-2xl font-extrabold text-yellow-400 text-center mb-1 sm:mb-2 drop-shadow casino-title">
     <i class="fas fa-dice text-green-400 mr-2"></i>
     🎟️ Productos con más tickets vendidos
   </h2>
 
-  <div class="w-full max-w-7xl bg-gradient-to-br from-[#0a0f1e] via-[#111827] to-[#0a0f1e] border rounded-2xl py-3 overflow-hidden relative shadow-2xl casino-carousel">
+  <div class="w-full max-w-7xl bg-gradient-to-br from-[#0a0f1e] via-[#111827] to-[#0a0f1e] border rounded-2xl py-2 sm:py-1 overflow-hidden relative shadow-2xl casino-carousel">
     <!-- Iconos casino flotantes -->
     <i class="fas fa-coins text-yellow-400 absolute left-4 top-4 opacity-30 text-lg casino-float"></i>
     <i class="fas fa-dice text-green-400 absolute right-4 top-4 opacity-30 text-lg casino-float"></i>
@@ -15,7 +15,7 @@
       <div
   v-for="(item, i) in topProducts"
   :key="i"
-  class="inline-flex flex-col justify-between bg-gradient-to-b from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-xl shadow-lg border border-gray-700/50 mx-2 px-3 py-3 min-w-[160px] sm:min-w-[260px] relative transition-all cursor-pointer casino-card group"
+  class="inline-flex flex-col justify-between bg-gradient-to-b from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-xl shadow-lg border border-gray-700/50 mx-2 px-3 py-0 min-w-[120px] sm:min-w-[220px] relative transition-all cursor-pointer casino-card group"
   :class="{
     'bg-gray-700/50 pointer-events-none grayscale': isSoldOut(item),
     'animate-pulse-hot': isHot(item)
@@ -74,7 +74,7 @@
   </div>
 
   <!-- Botón siempre abajo -->
-  <button
+  <!-- <button
     class="mt-3 px-2 sm:px-6 py-1 sm:py-2 rounded-full w-full font-bold text-xs sm:text-base shadow-lg casino-btn"
     :class="{
       'bg-gray-500 text-white cursor-not-allowed': isSoldOut(item),
@@ -84,14 +84,14 @@
     @click.stop="openParticipateModal(item)"
   >
     {{ isSoldOut(item) ? '¡VENDIDO!' : 'PARTICIPAR' }}
-  </button>
+  </button> -->
 </div>
 
     </div>
   </div>
 
   <!-- 🔹 Participar modal -->
-  <ParticiparModal
+  <ParticipateModal
     :open="showForm"
     :product="selectedProduct"
     @close="showForm = false"
@@ -122,150 +122,150 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useTicketStore } from '@/stores/useTicketStore'
-import { useAuthStore } from "@/stores/useAuthStore"
+import { useGridStore } from '@/stores/useGridStore'
+// import { useAuthStore } from "@/stores/useAuthStore"
 
-import ParticiparModal from './ParticipateModal.vue'
+import ParticipateModal from './ParticipateModal.vue'
 import ConfirmacionModal from './ConfirmationModal.vue'
 import DetailsModal from './ProductDetailsModal.vue'
 import JackpotAnimation from "./JackpotAnimation.vue"
 
-const ticketStore = useTicketStore()
-const { topProducts } = storeToRefs(ticketStore)
-const { productProgress, productAlmostSoldOut } = ticketStore
+const gridStore = useGridStore()
+// const authStore = useAuthStore()
+const { products } = storeToRefs(gridStore)
 
-// 🔹 Control de modales
+// Ordenamos por más vendidos primero
+const topProducts = ref<any[]>([])
+
+// Cada vez que cambien los productos, actualizamos el carrusel 
+//ADemas con filtrado de productos ya sorteados
+watch(products, async (list) => {
+  // Si no hay lista, limpiar el carrusel
+  if (!Array.isArray(list) || list.length === 0) {
+    topProducts.value = []
+    return
+  }
+
+  // Pedir progreso real (si procede)
+  for (const p of list) {
+    if (p && p.uuid) {
+      // no await aquí para lanzar todas las peticiones en paralelo desde el store
+      gridStore.fetchProductProgress(p.uuid)
+    }
+  }
+
+  // Filtrar rifas que *NO* queremos mostrar:
+  // - status que indique 'sorteado' / 'completed' / 'finalizado' (case-insensitive)
+  // - rifas cuya drawDate ya haya pasado
+  // - rifas agotadas (ticketsVendidos >= ticketsMax) — opcional según tu lógica
+  const now = Date.now()
+  const filtered = list.filter((p: any) => {
+    if (!p || !p.uuid) return false
+
+    // 1) status textual
+    const st = (p.status ?? '').toString().toLowerCase().trim()
+    const badStatuses = ['sorteado', 'completed', 'finalizado', 'closed', 'finished']
+    if (st && badStatuses.includes(st)) return false
+
+    // 2) fecha de sorteo en el pasado
+    const draw = p.drawDate || p.raffle_date || p.raffleDate
+    if (draw) {
+      const d = new Date(draw)
+      if (!Number.isNaN(d.getTime()) && d.getTime() < now) return false
+    }
+
+    // 3) agotada (ticketsVendidos >= ticketsMax) — si tienes ticketsMax reliable
+    if (typeof p.ticketsMax !== 'undefined' && typeof p.ticketsVendidos !== 'undefined') {
+      const max = Number(p.ticketsMax) || Infinity
+      const sold = Number(p.ticketsVendidos) || 0
+      if (sold >= max) return false
+    }
+
+    return true
+  })
+
+  // Ordenar por más vendidos (si ticketsVendidos aún es null, lo tratamos como 0)
+  topProducts.value = [...filtered].sort((a, b) => (Number(b.ticketsVendidos) || 0) - (Number(a.ticketsVendidos) || 0))
+
+}, { immediate: true, deep: true })
+// ----------------- FIN DEL WATCH -----------------
+
+
+// 🔥 funciones que **ya existen** visualmente en tu carrusel
+const productProgress = (item: any) => {
+  if (!item.ticketsVendidos || !item.ticketsMax) return 0
+  return Math.min(100, (item.ticketsVendidos / item.ticketsMax) * 100)
+}
+
+const productAlmostSoldOut = (item: any) => productProgress(item) > 80 && productProgress(item) < 100
+const isHot = (item: any) => productProgress(item) > 75 && productProgress(item) < 100
+const isSoldOut = (item: any) => productProgress(item) === 100
+
+// Modales
 const showForm = ref(false)
 const showConfirm = ref(false)
 const showDetails = ref(false)
-const selectedProduct = ref<any | null>(null)
 const showJackpot = ref(false)
+
+const selectedProduct = ref<any | null>(null)
 const userInitialTickets = ref(0)
 const purchasedTicketsCount = ref(0)
-const authStore = useAuthStore()
 
-// ✅ NUEVA FUNCIÓN: Manejar cuando el usuario presiona "Continuar" en ConfirmacionModal
-const handleShowJackpot = () => {
-  console.log('🎯 handleShowJackpot called')
-  showConfirm.value = false
-  showJackpot.value = true
-  console.log('🔄 State change: showConfirm -> false, showJackpot -> true')
-}
-
-// ✅ Manejar el cierre del jackpot
-const handleJackpotClose = () => {
-  console.log('🎯 handleJackpotClose called')
-  showJackpot.value = false
-  // Resetear el store para la próxima compra
-  setTimeout(() => {
-    ticketStore.reset()
-  }, 500)
-}
-
-// ✅ Manejar la confirmación de compra (ACTUALIZADO)
-const handleConfirmed = (data?: { initialTickets: number; purchasedTickets: number }) => {
-  console.log('🎯 handleConfirmed called with data:', data)
-  showForm.value = false
-  
-  if (data) {
-    // ✅ USAR LOS DATOS ENVIADOS DESDE ParticiparModal
-    userInitialTickets.value = data.initialTickets
-    purchasedTicketsCount.value = data.purchasedTickets
-  } else {
-    // Fallback: cálculo tradicional (puede fallar en primer intento)
-    userInitialTickets.value = getUserInitialTickets()
-    purchasedTicketsCount.value = getPurchasedTicketsCount()
-  }
-  
-  console.log('🎰 Jackpot Animation Data (CORREGIDO):', {
-    initialTickets: userInitialTickets.value,
-    purchasedTickets: purchasedTicketsCount.value,
-    lastAssignedTickets: ticketStore.lastAssignedTickets
-  })
-  
-  // Mostrar confirmación primero
-  showConfirm.value = true
-  console.log('✅ showConfirm set to:', true)
-}
-
-// ✅ Función para obtener los tickets iniciales del usuario (como fallback)
-const getUserInitialTickets = () => {
-  const userId = authStore.user?.id
-  
-  if (userId) {
-    const currentCount = ticketStore.userTicketsCount(userId)
-    const justPurchased = ticketStore.lastAssignedTickets?.length || 0
-    return Math.max(0, currentCount - justPurchased)
-  }
-  
-  const currentNullTickets = ticketStore.tickets.filter(t => t.userId === null).length
-  const justPurchased = ticketStore.lastAssignedTickets?.length || 0
-  return Math.max(0, currentNullTickets - justPurchased)
-}
-
-// ✅ Función para calcular tickets comprados (como fallback)
-const getPurchasedTicketsCount = () => {
-  return ticketStore.lastAssignedTickets?.length || 
-         (ticketStore.ticketNumber ? 1 : 0) ||
-         Number(ticketStore.formData?.tickets) || 1
-}
-
-
-const openDetails = (product: any) => {
+function openDetails(product: any) {
   selectedProduct.value = product
   showDetails.value = true
 }
+
 function openParticipateModal(product: any) {
-  selectedProduct.value = product
   showDetails.value = false
-  showForm.value = true
+  gridStore.openParticipateModal(product) // ✅ Ya selecciona y abre
 }
 
-// 🔹 Lógica de "Hot"
-const isHot = (item: any) => {
-  const progress = productProgress(item)
-  return progress > 75 && progress < 100
-}
-// 🔹 Lógica de "Vendido"
-const isSoldOut = (item: any) => {
-  return productProgress(item) === 100
+const handleConfirmed = (data?: { initialTickets: number; purchasedTickets: number }) => {
+  showForm.value = false
+  userInitialTickets.value = data?.initialTickets ?? 0
+  purchasedTicketsCount.value = data?.purchasedTickets ?? 0
+  showConfirm.value = true
 }
 
-// 🔹 Timer
+const handleShowJackpot = () => {
+  showConfirm.value = false
+  showJackpot.value = true
+}
+
+const handleJackpotClose = () => {
+  showJackpot.value = false
+}
+
+// Timer
 const now = ref(Date.now())
 let interval: any = null
-onMounted(() => {
-  interval = setInterval(() => {
-    now.value = Date.now()
-  }, 1000)
-})
-onUnmounted(() => {
-  clearInterval(interval)
-})
+onMounted(() => interval = setInterval(() => now.value = Date.now(), 1000))
+onUnmounted(() => clearInterval(interval))
 
 const timeLeft = (item: any) => {
   const drawDate = item.drawDate || '2025-12-01T23:59:59'
   const diff = new Date(drawDate).getTime() - now.value
   if (diff < 0) return { total: 0 }
 
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24)
-  const minutes = Math.floor((diff / 1000 / 60) % 60)
-  const seconds = Math.floor((diff / 1000) % 60)
-
+  const days = Math.floor(diff / 86400000)
+  const hours = Math.floor(diff / 3600000) % 24
+  const minutes = Math.floor(diff / 60000) % 60
+  const seconds = Math.floor(diff / 1000) % 60
   return { total: diff, days, hours, minutes, seconds }
 }
 </script>
 
+
 <style scoped>
 .casino-carousel {
-  box-shadow: 0 0 32px 8px #ffd70033, 0 0 12px 4px #003366aa;
+  box-shadow: 0 0 32px 8px #30058d33, 0 0 12px 4px #003366aa;
   border-radius: 1.5rem;
 }
 .casino-title {
-  text-shadow: 0 2px 8px #ffd70099;
+  text-shadow: 0 2px 8px #7700ff99;
   animation: casinoTitlePulse 2s infinite alternate;
 }
 @keyframes casinoTitlePulse {

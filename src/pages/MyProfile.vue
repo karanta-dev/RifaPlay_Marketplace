@@ -1,14 +1,14 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-purple-900 py-8 px-4">
-    <div class="max-w-4xl mx-auto">
+  <div class="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-purple-900 py-2 px-4">
+    <!-- Contenido para usuario autorizado -->
+    <div v-if="isAuthorized" class="max-w-4xl mx-auto">
       <!-- Header -->
-      <div class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-yellow-400 mb-2 drop-shadow-lg">Mi Perfil</h1>
-        <p class="text-white/80 text-lg">Gestiona tu información personal y preferencias</p>
+      <div class="text-center mb-2">
+        <h1 class="text-3xl font-bold text-yellow-400 mb-2 drop-shadow-lg">Mi Perfil</h1>
       </div>
 
       <!-- Card principal del perfil -->
-      <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl p-8 border border-yellow-400/30 backdrop-blur-sm">
+      <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl p-3 border border-yellow-400/30 backdrop-blur-sm">
         <!-- Sección de foto de perfil -->
         <div class="flex flex-col items-center mb-8">
           <div class="relative group cursor-pointer mb-4" @click="triggerFileInput">
@@ -39,8 +39,16 @@
           <!-- Nombre del usuario -->
           <h2 class="text-3xl font-bold text-white mb-2 drop-shadow-lg">{{ user?.name || 'Usuario' }}</h2>
           <p class="text-gray-300 text-lg">{{ user?.email || 'usuario@ejemplo.com' }}</p>
+          <p class="text-gray-400 text-md mt-1">{{ user?.phone || 'Teléfono no disponible' }}</p>
+          
+          <!-- Indicador de carga -->
+          <div v-if="uploadingAvatar" class="mt-2">
+            <div class="flex items-center gap-2 text-yellow-400">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span class="text-sm">Subiendo imagen...</span>
+            </div>
+          </div>
         </div>
-
         <!-- Opciones de configuración -->
         <div class="space-y-4">
           <h3 class="text-2xl font-bold text-white mb-6 text-center drop-shadow-lg">Configuración de la cuenta</h3>
@@ -199,19 +207,48 @@
         </div>
       </div>
     </div>
+    
+    <!-- Mensaje de acceso denegado -->
+    <div v-else class="max-w-4xl mx-auto text-center py-16">
+      <div class="bg-gradient-to-br from-red-900/80 to-red-800/80 rounded-3xl p-8 border border-red-700">
+        <h1 class="text-3xl font-bold text-white mb-4">Acceso Denegado</h1>
+        <p class="text-white/80 text-lg mb-6">No tienes permisos para ver este perfil.</p>
+        <button 
+          @click="$router.push('/')"
+          class="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-700 text-white font-bold rounded-xl hover:from-blue-700 hover:to-cyan-800 transition-all duration-300"
+        >
+          Volver al Inicio
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { useToast } from "vue-toastification"
+import { AuthService } from '@/services/AuthService'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+const toast = useToast()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const openSection = ref<string | null>(null)
+const uploadingAvatar = ref(false)
+const loadingProfile = ref(false)
+
+// Verificar si el usuario está autorizado para ver este perfil
+const isAuthorized = computed(() => {
+  const routeUserId = route.params.userId
+  const currentUserId = authStore.user?.id
+  
+  // Solo puede acceder si está autenticado y el ID de la ruta coincide con su ID
+  return authStore.isAuthenticated && currentUserId?.toString() === routeUserId
+})
 
 // Datos del formulario
 const personalInfo = reactive({
@@ -227,14 +264,51 @@ const passwordData = reactive({
 
 // Computed properties para los datos del usuario
 const user = computed(() => authStore.user)
-const userAvatar = computed(() => user.value?.avatar || '/default-avatar.png')
+const userAvatar = computed(() => authStore.userPhoto || '/default-avatar.png')
+// ✅ NUEVO: Cargar datos del perfil desde el backend
+const loadUserProfile = async () => {
+  if (!authStore.isAuthenticated) return;
+  
+  loadingProfile.value = true;
+  try {
+    console.log('📥 Cargando perfil del usuario desde el backend...');
+    await authStore.loadUserProfile();
+    
+    // ✅ ACTUALIZAR el formulario con los nuevos datos
+    if (authStore.user) {
+      personalInfo.name = authStore.user.name || '';
+      personalInfo.email = authStore.user.email || '';
+    }
+    
+    console.log('✅ Perfil cargado y formulario actualizado:', authStore.user);
+  } catch (error: any) {
+    console.error('❌ Error al cargar el perfil:', error);
+    toast.error('❌ Error al cargar los datos del perfil', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    });
+  } finally {
+    loadingProfile.value = false;
+  }
+};
 
 // Inicializar datos del usuario
-onMounted(() => {
+onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/')
     return
   }
+  
+  // Verificar autorización
+  if (!isAuthorized.value) {
+    console.warn('Acceso no autorizado al perfil:', {
+      routeUserId: route.params.userId,
+      currentUserId: authStore.user?.id
+    })
+    return
+  }
+  
+  // ✅ Cargar datos actualizados del backend
+  await loadUserProfile();
   
   // Cargar datos del usuario en el formulario
   if (user.value) {
@@ -248,20 +322,57 @@ const triggerFileInput = () => {
   fileInput.value?.click()
 }
 
-const handleAvatarChange = (event: Event) => {
+const handleAvatarChange = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   
-  if (file) {
-    console.log('Nueva imagen seleccionada:', file.name)
+  if (!file) return
+  
+  // Validar tipo de archivo
+  if (!file.type.startsWith('image/')) {
+    toast.error('❌ Por favor selecciona una imagen válida', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
+    return
+  }
+  
+  // Validar tamaño (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    toast.error('❌ La imagen debe ser menor a 5MB', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
+    return
+  }
+  
+  try {
+    uploadingAvatar.value = true
     
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      if (user.value) {
-        user.value.avatar = e.target?.result as string
-      }
+    console.log('📤 Subiendo avatar para usuario:', user.value?.id)
+    
+    // Subir avatar al backend
+    const response = await AuthService.uploadAvatar(user.value?.id, file)
+    console.log('✅ Avatar subido correctamente:', response)
+    
+    // ✅ ACTUALIZACIÓN: Recargar el perfil completo para obtener todos los datos actualizados
+    await loadUserProfile();
+    
+    toast.success('✅ Foto de perfil actualizada correctamente', {
+      toastClassName: "bg-green-900 text-white font-bold rounded-lg shadow-lg",
+    })
+    
+  } catch (error: any) {
+    console.error('❌ Error al subir avatar:', error)
+    
+    const errorMessage = error.response?.data?.message || error.message || 'Error al subir la imagen'
+    toast.error(`❌ ${errorMessage}`, {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
+  } finally {
+    uploadingAvatar.value = false
+    // Limpiar input file
+    if (fileInput.value) {
+      fileInput.value.value = ''
     }
-    reader.readAsDataURL(file)
   }
 }
 
@@ -271,38 +382,58 @@ const toggleSection = (section: string) => {
 }
 
 // Guardar información personal
-const savePersonalInfo = () => {
+const savePersonalInfo = async () => {
   if (!personalInfo.name.trim() || !personalInfo.email.trim()) {
-    alert('Por favor completa todos los campos')
+    toast.error('❌ Por favor completa todos los campos', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
     return
   }
   
-  // Aquí iría la lógica para guardar en el backend
-  console.log('Guardando información personal:', personalInfo)
-  
-  // Actualizar en el store
-  if (user.value) {
-    user.value.name = personalInfo.name
-    user.value.email = personalInfo.email
+  try {
+    // Aquí iría la lógica para guardar en el backend
+    console.log('Guardando información personal:', personalInfo)
+    
+    // Actualizar en el store localmente
+    if (user.value) {
+      user.value.name = personalInfo.name
+      user.value.email = personalInfo.email
+    }
+    
+    // ✅ Recargar perfil para asegurar que los datos están sincronizados
+    await loadUserProfile();
+    
+    toast.success('✅ Información personal actualizada correctamente', {
+      toastClassName: "bg-green-900 text-white font-bold rounded-lg shadow-lg",
+    })
+  } catch (error: any) {
+    console.error('❌ Error al guardar información personal:', error)
+    toast.error('❌ Error al guardar los cambios', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
   }
-  
-  alert('Información personal actualizada correctamente')
 }
 
 // Cambiar contraseña
 const changePassword = () => {
   if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-    alert('Por favor completa todos los campos de contraseña')
+    toast.error('❌ Por favor completa todos los campos de contraseña', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
     return
   }
   
   if (passwordData.newPassword !== passwordData.confirmPassword) {
-    alert('Las contraseñas nuevas no coinciden')
+    toast.error('❌ Las contraseñas nuevas no coinciden', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
     return
   }
   
   if (passwordData.newPassword.length < 6) {
-    alert('La contraseña debe tener al menos 6 caracteres')
+    toast.error('❌ La contraseña debe tener al menos 6 caracteres', {
+      toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
+    })
     return
   }
   
@@ -314,13 +445,19 @@ const changePassword = () => {
   passwordData.newPassword = ''
   passwordData.confirmPassword = ''
   
-  alert('Contraseña cambiada correctamente')
+  toast.success('✅ Contraseña cambiada correctamente', {
+    toastClassName: "bg-green-900 text-white font-bold rounded-lg shadow-lg",
+  })
   openSection.value = null
 }
 
 const handleLogout = () => {
+  // Usar confirm nativo para la confirmación de logout
   if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
     authStore.logout()
+    toast.info('👋 Sesión cerrada correctamente', {
+      toastClassName: "bg-blue-900 text-white font-bold rounded-lg shadow-lg",
+    })
     router.push('/')
   }
 }

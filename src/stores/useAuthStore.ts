@@ -1,54 +1,257 @@
 import { defineStore } from "pinia";
 import { ref, computed, watch } from "vue";
+import { AuthService } from "@/services/AuthService";
+// import axios from "axios";
+import apiClient from "@/services/api"; // ✅ AÑADIR (asumiendo que esta es la ruta a tu api.ts)
+
+// Función auxiliar para obtener el usuario de forma segura...
+const getInitialUser = () => {
+  const userString = localStorage.getItem('user');
+  if (!userString || userString === 'undefined') {
+    return null;
+  }
+  try {
+    return JSON.parse(userString);
+  } catch (error) {
+    console.error("Error al parsear el usuario desde localStorage, limpiando dato corrupto:", error);
+    localStorage.removeItem('user'); 
+    return null;
+  }
+};
 
 export const useAuthStore = defineStore("auth", () => {
-  const user = ref<null | {
-    id: number;
-    name: string;
-    email: string;
-    phone?: string;
-    country?: string;
-    avatar?: string;
-  }>(JSON.parse(localStorage.getItem("user") || "null"));
+  // Ahora usamos la función segura para inicializar el estado
+  const user = ref<any>(getInitialUser()); 
+  const token = ref<string | null>(localStorage.getItem("token"));
+  const isAuthenticated = computed(() => !!token.value);
+  const showLoginModal = ref(false); // 👈 AÑADE ESTA LÍNEA
 
-  const isAuthenticated = computed(() => !!user.value);
+  // Ensure axios default header is set on startup if token exists
+  if (token.value) {
+    apiClient.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
+  }
 
+  // ✅ Login mejorado con más logs
   const login = async (email: string, password: string) => {
-    if (email && password) {
-      user.value = {
-        id: 1,
-        name: "Juan Pérez",
-        email,
-        avatar: "https://i.pravatar.cc/150?img=3",
-      };
+    try {
+      console.log('🔐 Attempting login with:', { email });
+      
+      const response = await AuthService.login(email, password);
+      console.log('✅ Login response:', response);
+      
+      // AuthService returns { raw, token, user }
+      const responseToken = response.token || response.raw?.token || null;
+      const responseUser = response.user || response.raw?.data || response.raw || null;
+
+      if (!responseUser) {
+        console.error('❌ Invalid login response structure: Missing User Data.', response);
+        return false;
+      }
+
+      // If token exists, save it and set axios header
+      if (responseToken) {
+        token.value = responseToken;
+        localStorage.setItem("token", token.value as string);
+        apiClient.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
+      }
+
+      // Save user (strip token if present)
+      const userToStore = { ...responseUser };
+      if (userToStore.token) delete userToStore.token;
+      // Normalize id field for components expecting `id`
+      if (!userToStore.id && userToStore.uuid) userToStore.id = userToStore.uuid;
+      user.value = userToStore;
+      localStorage.setItem("user", JSON.stringify(userToStore));
+      
+      console.log('✅ Login successful, user:', user.value);
       return true;
+      
+    } catch (err: any) {
+      console.error("❌ Login error:", err);
+      
+      // Mostrar error específico al usuario
+      const errorMessage = err.response?.data?.message || err.message || 'Error de conexión';
+      console.error("🔧 Error details:", errorMessage);
+      
+      return false;
     }
-    return false;
   };
 
+  // ✅ Registro mejorado con validación de edad
   const register = async (data: {
     name: string;
+    last_name: string;
     email: string;
+    password: string;
     phone: string;
-    country: string;
     idType: string;
-    idNumber: string;
+    birth_date: string;
+    document_number: string;
     promoCode?: string;
   }) => {
-    user.value = {
-      id: Date.now(),
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      country: data.country,
-      avatar: "https://i.pravatar.cc/150?img=5",
-    };
-    return true;
+    try {
+      // Validar edad mínima
+      const birthDate = new Date(data.birth_date);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      
+      if (age < 18) {
+        console.error('❌ User must be at least 18 years old');
+        return false;
+      }
+
+      // Transformar datos al formato del endpoint
+      const payload = {
+        name: data.name,
+        last_name: data.last_name,
+        email: data.email,
+        password: data.password,
+        phone: data.phone,
+        birth_date: data.birth_date,
+        document_number: data.document_number
+      };
+
+      console.log('📤 Sending registration payload:', payload);
+
+      const response = await AuthService.register(payload);
+      console.log('✅ Registration response:', response);
+
+      const responseToken = response.token || response.raw?.token || null;
+      const responseUser = response.user || response.raw?.data || response.raw || null;
+
+      // If backend returns token, log the user in
+      if (responseToken) {
+        token.value = responseToken;
+        apiClient.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
+        localStorage.setItem("token", token.value as string);
+      }
+
+      if (responseUser) {
+        const userToStore = { ...responseUser };
+        if (userToStore.token) delete userToStore.token;
+        if (!userToStore.id && userToStore.uuid) userToStore.id = userToStore.uuid;
+        user.value = userToStore;
+        localStorage.setItem("user", JSON.stringify(userToStore));
+      }
+
+      // If the backend didn't return a token but provided a user, attempt to fetch profile
+      if (!token.value && user.value) {
+        // try to get tokenless profile or prompt user to login — for now return true since user created
+        console.warn('⚠️ Registration succeeded but no token returned. User created, please login.');
+      }
+      
+      console.log('✅ Registration successful, user:', user.value);
+      return true;
+      
+    } catch (err: any) {
+      console.error('❌ Registration error:', err);
+      
+      const errorMessage = err.response?.data?.message || err.message || 'Error de conexión';
+      console.error('🔧 Error details:', errorMessage);
+      
+      return false;
+    }
   };
 
-  const logout = () => {
+  // Resto del código permanece igual...
+const loadUserProfile = async () => {
+  if (!token.value) return;
+  try {
+    // userProfileResponse ES {"success": true, "data": {...}}
+    const userProfileResponse = await AuthService.getUserProfile();
+
+    // ✅ EXTRAE EL OBJETO DE USUARIO DENTRO DE "data"
+    const userObject = userProfileResponse?.data || userProfileResponse;
+
+    if (userObject) {
+      // Ahora userObject SÍ es { uuid: "...", name: "...", ... }
+      if (!userObject.id && userObject.uuid) {
+        userObject.id = userObject.uuid;
+      }
+
+      user.value = userObject; // 👈 AHORA SÍ GUARDAS EL OBJETO CORRECTO
+      localStorage.setItem("user", JSON.stringify(user.value));
+    }
+  } catch (err: any) {
+    console.error("⚠️ Error al cargar perfil:", err);
+
+    if (err.response && err.response.status === 401) {
+      console.warn("Token inválido o expirado. Cerrando sesión.");
+      logout();
+    }
+  }
+};
+  const logout = async () => {
+    if (token.value) {
+      try {
+        await AuthService.logout();
+      } catch {
+        console.warn("⚠️ Error cerrando sesión en el servidor");
+      }
+    }
+
     user.value = null;
+    token.value = null;
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    delete apiClient.defaults.headers.common["Authorization"];
   };
+
+  const userAge = computed(() => {
+    if (!user.value?.birth_date) return null;
+    
+    const birthDate = new Date(user.value.birth_date);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  });
+
+  const isAdult = computed(() => {
+    return userAge.value !== null && userAge.value >= 18;
+  });
+
+  const userPhoto = computed(() => {
+    const photoPath = user.value?.natural_profile?.photo; //
+
+    if (photoPath) {
+      // 1. Esta es tu URL de API (ej: http://192.168.1.17:8000/api/v1)
+      const apiUrl = import.meta.env.VITE_API_URL;
+      
+      // 2. ✅ LE QUITAMOS EL PREFIJO DE LA API
+      // Asumimos que la URL base es la API_URL sin el '/api/v1'
+      const baseUrl = apiUrl.replace('/api/v1', ''); // Queda: http://192.168.1.17:8000
+      
+      // 3. Construimos la URL correcta al storage
+      return `${baseUrl}/storage/${photoPath}`; // Queda: http://.../storage/users/avatars/...
+    }
+    
+    return null;
+  });
+
+  // 👈 AÑADE ESTAS FUNCIONES PARA MANEJAR EL MODAL
+  const openLoginModal = () => {
+    showLoginModal.value = true;
+  };
+
+  const closeLoginModal = () => {
+    showLoginModal.value = false;
+  };
+
+  watch(token, (val) => {
+    if (val) localStorage.setItem("token", val);
+    else localStorage.removeItem("token");
+  });
 
   watch(user, (newUser) => {
     if (newUser) {
@@ -58,97 +261,19 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }, { deep: true });
 
-  return {
-    user,
-    isAuthenticated,
-    login,
-    register,
-    logout,
+  return { 
+    user, 
+    token, 
+    isAuthenticated, 
+    userAge,
+    isAdult,
+    userPhoto,
+    showLoginModal, 
+    login, 
+    register, 
+    logout, 
+    loadUserProfile,
+    openLoginModal, 
+    closeLoginModal 
   };
 });
-
-
-// Service Authenticate
-// import { defineStore } from "pinia";
-// import { ref, computed, watch } from "vue";
-// import { AuthService } from "@/services/AuthService";
-// import axios from "axios";
-
-// export const useAuthStore = defineStore("auth", () => {
-//   const user = ref<any>(JSON.parse(localStorage.getItem("user") || "null"));
-//   const token = ref<string | null>(localStorage.getItem("token"));
-//   const isAuthenticated = computed(() => !!token.value);
-
-//   // ✅ Login con la API real
-//   const login = async (email: string, password: string) => {
-//     try {
-//       const response = await AuthService.login(email, password);
-//       token.value = response.token;
-//       user.value = response.user;
-//       localStorage.setItem("token", token.value);
-//       localStorage.setItem("user", JSON.stringify(user.value));
-
-//       // 🔧 Configurar axios para incluir el token automáticamente
-//       axios.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
-//       return true;
-//     } catch (err: any) {
-//       console.error("❌ Error de login:", err.response?.data || err);
-//       return false;
-//     }
-//   };
-
-//   // ✅ Registro
-//   const register = async (data: Record<string, any>) => {
-//     try {
-//       const response = await AuthService.register(data);
-//       token.value = response.token;
-//       user.value = response.user;
-//       localStorage.setItem("token", token.value);
-//       localStorage.setItem("user", JSON.stringify(user.value));
-
-//       axios.defaults.headers.common["Authorization"] = `Bearer ${token.value}`;
-//       return true;
-//     } catch (err: any) {
-//       console.error("❌ Error en el registro:", err.response?.data || err);
-//       return false;
-//     }
-//   };
-
-//   // ✅ Cargar perfil actual
-//   const loadUserProfile = async () => {
-//     if (!token.value) return;
-//     try {
-//       const profile = await AuthService.getUserProfile(token.value);
-//       user.value = profile;
-//       localStorage.setItem("user", JSON.stringify(user.value));
-//     } catch (err) {
-//       console.error("⚠️ Error al cargar perfil:", err);
-//       logout();
-//     }
-//   };
-
-//   // ✅ Logout
-//   const logout = async () => {
-//     if (token.value) {
-//       try {
-//         await AuthService.logout(token.value);
-//       } catch {
-//         console.warn("⚠️ Error cerrando sesión en el servidor");
-//       }
-//     }
-
-//     user.value = null;
-//     token.value = null;
-//     localStorage.removeItem("user");
-//     localStorage.removeItem("token");
-//     delete axios.defaults.headers.common["Authorization"];
-//   };
-
-//   // 🔁 Reactividad con persistencia local
-//   watch(token, (val) => {
-//     if (val) localStorage.setItem("token", val);
-//     else localStorage.removeItem("token");
-//   });
-
-//   return { user, token, isAuthenticated, login, register, logout, loadUserProfile };
-// });

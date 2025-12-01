@@ -1,14 +1,12 @@
 <template>
 <div
-  class="relative bg-gradient-to-r from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-2xl p-5 border border-gray-700/50 shadow-lg hover:shadow-yellow-500/10 transition transform hover:scale-105 overflow-hidden group cursor-pointer
+  class="relative bg-gradient-to-r from-[#1a1f35] via-[#0f172a] to-[#1a1f35] rounded-2xl p-1.5 border border-gray-700/50 shadow-lg hover:shadow-yellow-500/10 transition transform hover:scale-105 overflow-hidden group cursor-pointer
          flex flex-col justify-between h-full"
   :class="{ 'opacity-60 pointer-events-none': isSoldOut || isTimeUp }"
   @click="$emit('view-details')"
 >
-    <!-- Glow decorativo -->
     <div class="absolute inset-0 opacity-10 group-hover:opacity-20 transition bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.3),transparent)]"></div>
 
-    <!-- HOT badge -->
     <span
       v-if="isHot"
       class="absolute top-0 right-0 mt-2 mr-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full uppercase z-10 animate-bounce shadow-[0_0_10px_rgba(220,38,38,0.7)]"
@@ -16,120 +14,127 @@
       🔥 ¡Caliente!
     </span>
 
-    <!-- Imagen -->
     <div class="flex-1 flex flex-col justify-start">
-  <img
-    :src="image"
-    alt="Premio"
-    class="w-full h-40 sm:h-56 object-cover rounded-xl border border-gray-600 shadow-md mb-4 relative z-5"
-  />
+      <img
+        :src="product.images?.[0] || '/default.png'"
+        alt="Premio"
+        class="w-full h-40 sm:h-56 object-cover rounded-xl border border-gray-600 shadow-md mb-4 relative z-5"
+      />
 
-  <h3 class="font-bold text-lg text-white drop-shadow text-center mb-1 line-clamp-2">
-    {{ title }}
-  </h3>
-  <p class="text-gray-400 text-sm text-center mb-3 line-clamp-2">
-    {{ description }}
-  </p>
+      <h3 class="font-bold text-lg text-white drop-shadow text-center mb-1 line-clamp-2">
+        {{ product.title }}
+      </h3>
+      <p class="text-gray-400 text-sm text-center mb-3 line-clamp-2">
+        {{ product.description }}
+      </p>
 
-  <div class="w-full bg-gray-700/50 rounded-full h-2 sm:h-3 mb-2 overflow-hidden">
-    <div
-      class="bg-yellow-400 h-2 sm:h-3 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.6)] transition-all duration-500"
-      :style="{ width: progress + '%' }"
-    ></div>
-  </div>
-  <p class="text-xs text-gray-400 text-center mb-4">{{ progress }}% vendido</p>
-</div>
-
-
-   <!-- Contador actualizado con condicional de tiempo límite -->
-      <div class="text-center mb-3">
-        <div v-if="!isTimeUp" class="inline-flex flex-col items-center bg-gray-800/70 rounded-lg px-0 py-2 border border-gray-600/50">
-          <span class="text-xs text-gray-300 mb-1">Tiempo restante:</span>
-          <div class="flex items-center justify-center space-x-1">
-            <div class="flex flex-col items-center">
-              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.days }}</span>
-              <span class="text-xs text-gray-400 mt-0.5">Días</span>
-            </div>
-            <span class="text-yellow-300 font-bold -mt-5">:</span>
-            <div class="flex flex-col items-center">
-              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.hours }}</span>
-              <span class="text-xs text-gray-400 mt-0.5">Horas</span>
-            </div>
-            <span class="text-yellow-300 font-bold -mt-5">:</span>
-            <div class="flex flex-col items-center">
-              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.minutes }}</span>
-              <span class="text-xs text-gray-400 mt-0.5">Min</span>
-            </div>
-            <span class="text-yellow-300 font-bold -mt-5">:</span>
-            <div class="flex flex-col items-center">
-              <span class="bg-gray-900 text-yellow-300 font-mono text-sm px-1.5 py-0.5 rounded min-w-[1.5rem] text-center">{{ timeLeft.seconds }}</span>
-              <span class="text-xs text-gray-400 mt-0.5">Seg</span>
+      <div class="w-full bg-gray-700/50 rounded-full h-6 sm:h-5 mb-2 overflow-hidden relative flex items-center justify-center">
+        <div v-if="product.isProgressLoading" class="spinner"></div>
+        <template v-else>
+          <div
+            class="bg-gradient-to-br from-yellow-400 to-red-500 h-full rounded-full shadow-[0_0_10px_rgba(234,179,8,0.6)] transition-all duration-500 absolute left-0 top-0"
+            :style="{ width: progressPercentage + '%' }" 
+          >
+            <div class="absolute right-1 top-1/2 transform -translate-y-1/2">
+              <span class="text-xs font-bold text-white drop-shadow-md whitespace-nowrap">
+                {{ progressPercentage }}%
+              </span>
             </div>
           </div>
-        </div>
-        <div v-else class="inline-flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-2 border border-gray-600/50">
-          <span class="text-xs text-gray-300 mb-1">Estado:</span>
-          <div class="flex items-center justify-center">
-            <span class="text-green-400 font-bold text-sm drop-shadow">🎉 ¡SORTEADO!</span>
+          <div v-if="progressPercentage < 15 && product.ticketsVendidos !== null" class="absolute right-1 top-1/2 transform -translate-y-1/2">
+            <span class="text-[10px] font-bold text-gray-300 drop-shadow-md whitespace-nowrap">
+              {{ progressPercentage }}%
+            </span>
           </div>
+        </template>
+      </div>
+    </div>
+
+    <div class="text-center mb-2">
+      <div v-if="!isTimeUp" class="flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-0 border border-gray-600/50 w-full max-w-xs mx-auto">
+        <span class="text-xs text-gray-300 mb-1">Tiempo restante:</span>
+        <div class="flex items-center justify-center gap-0 sm:gap-1 w-30">
+          <div class="flex flex-col items-center flex-1"><span class="bg-gray-900 text-yellow-300 font-mono text-xs sm:text-sm px-1 py-0.5 rounded w-8 text-center">{{ timeLeft.days }}</span><span class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Días</span></div>
+          <span class="text-yellow-300 font-bold text-sm -mt-3">:</span>
+          <div class="flex flex-col items-center flex-1"><span class="bg-gray-900 text-yellow-300 font-mono text-xs sm:text-sm px-1 py-0.5 rounded w-8 text-center">{{ timeLeft.hours }}</span><span class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Horas</span></div>
+          <span class="text-yellow-300 font-bold text-sm -mt-3">:</span>
+          <div class="flex flex-col items-center flex-1"><span class="bg-gray-900 text-yellow-300 font-mono text-xs sm:text-sm px-1 py-0.5 rounded w-8 text-center">{{ timeLeft.minutes }}</span><span class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Min</span></div>
+          <span class="text-yellow-300 font-bold text-sm -mt-3">:</span>
+          <div class="flex flex-col items-center flex-1"><span class="bg-gray-900 text-yellow-300 font-mono text-xs sm:text-sm px-1 py-0.5 rounded w-8 text-center">{{ timeLeft.seconds }}</span><span class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Seg</span></div>
         </div>
       </div>
+      <div v-else class="flex flex-col items-center bg-gray-800/70 rounded-lg px-3 py-2 border border-gray-600/50 w-full max-w-xs mx-auto">
+        <span class="text-xs text-gray-300 mb-1">Estado:</span>
+        <div class="flex items-center justify-center"><span class="text-green-400 font-bold text-sm drop-shadow">🎉 ¡SORTEADO!</span></div>
+      </div>
+    </div>
 
-    <!-- Botón participar -->
-    <button
-      class="px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
-      :class="{
-        'bg-green-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.6)]': isSoldOut || isTimeUp,
-        'bg-yellow-500 text-black hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)]': !isSoldOut && !isTimeUp
-      }"
-      @click.stop="$emit('participar')"
-      :disabled="isSoldOut || isTimeUp"
-    >
+   <button
+  class="btn_participate px-4 sm:px-6 py-2 rounded-full w-full font-bold text-sm sm:text-base shadow-md transition-colors relative z-10"
+  :class="{'bg-green-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.6)]': isSoldOut || isTimeUp, 'bg-yellow-500 text-black hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)]': !isSoldOut && !isTimeUp}"
+  @click.stop="handleParticipate"
+  :disabled="isSoldOut || isTimeUp"
+>
       {{ isTimeUp ? '¡SORTEADO!' : (isSoldOut ? '¡VENDIDO!' : 'PARTICIPAR') }}
     </button>
-  </div>
+</div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useGridStore } from '@/stores/useGridStore'
 
-const props = defineProps({
-  image: String,
-  title: String,
-  description: String,
-  progress: Number,
-  drawDate: String // Nueva propiedad
+const props = defineProps<{
+  product: any,
+  image?: string,
+  title?: string,
+  description?: string,
+  progress?: number,
+  drawDate?: string,
+  onParticipar?: Function,
+  onViewDetails?: Function
+}>()
+
+const gridStore = useGridStore()
+
+const progressPercentage = computed(() => {
+  if (!props.product || props.product.ticketsVendidos === null || !props.product.ticketsMax || props.product.ticketsMax === 0) {
+    return 0;
+  }
+  const progress = (props.product.ticketsVendidos / props.product.ticketsMax) * 100;
+  return Math.floor(progress);
 })
 
-// Lógica de "Hot"
-const isHot = computed(() => props.progress! > 70 && props.progress! < 100)
-// Lógica de "Vendido"
-const isSoldOut = computed(() => props.progress! === 100)
-// Lógica de "Tiempo Agotado"
+const isHot = computed(() => progressPercentage.value > 70 && progressPercentage.value < 100)
+const isSoldOut = computed(() => progressPercentage.value === 100)
 const isTimeUp = computed(() => timeLeft.value.total <= 0)
 
 const now = ref(Date.now())
 let interval: any = null
 
 onMounted(() => {
-  interval = setInterval(() => {
-    now.value = Date.now()
-  }, 1000)
+  if (props.product && props.product.ticketsVendidos === null) {
+    gridStore.fetchProductProgress(props.product.uuid);
+  }
+  interval = setInterval(() => { now.value = Date.now() }, 1000)
 })
 
 onUnmounted(() => {
   clearInterval(interval)
 })
-
+const handleParticipate = (event: Event) => {
+  event.stopPropagation();
+  event.preventDefault();
+  gridStore.openParticipateModal(props.product);
+};
 const timeLeft = computed(() => {
-  const diff = new Date(props.drawDate!).getTime() - now.value
-  if (diff < 0) return { total: 0, days: 0, hours: 0, minutes: 0, seconds: 0 }
-
+  if (!props.product?.drawDate) return { total: 0, days: '00', hours: '00', minutes: '00', seconds: '00' }
+  const diff = new Date(props.product.drawDate).getTime() - now.value
+  if (diff < 0) return { total: 0, days: '00', hours: '00', minutes: '00', seconds: '00' }
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24)
   const minutes = Math.floor((diff / 1000 / 60) % 60)
   const seconds = Math.floor((diff / 1000) % 60)
-
   return { 
     total: diff, 
     days: days.toString().padStart(2, '0'), 
@@ -141,7 +146,6 @@ const timeLeft = computed(() => {
 </script>
 
 <style scoped>
-/* Agrega esta animación en el <style> de ProductCard.vue */
 @keyframes bounce {
   0%, 100% {
     transform: translateY(-25%) scale(1.1);
@@ -152,11 +156,9 @@ const timeLeft = computed(() => {
     animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
   }
 }
-
 .animate-bounce {
   animation: bounce 1s infinite;
 }
-
 .bg-green-600 {
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
@@ -165,5 +167,18 @@ const timeLeft = computed(() => {
 }
 .bg-red-600 {
   box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #f3b243;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

@@ -2,11 +2,11 @@
 <template>
   <div class="jackpot-container">
     <!-- Encabezado -->
-    <div class="jackpot-header">ACUMULADO</div>
+    <div class="jackpot-header">TICKETS COMPRADOS</div>
     <div class="cant_container">
       <div ref="wrapperRef" class="jackpot-wrapper" role="img" aria-label="jackpot counter">
         <!-- Símbolo de dólar fijo -->
-        <div class="symbol">$</div>
+        <!-- <div class="symbol">$</div> -->
 
         <!-- Columnas con dígitos -->
         <div
@@ -206,7 +206,7 @@ onBeforeUnmount(() => {
   align-items: center;
   background: #003399; /* azul principal */
   border-radius: 18px;
-  padding: 0px 10px;
+  padding: 0px 13px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   max-width: 100%;
 }
@@ -216,21 +216,21 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   background: #000000; /* azul oscuro */
-  border: 2px solid #ffd700; /* borde amarillo */
+  border: 1px solid #ffd700; /* borde amarillo */
   border-radius: 4px;
   box-shadow: 0 0 16px 4px rgba(255,215,0,0.35), inset 0 0 8px rgba(255,255,255,0.1);
   min-width: 120px;
+  height: 2;
   animation: containerGlow 2s ease-in-out;
 }
 
 .jackpot-header {
   background: #ffd700; /* amarillo */
   color: #000;
-  font-weight: 800;
-  font-size: 0.9rem;
-  padding: 0px 8px;
-  border-radius: 2px;
-  margin-bottom: 0px;
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0px 4px;
+
   animation: headerPulse 2s ease-in-out;
 }
 
@@ -242,10 +242,10 @@ onBeforeUnmount(() => {
 }
 
 .symbol {
-  font-size: calc(var(--digit-h) * 0.7);
-  font-weight: 900;
+  font-size: calc(var(--digit-h) * 0.75);
+  font-weight: 800;
   color: #ffd700;
-  margin-right: 6px;
+  margin-left: 5px;
   text-shadow: 0 2px 4px rgba(0,0,0,0.7);
   animation: symbolShine 2s ease-in-out;
 }
@@ -257,8 +257,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border-radius: 2px;
   background: #1c1c1c;
-  margin-left: -6px;
-  box-shadow: inset 0 -2px 4px rgb(15, 2, 157), inset 0 2px 4px rgba(0,0,0,0.6);
+  margin-left: 0px;
 }
 
 .digit-stack {
