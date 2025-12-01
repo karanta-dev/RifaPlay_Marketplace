@@ -27,6 +27,9 @@ export interface PaymentMethod {
   document_number?: string;
   is_default?: boolean;
   original_data?: any; // Para mantener los datos originales
+  logoUrl?: string;
+  structured_data?: any; // Estructura dinámica que indica campos requeridos por el método
+  is_active?: boolean;
   [key: string]: any;
 }
 
@@ -124,6 +127,10 @@ fetchPaymentMethods: async (): Promise<PaymentMethod[]> => {
     const paymentMethods: PaymentMethod[] = data.data
       .filter((item: any) => item.is_active) // Solo métodos activos
       .map((item: any) => {
+            // Preserve the original method_name from backend and also provide a machine-friendly variable name
+            const methodNameRaw = item.method_name || 'Método de Pago';
+            const variableName = (methodNameRaw || '').toString().toLowerCase().replace(/\s+/g, '_');
+
         // Generar slug basado en el method_name
         let slug = '';
         if (item.method_name?.toLowerCase().includes('pago movil')) {
@@ -143,9 +150,65 @@ fetchPaymentMethods: async (): Promise<PaymentMethod[]> => {
           slug = item.method_name?.toLowerCase().replace(/\s+/g, '-') || 'metodo-pago';
         }
         
-        return {
-          uuid: item.uuid,
-          name: item.method_name || 'Método de Pago',
+        // Intentar extraer una URL de ícono/logo desde varias posibles propiedades.
+        // El backend puede devolver:
+        // - una URL absoluta (https://...)
+        // - una ruta relativa que empieza con '/' (ej: '/48.../icon.png')
+        // - un path relativo sin slash (ej: '48.../icon.png')
+        // - un objeto images: [{ url, path }]
+        // Normalizamos y construimos una `logoUrl` absoluta usando `apiClient.defaults.baseURL` cuando haga falta.
+        let rawIcon: any = item.logo_url || item.icon || (item.images && Array.isArray(item.images) && item.images[0] && (item.images[0].url || item.images[0].path)) || item.image || null;
+        let logoUrl = null as string | null;
+        if (rawIcon) {
+          try {
+            // Si viene como objeto con { url } o { path }
+            if (typeof rawIcon === 'object' && rawIcon !== null) {
+              rawIcon = rawIcon.url || rawIcon.path || String(rawIcon);
+            }
+
+            if (typeof rawIcon === 'string') {
+              rawIcon = rawIcon.trim();
+              // Si es una URL absoluta, usarla tal cual
+              if (/^https?:\/\//i.test(rawIcon)) {
+                logoUrl = rawIcon;
+              } else {
+                // Construir URL absoluta relativa a apiClient.defaults.baseURL
+                const base = apiClient.defaults.baseURL || '';
+                try {
+                  // normalizar entradas como 'path/to/file' o '/path/to/file'
+                  // new URL manejará correctamente la concatenación
+                  logoUrl = new URL(rawIcon.replace(/^\/*/, '/'), base).toString();
+                } catch (err) {
+                  // Fallback manual conservador
+                  const baseTrim = (base || '').replace(/\/$/, '');
+                  logoUrl = rawIcon.startsWith('/') ? `${baseTrim}${rawIcon}` : `${baseTrim}/${rawIcon}`;
+                }
+              }
+            } else {
+              // cualquier otro tipo, forzar a string
+              logoUrl = String(rawIcon);
+            }
+          } catch (e) {
+            logoUrl = String(rawIcon);
+          }
+        }
+
+        // Procesar structured_data: puede venir como string JSON, objeto o null
+        let structured = item.structured_data ?? item.fields ?? null
+        if (typeof structured === 'string') {
+          try {
+            structured = JSON.parse(structured)
+          } catch (e) {
+            // Si no es JSON válido, dejar como string para mostrar como texto
+            structured = structured
+          }
+        }
+
+            return {
+              uuid: item.uuid,
+              name: methodNameRaw,
+              method_name: methodNameRaw,
+              variable_name: variableName,
           slug: slug,
           description: item.observation,
           account_number: item.account_number,
@@ -155,7 +218,11 @@ fetchPaymentMethods: async (): Promise<PaymentMethod[]> => {
           document_number: item.document_number,
           is_default: item.is_default,
           // Mantener todos los campos originales por si acaso
-          original_data: item
+          original_data: item,
+          logoUrl: logoUrl,
+          // Algunos endpoints devuelven structured_data como array u objeto o como JSON string
+          structured_data: structured,
+          is_active: item.is_active ?? true
         };
       })
       .sort((a: PaymentMethod, b: PaymentMethod) => {

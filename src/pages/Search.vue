@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 py-8 px-4 relative overflow-hidden">
+  <div class="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-800 py-8 px-4 relative overflow-hidden">
     <!-- Efectos de fondo -->
     <div class="absolute inset-0 bg-black/20"></div>
     <div class="absolute top-0 left-0 w-72 h-72 bg-yellow-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
