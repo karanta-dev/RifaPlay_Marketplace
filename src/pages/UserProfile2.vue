@@ -532,12 +532,12 @@ const selectedTickets = ref<number[]>([])
 const progressWidth = ref<number>(0)
 const targetProgress = ref<number>(32.5)
 const animationDuration = ref<number>(2000)
-const maxTickets = computed(() => raffle.value?.end_range || 100)
-const loadingProfile = ref(true);
+// const maxTickets = computed(() => raffle.value?.end_range || 100)
+// const loadingProfile = ref(true);
 
 // Ticket pagination and ranges
-const ticketsPerPage = ref<number>(200)
-const currentTicketPage = ref<number>(1)
+// const ticketsPerPage = ref<number>(200)
+// const currentTicketPage = ref<number>(1)
 
 // Métodos de pago provenientes del backend
 const paymentMethods = ref<PaymentMethod[]>([])
@@ -577,7 +577,7 @@ const maxAvailable = computed(() => gridStore.availableTickets)
 // --- Currency selection and price logic (use centralized payment store like ParticipateModal) ---
 const paymentStore = usePaymentStore()
 const { currencies, defaultCurrencyId, bcvRate, copRate, loadingRates } = storeToRefs(paymentStore)
-const loadingCurrencies = ref(false)
+// const loadingCurrencies = ref(false)
 const selectedCurrencyId = ref<string | undefined>(undefined)
 
 const displayPrice = computed(() => {
@@ -667,10 +667,7 @@ const sellerName = computed(() => {
 })
 
 
-const sellerEmail = computed(() => {
-  // En un caso real, esto vendría de la API
-  return 'contacto@bolidosrifas.com'
-})
+
 
 const displayedImages = computed(() => {
   if (!raffle.value?.images) return []
@@ -698,29 +695,29 @@ const selectedTicketsCount = computed(() => currentQty.value)
 const totalPrice = computed(() => currentQty.value * ticketPrice.value)
 
 
-const totalTickets = computed(() => {
-  if (!raffle.value) return 100
-  const start = raffle.value.initial_range || 1
-  const end = raffle.value.end_range || 100
-  return end - start + 1
-})
+// const totalTickets = computed(() => {
+//   if (!raffle.value) return 100
+//   const start = raffle.value.initial_range || 1
+//   const end = raffle.value.end_range || 100
+//   return end - start + 1
+// })
 
-const totalTicketPages = computed(() => Math.max(1, Math.ceil(totalTickets.value / ticketsPerPage.value)))
+// const totalTicketPages = computed(() => Math.max(1, Math.ceil(totalTickets.value / ticketsPerPage.value)))
 
-const fullTicketList = computed(() => {
-  if (!raffle.value) return Array.from({ length: 100 }, (_, i) => i + 1)
-  const start = raffle.value.initial_range || 1
-  const end = raffle.value.end_range || 100
-  const arr: number[] = []
-  for (let i = start; i <= end; i++) arr.push(i)
-  return arr
-})
+// const fullTicketList = computed(() => {
+//   if (!raffle.value) return Array.from({ length: 100 }, (_, i) => i + 1)
+//   const start = raffle.value.initial_range || 1
+//   const end = raffle.value.end_range || 100
+//   const arr: number[] = []
+//   for (let i = start; i <= end; i++) arr.push(i)
+//   return arr
+// })
 
-const paginatedTickets = computed(() => {
-  const startIndex = (currentTicketPage.value - 1) * ticketsPerPage.value
-  const endIndex = startIndex + ticketsPerPage.value
-  return fullTicketList.value.slice(startIndex, endIndex)
-})
+// const paginatedTickets = computed(() => {
+//   const startIndex = (currentTicketPage.value - 1) * ticketsPerPage.value
+//   const endIndex = startIndex + ticketsPerPage.value
+//   return fullTicketList.value.slice(startIndex, endIndex)
+// })
 
 const formattedRandomTime = computed(() => {
   const minutes = Math.floor(randomTicketsTimeLeft.value / 60)
@@ -1024,20 +1021,20 @@ const getRaffleHighlight = (raffle: Raffle) => {
     : 'OPORTUNIDAD ÚNICA DE GANAR'
 }
 
-const getTicketClass = (n: number) => {
-  const ticketNumber = n
+// const getTicketClass = (n: number) => {
+//   const ticketNumber = n
   
-  if (selectedTickets.value.includes(ticketNumber)) {
-    return 'ticket-box selected'
-  }
+//   if (selectedTickets.value.includes(ticketNumber)) {
+//     return 'ticket-box selected'
+//   }
   
-  // Simular algunos boletos vendidos (en un caso real, esto vendría de la API)
-  if (n % 7 === 0) {
-    return 'ticket-box sold'
-  }
+//   // Simular algunos boletos vendidos (en un caso real, esto vendría de la API)
+//   if (n % 7 === 0) {
+//     return 'ticket-box sold'
+//   }
   
-  return 'ticket-box available'
-}
+//   return 'ticket-box available'
+// }
 
 const getPaymentMethodClass = (method: any) => {
   const base = 'payment-method-box'
@@ -1117,24 +1114,24 @@ const scrollToPersonalData = () => {
   }
 }
 
-const toggleTicketSelection = (n: number) => {
-  const ticketNumber = n
+// const toggleTicketSelection = (n: number) => {
+//   const ticketNumber = n
   
-  if (selectedTickets.value.includes(ticketNumber)) {
-    const index = selectedTickets.value.indexOf(ticketNumber)
-    selectedTickets.value.splice(index, 1)
-  } else {
-    // Limitar la selección a un máximo (por ejemplo, 10 boletos)
-    if (selectedTickets.value.length < 10) {
-      selectedTickets.value.push(ticketNumber)
-    }
-  }
-}
+//   if (selectedTickets.value.includes(ticketNumber)) {
+//     const index = selectedTickets.value.indexOf(ticketNumber)
+//     selectedTickets.value.splice(index, 1)
+//   } else {
+//     // Limitar la selección a un máximo (por ejemplo, 10 boletos)
+//     if (selectedTickets.value.length < 10) {
+//       selectedTickets.value.push(ticketNumber)
+//     }
+//   }
+// }
 
-const selectRandomTickets = () => {
-  // Abrir la UI de selección automática (el usuario escoge la cantidad y obtiene tickets)
-  selectionMode.value = 'auto'
-}
+// const selectRandomTickets = () => {
+//   // Abrir la UI de selección automática (el usuario escoge la cantidad y obtiene tickets)
+//   selectionMode.value = 'auto'
+// }
 
 // Cancelar la selección automática: liberar tickets reservados, limpiar timers y volver a modo manual
 const cancelAutoSelection = async () => {
@@ -1156,13 +1153,13 @@ const cancelAutoSelection = async () => {
   selectionMode.value = 'manual'
 }
 
-const prevTicketPage = () => {
-  if (currentTicketPage.value > 1) currentTicketPage.value--
-}
+// const prevTicketPage = () => {
+//   if (currentTicketPage.value > 1) currentTicketPage.value--
+// }
 
-const nextTicketPage = () => {
-  if (currentTicketPage.value < totalTicketPages.value) currentTicketPage.value++
-}
+// const nextTicketPage = () => {
+//   if (currentTicketPage.value < totalTicketPages.value) currentTicketPage.value++
+// }
 
 // Animación de la barra de progreso
 const animateProgressBar = () => {
