@@ -1,302 +1,703 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 text-white relative overflow-hidden">
-    <!-- Patrón de fondo tecnológico -->
-    <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(120,119,198,0.1),_transparent_50%)]"></div>
-    <div class="absolute inset-0 bg-[linear-gradient(45deg,_transparent_48%,_rgba(56,189,248,0.03)_50%,_transparent_52%)] bg-[length:20px_20px]"></div>
-    
-    <!-- Header Tecnológico -->
-    <div class="relative bg-gradient-to-r from-blue-900/90 to-purple-900/90 backdrop-blur-sm p-4 flex items-center justify-between border-b border-cyan-500/30 shadow-2xl">
-      <button 
-        @click="$router.back()" 
-        class="px-4 py-2 rounded-xl bg-blue-800/60 hover:bg-cyan-700 text-cyan-200 hover:text-white transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 flex items-center gap-2"
-      >
-        <i class="fas fa-arrow-left"></i>
-        <span class="hidden sm:inline">Volver</span>
-      </button>
-      <div class="flex items-center gap-3 text-sm">
-        <div class="flex items-center gap-2 bg-blue-800/40 px-3 py-1 rounded-full">
-          <i class="fas fa-store text-cyan-400 text-xs"></i>
-          <span class="text-cyan-200">Tienda Oficial</span>
+  <div class="user-profile-container">
+    <nav class="navbar">
+      <div class="top-accent-line"></div>
+      
+       <div class="nav-content">
+        <div class="logo-container">
+          <!-- Cambiar el router-link para que vaya al perfil actual -->
+          <router-link 
+            :to="riferoProfileLink" 
+            class="logo-text"
+          >
+            <span v-if="loadingProfile">Cargando...</span>
+            <span v-else>{{ sellerName }}</span>
+          </router-link>
         </div>
-        <button class="p-2 rounded-lg bg-blue-800/40 hover:bg-cyan-700/60 text-cyan-200 transition-all">
-          <i class="fas fa-share-alt"></i>
-        </button>
+
+
+        <ul class="nav-links hidden-mobile">
+          <li>
+            <router-link to="/" class="nav-link">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+              </svg>
+              INICIO
+            </router-link>
+          </li>
+          <li>
+            <a href="#" class="nav-link">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                <path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17C5.06 5.687 5 5.35 5 5zm4 1V5a1 1 0 10-1 1h1zm3 0a1 1 0 10-1-1v1h1z" clip-rule="evenodd" />
+                <path d="M9 11H3v5a2 2 0 002 2h4v-7zM11 18h4a2 2 0 002-2v-5h-6v7z" />
+              </svg>
+              CUENTAS DE PAGO
+            </a>
+          </li>
+          <li>
+            <a href="#" class="nav-link">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-5.5-2.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM10 12a5.99 5.99 0 00-4.793 2.39A9.948 9.948 0 0110 5a9.95 9.95 0 014.793 9.39A5.99 5.99 0 0010 12z" clip-rule="evenodd" />
+              </svg>
+              CONTACTO
+            </a>
+          </li>
+        </ul>
+
+        <button class="btn-boletos">LISTA DE BOLETOS</button>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <div class="catalog-header">
+        <h1 class="catalog-title">DISPONIBLES</h1>
+      </div>
+
+      <div v-if="loadingRaffles" class="text-center py-10">
+        <p class="text-xl font-bold text-gray-500">Cargando rifas...</p>
+      </div>
+
+      <div v-else-if="filteredRaffles.length === 0" class="text-center py-10">
+        <p class="text-xl font-bold text-gray-500">Este usuario no tiene rifas activas en este momento.</p>
+      </div>
+
+      <div v-else class="raffles-grid">
+        <div 
+          v-for="raffle in filteredRaffles" 
+          :key="raffle.uuid" 
+          class="raffle-card"
+        >
+          <div class="raffle-image-container">
+            <img 
+              :src="getImageUrl(raffle)" 
+              :alt="raffle.name" 
+              class="raffle-image"
+            />
+          </div>
+          <div class="raffle-header">
+            <h2 class="raffle-name">{{ raffle.name }}</h2>
+            <div class="raffle-date">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="date-icon">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+              </svg>
+              {{ formatDate(raffle.raffle_date) }}
+            </div>
+          </div>
+          
+          <div class="progress-section">
+            <div class="progress-container">
+              <div class="progress-bar-gradient" :style="{ width: calculateProgress(raffle) + '%' }">
+                <span class="progress-text">{{ calculateProgress(raffle) }}%</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-tickets" @click="goToRaffle(raffle)">
+            BOLETOS DISPONIBLES
+          </button>
+        </div>
       </div>
     </div>
-
-    <!-- Hero Section -->
-    <div class="relative p-6 flex flex-col items-center text-center z-10" v-if="user">
-      <div class="relative">
-        <div class="w-28 h-28 rounded-2xl overflow-hidden shadow-2xl border-4 border-cyan-400/80 relative bg-gradient-to-br from-cyan-500 to-blue-600">
-          <div class="w-full h-full flex items-center justify-center text-white">
-            <i class="fas fa-store text-4xl"></i>
-          </div>
-        </div>
-        <!-- Badge tienda oficial -->
-        <div class="absolute -bottom-2 -right-2 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full p-2 shadow-lg border-2 border-white">
-          <i class="fas fa-certificate text-white text-xs"></i>
-        </div>
+      <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-text">
+        <h3>Nuestro objetivo es <span class="highlight">premiarte!</span></h3>
       </div>
       
-      <h1 class="mt-4 text-3xl font-bold text-white drop-shadow-lg">
-        {{ user.name }}
-      </h1>
-      <p class="text-cyan-200 mt-1 text-sm">Tienda Oficial de Tecnología</p>
-
-      <!-- Rating con estilo tecnológico -->
-      <div class="flex items-center gap-3 mt-3 bg-blue-900/40 px-4 py-2 rounded-full border border-cyan-500/30">
-        <div class="flex">
-          <i
-            v-for="n in 5"
-            :key="n"
-            class="fas text-lg"
-            :class="n <= user.rating ? 'fa-star text-cyan-400' : 'fa-star text-cyan-700'"
-          ></i>
+      <div class="footer-sections">
+          <div class="footer-section">
+          <h4>BOLIDOS RIFAS</h4>
+          <ul>
+            <li><a href="#">SORTEOS - PREMIOS🍀</a></li>
+            <li><a href="#">Nuestro objetivo es premiarte!</a></li>
+          </ul>
         </div>
-        <span class="text-cyan-200 text-sm font-semibold">{{ user.rating }}/5</span>
+        <div class="footer-section">
+          <h4>SECCIONES</h4>
+          <ul>
+            <li><a href="#">Inicio</a></li>
+            <li><a href="#">Premios</a></li>
+            <li><a href="#">Verificar mis Boletos</a></li>
+            <li><a href="#">Preguntas Frecuentes</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-section">
+          <h4>CONTACTO</h4>
+          <ul>
+            <li><a href="mailto:info@bolidosrifas.com">www.bolidorifas.com/</a></li>
+            <li><a href="https://www.bolidosrifas.com">+573205477340</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>SIGUENOS</h4>
+          <ul>
+            <li><a href="https://www.instagram.com/bolidosrifas/" target="_blank">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+              </a>
+            </li>
+          </ul>
+        </div>      
       </div>
     </div>
-
-    <!-- Tabs Tecnológicos -->
-    <div class="relative flex justify-center gap-2 px-4 py-4 bg-blue-900/30 backdrop-blur-sm border-y border-cyan-500/20">
-      <button
-        v-for="tab in tabs"
-        :key="tab"
-        @click="currentTab = tab"
-        :class="[ 
-          'px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg border',
-          currentTab === tab
-            ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-cyan-500/50 scale-105 border-cyan-400/50'
-            : 'bg-blue-900/40 text-cyan-200 hover:bg-cyan-800/60 hover:text-white border-cyan-700/30'
-        ]"
-      >
-        {{ tab }}
-      </button>
+    
+    <div class="footer-bottom">
+      <p>&copy; 2023 Bólidos Rifas. Todos los derechos reservados.</p>
     </div>
-
-    <!-- Content -->
-    <div class="relative p-6 space-y-6" v-if="user">
-      <!-- Información -->
-      <div v-if="currentTab === 'Información'" class="space-y-6">
-        <!-- Tarjeta de Especialización -->
-        <div class="bg-gradient-to-br from-blue-800/60 to-purple-800/60 rounded-2xl p-6 shadow-2xl border border-cyan-500/30 backdrop-blur-sm">
-          <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <i class="fas fa-microchip text-cyan-400"></i>
-            Especialistas en Tecnología
-          </h3>
-          <div class="flex flex-wrap gap-3">
-            <span
-              v-for="cat in categories"
-              :key="cat"
-              class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full text-sm font-semibold text-white shadow-lg border border-cyan-400/30"
-            >
-              {{ cat }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Estadísticas Tecnológicas -->
-        <div class="grid grid-cols-2 gap-4">
-          <div class="bg-blue-800/40 rounded-xl p-4 text-center border border-cyan-500/20 backdrop-blur-sm">
-            <div class="text-2xl font-bold text-cyan-300">{{ userRifas.length }}</div>
-            <div class="text-cyan-200 text-sm mt-1">Productos Activos</div>
-          </div>
-          <div class="bg-purple-800/40 rounded-xl p-4 text-center border border-purple-500/20 backdrop-blur-sm">
-            <div class="text-2xl font-bold text-purple-300">{{ totalTickets }}</div>
-            <div class="text-purple-200 text-sm mt-1">Tickets Vendidos</div>
-          </div>
-        </div>
-
-        <!-- Información de la Tienda -->
-        <div class="bg-gradient-to-br from-blue-800/50 to-purple-800/50 rounded-2xl p-6 shadow-xl border border-cyan-500/20">
-          <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <i class="fas fa-info-circle text-cyan-400"></i>
-            Información de la Tienda
-          </h3>
-          <div class="space-y-3 text-cyan-100">
-            <div class="flex justify-between items-center py-2 border-b border-cyan-700/30">
-              <span class="font-semibold">🏪 Tipo</span>
-              <span class="text-cyan-300">Tienda Oficial</span>
-            </div>
-            <div class="flex justify-between items-center py-2 border-b border-cyan-700/30">
-              <span class="font-semibold">📅 Registrada</span>
-              <span class="text-cyan-300">hace {{ user.registeredDays }} días</span>
-            </div>
-            <div class="flex justify-between items-center py-2 border-b border-cyan-700/30">
-              <span class="font-semibold">🔥 Productos Activos</span>
-              <span class="text-cyan-300">{{ userRifas.filter(r => isActive(r.drawDate)).length }}</span>
-            </div>
-            <div class="flex justify-between items-center py-2">
-              <span class="font-semibold">✅ Garantía</span>
-              <span class="text-green-400 font-bold">100% Oficial</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Rifas -->
-      <div v-if="currentTab === 'Rifas'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div v-for="(rifa, i) in sortedRifas" :key="i">
-          <ProductCard
-            v-if="isActive(rifa.drawDate)"
-            :product="rifa"
-            :image="rifa.images?.[0]"
-            :title="rifa.title"
-            :description="rifa.description"
-            :progress="productProgress(rifa)"
-            :drawDate="rifa.drawDate"
-            @view-details="() => openDetails(rifa)"
-            @participar="() => openParticipateModal(rifa)"
-          />
-          <div
-            v-else
-            class="p-6 rounded-2xl bg-gradient-to-br from-blue-800/40 to-purple-800/40 border border-cyan-700/30 shadow-xl opacity-70"
-          >
-            <h3 class="font-bold text-white text-lg">{{ rifa.title }}</h3>
-            <p class="text-cyan-200 mt-2">{{ rifa.description }}</p>
-            <div class="mt-3 px-3 py-1 bg-blue-900/60 rounded-full text-cyan-300 text-sm inline-block">
-              Finalizado: {{ new Date(rifa.drawDate).toLocaleDateString() }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Comentarios -->
-      <div v-if="currentTab === 'Comentarios'" class="space-y-4">
-        <div
-          v-for="(c, i) in user.comments"
-          :key="i"
-          class="bg-gradient-to-br from-blue-800/50 to-purple-800/50 rounded-2xl p-6 shadow-xl border border-cyan-500/20 backdrop-blur-sm"
-        >
-          <div class="flex gap-4 items-start">
-            <!-- Avatar -->
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
-              <img
-                v-if="c.avatar"
-                :src="c.avatar"
-                alt="avatar"
-                class="w-full h-full object-cover rounded-2xl"
-              />
-              <span v-else>{{ c.user.charAt(0).toUpperCase() }}</span>
-            </div>
-
-            <!-- Contenido -->
-            <div class="flex-1">
-              <div class="flex justify-between items-start mb-2">
-                <div>
-                  <h4 class="font-bold text-white text-lg">{{ c.user }}</h4>
-                  <div class="flex items-center gap-2 mt-1">
-                    <div class="flex">
-                      <i
-                        v-for="n in 5"
-                        :key="n"
-                        class="fas text-cyan-400"
-                        :class="n <= c.rating ? 'fa-star' : 'fa-star text-cyan-700'"
-                      ></i>
-                    </div>
-                  </div>
-                </div>
-                <span class="text-cyan-300 text-sm bg-blue-900/40 px-2 py-1 rounded-full">{{ c.date }}</span>
-              </div>
-              <p class="text-cyan-100 leading-relaxed">{{ c.text }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modales -->
-    <ParticiparModal
-      :open="showForm"
-      :product="selectedProduct"
-      @close="showForm = false"
-      @confirmed="handleConfirmed"
-    />
-
-    <ConfirmacionModal
-      :open="showConfirm"
-      @close="showConfirm = false"
-    />
-
-    <DetailsModal
-      :open="showDetails"
-      :product="selectedProduct"
-      @close="showDetails = false"
-      @buy="openParticipateModal"
-    />
+  </footer>
   </div>
+
 </template>
 
 <script setup lang="ts">
-// Mismo script que UserProfileJuan.vue, solo cambia el diseño
-import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
-import { useUserStore } from "@/stores/useUserStore";
-import { useTicketStore } from "@/stores/useTicketStore";
-
-import ProductCard from "@/components/ProductCard.vue";
-import ParticiparModal from "@/components/ParticipateModal.vue";
-import ConfirmacionModal from "@/components/ConfirmationModal.vue";
-import DetailsModal from "@/components/ProductDetailsModal.vue";
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+// Asegúrate de que los tipos y servicios son accesibles
+// Reemplaza con la ruta correcta a tus servicios si es necesario
+import { RaffleService, UserService, type UserProfile } from "@/services/RaffleService"; 
 
 const route = useRoute();
-const userStore = useUserStore();
-const ticketStore = useTicketStore();
+const router = useRouter();
 
-const user = computed(() => userStore.getUserById(route.params.id as string));
-const userRifas = computed(() =>
-  user.value ? userStore.getUserProducts(user.value.name) : []
-);
+// Estados
+const userProfile = ref<UserProfile | null>(null);
+const raffles = ref<any[]>([]);
+const loadingProfile = ref(true);
+const loadingRaffles = ref(true);
 
-const { productProgress } = ticketStore;
+// Computed property para el enlace del perfil del rifero actual
+const riferoProfileLink = computed(() => {
+  const userId = route.params.id as string;
+  if (userId) {
+    return { 
+      name: 'user-profile', 
+      params: { id: userId } 
+    };
+  }
+  return '/';
+});
 
-// Tabs
-const tabs = ["Información", "Rifas", "Comentarios"];
-const currentTab = ref("Información");
+// Computed para obtener el nombre del vendedor (Rifero)
+const sellerName = computed(() => {
+  if (userProfile.value) {
+    const firstName = userProfile.value.name || '';
+    const lastName = userProfile.value.profile?.data?.last_name || ''; 
+    
+    if (!firstName && !lastName) return 'Perfil de Usuario';
+    
+    return `${firstName} ${lastName}`.trim().toUpperCase();
+  }
+  return 'BOLIDOS RIFAS'; // Fallback inicial mientras carga
+});
 
-// Ordenar rifas (activas primero, más nuevas antes)
-const sortedRifas = computed(() => {
-  return [...userRifas.value].sort((a, b) => {
-    const activeA = isActive(a.drawDate);
-    const activeB = isActive(b.drawDate);
+// CORRECCIÓN APLICADA AQUÍ: Se añade la validación Array.isArray()
+const filteredRaffles = computed(() => {
+  // Verificación defensiva para evitar el error 'length' si raffles.value es null/undefined.
+  if (!Array.isArray(raffles.value)) {
+    return [];
+  }
+  
+  return raffles.value.filter(raffle => 
+    raffle.status && raffle.status.toLowerCase() === 'aprobada'
+  );
+});
 
-    if (activeA !== activeB) return activeA ? -1 : 1;
-    return new Date(b.drawDate).getTime() - new Date(a.drawDate).getTime();
+// Helper para formatear fecha
+const formatDate = (dateString: string) => {
+  if (!dateString) return 'Fecha por definir';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', { 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
   });
-});
-
-function isActive(drawDate: string) {
-  return new Date(drawDate).getTime() > Date.now();
-}
-
-// Modales
-const showForm = ref(false);
-const showConfirm = ref(false);
-const showDetails = ref(false);
-const selectedProduct = ref<any | null>(null);
-
-const handleConfirmed = () => {
-  showForm.value = false;
-  showConfirm.value = true;
 };
 
-const openDetails = (product: any) => {
-  selectedProduct.value = product;
-  showDetails.value = true;
+// Helper para calcular progreso
+const calculateProgress = (raffle: any) => {
+  const totalTickets = (raffle.end_range - raffle.initial_range + 1) || 100;
+  const soldTickets = raffle.tickets_sold || 0;
+  const percentage = (soldTickets / totalTickets) * 100;
+  
+  return percentage.toFixed(1).replace('.', ',');
 };
 
-const totalTickets = computed(() => {
-  return userRifas.value.reduce((acc, r) => acc + (r.ticketsVendidos || 0), 0);
-});
+// Helper para obtener imagen
+const getImageUrl = (raffle: any) => {
+  if (raffle.images && raffle.images.length > 0) {
+    return raffle.images[0].url;
+  }
+  return 'https://via.placeholder.com/800x600?text=Sorteo'; 
+};
 
-const categories = computed(() => {
-  const all = userRifas.value.flatMap(r => r.categories || []);
-  return [...new Set(all)];
-});
+// Navegación (opcional)
+const goToRaffle = (raffle: any) => {
+  console.log("Navegar a rifa:", raffle.name);
+  // Redirecciona a la ruta 'user-profile-juan' (UserProfile2.vue) 
+  // usando el UUID de la rifa como parámetro.
+  router.push({ name: 'user-profile-juan', params: { id: raffle.uuid } }); 
+};
+// Cargar Datos
+const fetchUserData = async () => {
+  const userId = route.params.id as string;
+  if (!userId) {
+    loadingProfile.value = false;
+    loadingRaffles.value = false;
+    return;
+  }
 
-function openParticipateModal(product: any) {
-  selectedProduct.value = product;
-  showDetails.value = false;
-  showForm.value = true;
-}
+  loadingProfile.value = true;
+  loadingRaffles.value = true;
+
+  try {
+    // 1. Cargar Perfil del Usuario para el nombre del logo
+    const profileResponse = await UserService.getPublicProfile(userId);
+    userProfile.value = profileResponse;
+    
+    // 2. Cargar todas las rifas y filtrar en el frontend
+    const rafflesResponse = await RaffleService.getAll(1, 100);
+    
+    if (rafflesResponse && Array.isArray(rafflesResponse.data)) {
+      raffles.value = rafflesResponse.data.filter((r: any) => {
+        return r.seller && r.seller.uuid === userId;
+      });
+    }
+
+  } catch (error) {
+    console.error("Error cargando datos del perfil:", error);
+    raffles.value = []; // Asegurarse de que sea un array en caso de fallo
+  } finally {
+    loadingProfile.value = false;
+    loadingRaffles.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchUserData();
+});
 </script>
+
+<style scoped>
+.user-profile-container {
+  font-family: 'Montserrat', Arial, sans-serif;
+  background-color: #fff;
+  color: #000;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Navbar Styles (igual al original) */
+.navbar {
+  background-color: #111;
+  padding-bottom: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.top-accent-line {
+  width: 100%;
+  height: 4px;
+  background-color: #ff3366;
+  box-shadow: 0 0 10px #ff3366;
+}
+
+.nav-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px 5px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo-text {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900;
+  font-style: italic;
+  color: #fff;
+  font-size: 20px;
+  letter-spacing: -1px;
+  background: linear-gradient(to bottom, #fff, #999);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-decoration: none;
+  cursor: pointer;
+  text-transform: uppercase; /* Asegura mayúsculas para el nombre */
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 25px;
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links li {
+  display: flex;
+  align-items: center;
+}
+
+.nav-link {
+  color: #fff;
+  text-decoration: none;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.3s;
+}
+
+.nav-link:hover {
+  color: #ff3366;
+}
+
+.btn-boletos {
+  background-color: #ff4757;
+  color: #000;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 9999px;
+  font-weight: 900;
+  font-size: 14px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+  box-shadow: 0 0 15px rgba(255, 71, 87, 0.4);
+}
+
+.btn-boletos:hover {
+  background-color: #ff3366;
+  transform: scale(1.05);
+}
+
+/* Main Content Styles */
+.main-content {
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+.catalog-header {
+  text-align: center;
+  margin-bottom: 40px;
+  padding: 20px 0;
+}
+
+.catalog-title {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #ff3366;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.raffles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 30px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.raffle-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  padding: 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.raffle-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ff3366, #ff6b9c);
+}
+
+.raffle-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(255, 51, 102, 0.2);
+}
+
+.raffle-image-container {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  position: relative;
+}
+
+.raffle-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.raffle-card:hover .raffle-image {
+  transform: scale(1.05);
+}
+
+.raffle-header {
+  margin-bottom: 25px;
+  padding: 20px 30px 0;
+}
+
+.raffle-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #333;
+  margin-bottom: 10px;
+  line-height: 1.3;
+  text-transform: uppercase;
+  /* Limitar líneas para mantener altura uniforme */
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 3.9rem; 
+}
+
+.raffle-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.date-icon {
+  width: 18px;
+  height: 18px;
+  color: #ff3366;
+}
+
+.progress-section {
+  margin-bottom: 25px;
+  padding: 0 30px;
+}
+
+.progress-container {
+  background-color: #e9ecef;
+  border-radius: 10px;
+  height: 24px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-gradient {
+  height: 100%;
+  background: linear-gradient(90deg, #ff8fa3 0%, #ff4757 100%);
+  border-radius: 10px;
+  transition: width 0.8s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 10px;
+  position: relative;
+  min-width: 60px; /* Asegura que siempre haya espacio para el texto */
+}
+
+.progress-text {
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+.btn-tickets {
+  width: calc(100% - 60px);
+  margin: 0 30px 30px;
+  background: linear-gradient(135deg, #ff3366, #ff6b9c);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 1rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 51, 102, 0.3);
+}
+
+.btn-tickets:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 51, 102, 0.4);
+  background: linear-gradient(135deg, #e62e5c, #ff5a8c);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .catalog-title {
+    font-size: 2rem;
+  }
+  
+  .raffles-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 0 15px;
+  }
+  
+  .raffle-card {
+    padding: 0;
+  }
+  
+  .raffle-header {
+    padding: 15px 20px 0;
+  }
+  
+  .progress-section {
+    padding: 0 20px;
+  }
+  
+  .raffle-name {
+    font-size: 1.3rem;
+  }
+  
+  .btn-tickets {
+    width: calc(100% - 40px);
+    margin: 0 20px 20px;
+  }
+
+  .nav-links {
+    display: none;
+  }
+  
+  .progress-container {
+    height: 20px;
+  }
+  
+  .progress-text {
+    font-size: 0.7rem;
+  }
+}
+
+/* Estilos para el footer */
+.site-footer {
+  background-color: #ff3366;
+  color: #fff;
+  padding: 40px 20px 20px;
+  margin-top: 50px;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.footer-text h3 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 30px;
+  text-transform: uppercase;
+}
+
+.highlight {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+}
+
+.footer-sections {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.footer-section {
+  text-align: left;
+}
+
+.footer-section h4 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.footer-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-section li {
+  margin-bottom: 8px;
+}
+
+.footer-section a {
+  color: #fff;
+  text-decoration: none;
+  transition: color 0.3s;
+  font-size: 14px;
+}
+
+.footer-section a:hover {
+  color: #000000;
+}
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 30px auto 0;
+  padding-top: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: #ffffff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .footer-sections {
+    flex-direction: column;
+    gap: 30px;
+    align-items: center;
+  }
+  
+  .footer-section {
+    text-align: center;
+  }
+  
+  .footer-text h3 {
+    font-size: 22px;
+  }
+}
+@media (min-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+</style>

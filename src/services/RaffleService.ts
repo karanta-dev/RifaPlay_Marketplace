@@ -14,6 +14,7 @@ export interface Raffle {
   status: string;
   images?: { url: string }[];
   categories?: { name: string }[];
+  prizes?: Prize[];
   created_by?: { name: string };
   seller?: {
     uuid: string;
@@ -39,6 +40,7 @@ export interface Prize {
   uuid: string;
   name: string;
   description: string;
+  images?: { url: string }[];
   specifications?: string;
   prize_order: number;
   prize_amount: number;
@@ -147,9 +149,13 @@ export const RaffleService = {
         end_range: r.end_range ?? 0,
         raffle_date: r.raffle_date,
         status: r.status,
-        images: r.images ?? [],
-        categories: r.categories ?? [],
-        prizes: r.prizes ?? [], 
+        images: (Array.isArray(r.images) && r.images.length) ? r.images : (
+          Array.isArray(r.prizes) && r.prizes.length && Array.isArray(r.prizes[0].images) && r.prizes[0].images.length
+            ? [r.prizes[0].images[0]]
+            : []
+        ),
+  categories: r.categories ?? [],
+  prizes: r.prizes ?? [], 
         created_by: r.created_by ?? {},
         seller: r.seller ? {
           uuid: r.seller.uuid,
@@ -161,6 +167,81 @@ export const RaffleService = {
       return { data: formattedRaffles, meta };
     } catch (error) {
       console.error("Error al obtener rifas:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener una rifa por su UUID
+   */
+  async getByUuid(uuid: string): Promise<Raffle | null> {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await apiClient.get(`/raffles/${uuid}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      const r = response.data?.data || response.data;
+      if (!r) return null;
+
+      const formatted: Raffle = {
+        uuid: r.uuid,
+        name: r.name,
+        description: r.description,
+        ticket_price: Number(r.ticket_price),
+        tickets_sold: r.tickets_sold ?? 0,
+        start_sell_at: r.start_sell_at ?? 0,
+        end_sell_at: r.end_sell_at ?? 0,
+        initial_range: r.initial_range ?? 0,
+        end_range: r.end_range ?? 0,
+        raffle_date: r.raffle_date,
+        status: r.status,
+  images: (Array.isArray(r.images) && r.images.length) ? r.images : (
+    Array.isArray(r.prizes) && r.prizes.length && Array.isArray(r.prizes[0].images) && r.prizes[0].images.length
+      ? [r.prizes[0].images[0]]
+      : []
+  ),
+  categories: r.categories ?? [],
+  prizes: r.prizes ?? [],
+    created_by: r.created_by ?? {},
+        seller: r.seller ? {
+          uuid: r.seller.uuid,
+          name: r.seller.name,
+          last_name: r.seller.last_name,
+          photo: r.seller.photo
+        } : undefined
+      };
+
+      // Fallback: si la respuesta individual no trae imágenes o premios (o están vacíos),
+      // intentar obtener los datos desde el endpoint paginado que sí devuelve images/prizes
+      // (por ejemplo: /raffles?page=1&perPage=100&paginated=true)
+      try {
+        const listResp = await RaffleService.getAll(1, 100);
+        if (listResp && Array.isArray(listResp.data)) {
+          const found = listResp.data.find((x) => x.uuid === uuid);
+          if (found) {
+            // Copiar imágenes si vienen vacías en la respuesta individual
+            if ((!formatted.images || formatted.images.length === 0) && found.images?.length) {
+              formatted.images = found.images;
+            }
+            // Copiar premios (prizes) si no vienen en la respuesta individual
+            if ((!formatted.prizes || formatted.prizes.length === 0) && found.prizes?.length) {
+              formatted.prizes = found.prizes;
+            }
+            // Si el ticket_price viene como 0 o null, usar el de la lista
+            if ((!formatted.ticket_price || Number(formatted.ticket_price) === 0) && found.ticket_price) {
+              formatted.ticket_price = Number(found.ticket_price as any);
+            }
+          }
+        }
+      } catch (err) {
+        // No bloquear si el fallback falla; solo dejar el objeto como está
+        console.warn('Warning: fallback to list endpoint failed for raffle images/prizes', err);
+      }
+
+      return formatted;
+    } catch (error) {
+      console.error(`Error al obtener rifa ${uuid}:`, error);
       throw error;
     }
   },
@@ -370,7 +451,36 @@ export const PrizeService = {
       const response = await apiClient.get(`/raffles/${raffleUuid}/prizes`);
       const responseData = response.data as PrizeResponse;
       if (responseData.status === "success") {
-        return responseData.data || [];
+        const prizes: Prize[] = responseData.data || [];
+
+        // Si los premios vienen sin imágenes, intentar tomar las prizes desde
+        // el endpoint de listado de rifas (que puede incluir images dentro de prizes)
+        const hasAnyImage = prizes.some(p => Array.isArray(p.images) && p.images.length > 0);
+        if (!hasAnyImage) {
+          try {
+            const listResp = await RaffleService.getAll(1, 100);
+            if (listResp && Array.isArray(listResp.data)) {
+              const found = listResp.data.find(r => r.uuid === raffleUuid);
+              if (found && Array.isArray(found.prizes) && found.prizes.length > 0) {
+                // Mapear y normalizar prize_amount a number y asegurar images existe
+                return found.prizes.map((p: any) => ({
+                  ...p,
+                  prize_amount: p.prize_amount != null ? Number(p.prize_amount) : p.prize_amount,
+                  images: p.images ?? [],
+                }));
+              }
+            }
+          } catch (err) {
+            console.warn('Warning: fallback to list endpoint failed for prizes', err);
+          }
+        }
+
+        // Normalizar prize_amount para los premios ya obtenidos
+        return prizes.map(p => ({
+          ...p,
+          prize_amount: p.prize_amount != null ? Number((p as any).prize_amount) : p.prize_amount,
+          images: p.images ?? [],
+        }));
       } else {
         console.error("Error en la respuesta del servidor:", responseData);
         return [];

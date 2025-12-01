@@ -6,12 +6,12 @@ window.Pusher = Pusher;
 
 // Configuración de conexión con el servidor WebSockets
 window.Echo = new Echo({
-    broadcaster: 'reverb', // Usa Reverb como broadcaster
-    key: '27frrudim8hyah2rd0i4', // API Key de tu aplicación (cambiar en producción)
-    wsHost: 'rifaplay-ws.karanta.dev', // Host de tu servidor WebSockets
-    wsPort: 443, // Puerto WebSocket seguro
-    wssPort: 443,
-    forceTLS: true, // Forzar conexión segura
-    disableStats: true, // Mejor rendimiento
-    enabledTransports: ['ws', 'wss'] // Protocolos habilitados
+    broadcaster: import.meta.env.VITE_ECHO_BROADCASTER,
+    key: import.meta.env.VITE_ECHO_KEY,
+    wsHost: import.meta.env.VITE_ECHO_WS_HOST,
+    wsPort: Number(import.meta.env.VITE_ECHO_WS_PORT),
+    wssPort: Number(import.meta.env.VITE_ECHO_WSS_PORT),
+    forceTLS: import.meta.env.VITE_ECHO_FORCE_TLS === 'true',
+    disableStats: import.meta.env.VITE_ECHO_DISABLE_STATS === 'true',
+    enabledTransports: import.meta.env.VITE_ECHO_ENABLED_TRANSPORTS.split(','),
 });
