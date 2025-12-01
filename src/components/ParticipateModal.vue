@@ -168,18 +168,17 @@
                 <div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30 relative">
                   <div class="flex justify-between items-start mb-2">
                     <p class="flex items-center gap-2 text-cyan-400 font-semibold">
-                      <span>📱</span> Datos para Pago Móvil del Rifero
+                      <!-- <span>📱</span> Datos para Pago Móvil del Rifero -->
                     </p>
-                    <button type="button" @click="copyPagoMovilData($event)" class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all duration-200 text-xs border border-cyan-400/30" title="Copiar datos al portapapeles">
+                    <!-- <button type="button" @click="copyPagoMovilData($event)" class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all duration-200 text-xs border border-cyan-400/30" title="Copiar datos al portapapeles">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg> 
                       Copiar
-                    </button>
+                    </button> -->
                   </div>
                   
                   <!-- Mostrar información específica del rifero -->
-                  <div v-if="paymentMethods.length > 0">
+                  <!-- <div v-if="paymentMethods.length > 0">
                     <div v-for="method in paymentMethods.filter(m => m.slug === 'pago-movil')" :key="method.uuid" class="space-y-2 mb-4 p-3 bg-cyan-500/10 rounded-lg">
                       <div class="flex items-center justify-between">
                         <p class="font-semibold text-cyan-300">{{ method.name }}</p>
@@ -211,7 +210,7 @@
                   </div>
                   <div v-else class="text-yellow-400 text-sm">
                     ⚠️ No se encontraron métodos de pago móvil configurados por el rifero
-                  </div>
+                  </div> -->
                 </div>
                 
                 <!-- Modo Automático -->
