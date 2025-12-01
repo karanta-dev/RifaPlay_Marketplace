@@ -3,13 +3,18 @@
     <nav class="navbar">
       <div class="top-accent-line"></div>
       
-      <div class="nav-content">
+       <div class="nav-content">
         <div class="logo-container">
-          <router-link to="/" class="logo-text">
+          <!-- Cambiar el router-link para que vaya al perfil actual -->
+          <router-link 
+            :to="riferoProfileLink" 
+            class="logo-text"
+          >
             <span v-if="loadingProfile">Cargando...</span>
             <span v-else>{{ sellerName }}</span>
           </router-link>
         </div>
+
 
         <ul class="nav-links hidden-mobile">
           <li>
@@ -162,6 +167,18 @@ const userProfile = ref<UserProfile | null>(null);
 const raffles = ref<any[]>([]);
 const loadingProfile = ref(true);
 const loadingRaffles = ref(true);
+
+// Computed property para el enlace del perfil del rifero actual
+const riferoProfileLink = computed(() => {
+  const userId = route.params.id as string;
+  if (userId) {
+    return { 
+      name: 'user-profile', 
+      params: { id: userId } 
+    };
+  }
+  return '/';
+});
 
 // Computed para obtener el nombre del vendedor (Rifero)
 const sellerName = computed(() => {

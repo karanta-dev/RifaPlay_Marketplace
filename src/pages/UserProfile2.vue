@@ -5,8 +5,10 @@
       
       <div class="nav-content">
         <div class="logo-container">
-          <router-link to="/" class="logo-text">
-            {{ sellerName || 'Rifero' }}
+          <router-link :to="riferoProfileLink" class="logo-text">
+            <!-- Agregar estado de loading para el nombre del rifero -->
+            <span v-if="loading">Cargando...</span>
+            <span v-else>{{ sellerName || 'Rifero' }}</span>
           </router-link>
         </div>
 
@@ -199,7 +201,7 @@
           SELECCIONADOS: 
           <span class="text-green-600 ml-1">{{ selectedTicketsCount }}</span> 
           de 
-          <span class="text-red-600">{{ maxTickets }}</span>
+          <span class="text-red-600">{{ maxAvailable }}</span>
         </span>
         <div class="text-xs text-gray-600">
           Total: <span class="font-bold text-green-600">${{ totalPrice }} USD</span>
@@ -340,32 +342,12 @@
           </div>
 
           <div class="mb-6">
-            <label class="input-label" for="file-upload">Foto/Captura de Pantalla</label>
-            <div class="upload-area">
-              <input id="file-upload" type="file" class="sr-only">
-              <div class="space-y-1 text-center">
-                <svg class="upload-icon" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v-2a4 4 0 00-4-4H18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 20l.3 5.3L15 29l-3 4-2 3M24 30h4v6H24z" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M42 32a6 6 0 11-12 0 6 6 0 0112 0z" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <div class="flex text-sm text-gray-600">
-                  <span class="upload-text-button">
-                    <span>Subir archivo</span>
-                  </span>
-                  <p class="pl-1">o arrastrar y soltar</p>
-                </div>
-                <p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
-              </div>
-            </div>
+
             <!-- Referencia de pago (4 últimos dígitos / número) -->
             <div class="mb-4">
               <label class="input-label" for="referencia-pago">Referencia de Pago</label>
               <input id="referencia-pago" v-model="referenciaPago" type="text" placeholder="🔖 Número de referencia" class="input-field" />
             </div>
-          </div>
-          
-          <div class="confirm-checkbox-wrapper">
-            <input type="checkbox" id="terminos" class="rounded text-pink-600 focus:ring-pink-500">
-            <label for="terminos" class="ml-2 text-xs text-gray-500">
-              Al confirmar autorizo el uso de los **Datos Personales**
-            </label>
           </div>
           
           <div class="text-center">
@@ -551,6 +533,7 @@ const progressWidth = ref<number>(0)
 const targetProgress = ref<number>(32.5)
 const animationDuration = ref<number>(2000)
 const maxTickets = computed(() => raffle.value?.end_range || 100)
+const loadingProfile = ref(true);
 
 // Ticket pagination and ranges
 const ticketsPerPage = ref<number>(200)
@@ -632,7 +615,16 @@ const displayPrice = computed(() => {
     return { text: `${totalUsd.toFixed(2)} USD`, showUsdRate: false, showUsdPrice: false }
   }
 })
-
+const riferoProfileLink = computed(() => {
+  if (raffle.value?.seller?.uuid) {
+    return { 
+      name: 'user-profile', 
+      params: { id: raffle.value.seller.uuid } 
+    }
+  }
+  // Fallback si no hay seller info
+  return '/'
+})
 // Valores para los campos dinámicos de structured_data
 // structuredFields devuelve un array de { key, label, value } para mostrar como texto (no editables)
 const structuredFieldValues = ref<Record<string, any>>({})
@@ -666,10 +658,14 @@ const structuredFields = computed(() => {
 
 // Computed properties
 const sellerName = computed(() => {
+  // Mostrar "Cargando..." mientras loading es true
+  if (loading.value) return 'Cargando...'
+  
   return raffle.value?.seller?.name 
     ? `${raffle.value.seller.name} ${raffle.value.seller.last_name || ''}`.trim().toUpperCase()
-    : 'BOLIDOS RIFAS'
+    : 'Rifero'
 })
+
 
 const sellerEmail = computed(() => {
   // En un caso real, esto vendría de la API
@@ -689,16 +685,14 @@ const ticketPrice = computed(() => {
 
 // Número actual de tickets a comprar (respeta modo manual/auto)
 const currentQty = computed(() => {
-  // si estamos en modo manual, usar la selección manual
-  if (typeof selectionMode !== 'undefined' && selectionMode.value === 'manual') {
-    return selectedManualTickets.value.length
+  if (selectionMode.value === 'manual') {
+    return selectedManualTickets.value.length;
+  } else if (selectionMode.value === 'auto' && randomTicketsResult.value) {
+    return randomTicketsResult.value.successful.length;
+  } else {
+    return Number(formAuto.value.tickets || 0);
   }
-  // modo automático: si hay resultado aleatorio usar su cantidad, sino usar el valor del formulario
-  if (randomTicketsResult && randomTicketsResult.value) {
-    return Array.isArray(randomTicketsResult.value.successful) ? randomTicketsResult.value.successful.length : 0
-  }
-  return Number((typeof formAuto !== 'undefined' ? formAuto.value.tickets : 0) || 0)
-})
+});
 
 const selectedTicketsCount = computed(() => currentQty.value)
 const totalPrice = computed(() => currentQty.value * ticketPrice.value)
@@ -896,10 +890,31 @@ async function confirmFromProfile() {
 
   const metodoPago = selectedPaymentMethod.value ? ((selectedPaymentMethod.value as any).slug || (selectedPaymentMethod.value as any).uuid || (selectedPaymentMethod.value as any).name) : undefined
 
+  // ✅ CORRECCIÓN: Determinar qué tickets enviar según el modo de selección
+  let ticketsToSend: number[] = []
+  
+  if (selectionMode.value === 'manual') {
+    // Modo manual: usar los tickets seleccionados manualmente
+    ticketsToSend = selectedManualTickets.value
+  } else if (selectionMode.value === 'auto' && randomTicketsResult.value) {
+    // Modo automático: usar los tickets aleatorios obtenidos
+    ticketsToSend = randomTicketsResult.value.successful.map((r: any) => r.number)
+  }
+
+  // Validar que hay tickets para comprar
+  if (ticketsToSend.length === 0) {
+    if (selectionMode.value === 'auto') {
+      showToast('Primero debes obtener tickets aleatorios', 'error')
+    } else {
+      showToast('Debes seleccionar al menos un ticket', 'error')
+    }
+    return
+  }
+
   try {
     await modal.externalBuy({
       selectionMode: selectionMode.value,
-      selectedManualTickets: selectedManualTickets.value,
+      selectedManualTickets: ticketsToSend, // ✅ Pasar los tickets correctos
       formOverrides: {
         referencia: referenciaPago.value,
         metodoPago: metodoPago

@@ -367,6 +367,30 @@
       </div>
     </div>
   </transition>
+<Bill
+  :open="showBill"
+  :qr-url="billData.qrUrl"
+  :serial-number="billData.serialNumber"
+  :date="billData.date"
+  :seller-name="billData.sellerName"  
+  :raffle-name="billData.raffleName"
+  :selected-numbers="billData.selectedNumbers"
+  :draw-date="billData.drawDate"
+  :quantity="billData.quantity"
+  :price="billData.price"
+  :total="billData.total"
+  :amount-usd="billData.amountUsd"
+  :exchange-rate="billData.exchangeRate"
+  :amount-local-currency-label="billData.amountLocalCurrencyLabel"
+  :amount-local="billData.amountLocal"
+  :client-name="billData.clientName"
+  :client-id="billData.clientId"
+  :client-phone="billData.clientPhone"
+  @close="handleBillClose"
+  @download="handleBillDownload"
+  @print="handleBillPrint"
+  @sell-another="handleSellAnother"
+/>
 </template>
 
 <script setup lang="ts">
@@ -378,6 +402,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useGridStore } from '@/stores/useGridStore';
 import { RaffleService } from '@/services/RaffleService';
 import { PaymentFlowService, type Currency} from '@/services/PaymentFlow';
+import Bill from './Bill.vue';
 import { usePaymentStore } from '@/stores/usePaymentStore';
 import { useBookingTimer } from '@/composables/useBookingTimer';
 import { useToast } from '@/composables/useToast';
@@ -424,6 +449,7 @@ const form = ticketStore.formData
 const previewUrl = ref<string | null>(null)
 const error = ref<string | null>(null)
 const submitting = ref(false)
+const showBill = ref(false);
 // Timer para la reserva automática
 const randomTicketsTimer = ref<number | null>(null);
 const randomTicketsTimeLeft = ref(0);
@@ -492,7 +518,6 @@ const startRandomTicketsTimer = (seconds: number) => {
       clearRandomTicketsTimer();
       randomTicketsResult.value = null;
       selectedManualTickets.value = [];
-      showToast('⏰ El tiempo de reserva para los tickets aleatorios ha expirado', 'warning');
     }
   }, 1000);
 };
@@ -683,6 +708,7 @@ watch(isParticipateModalOpen, (open) => {
 const close = () => {
   if (selectionMode.value === 'manual' && selectedManualTickets.value.length > 0) {
     freeAllBookedTickets();
+    showBill.value = false;
   }
   
   // Liberar tickets aleatorios si existen
@@ -861,6 +887,7 @@ const executeAutomaticSale = async (verificationData: any) => {
       }
       ticketStore.formData.totalPrice = parseFloat(totalPrice.value);
       ticketStore.formData.totalPriceBs = parseFloat(totalPriceBs.value);
+      showInvoice(data);
       const userId = authStore.user?.id
       let initialTickets = 0
       if (userId) {
@@ -1248,6 +1275,217 @@ onMounted(() => {
 onUnmounted(() => {
   clearRandomTicketsTimer();
 });
+
+const billData = ref({
+  qrUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Example',
+  serialNumber: '',
+  date: '',
+  sellerName: '',
+  raffleName: '',
+  selectedNumbers: [] as string[], // Cambiado de number[] a string[]
+  drawDate: '',
+  quantity: 0,
+  price: 0,
+  total: '0.00',
+  amountUsd: '0.00',
+  exchangeRate: '',
+  amountLocalCurrencyLabel: '',
+  amountLocal: '0.00',
+  clientName: '',
+  clientId: '',
+  clientPhone: ''
+});
+
+// Función corregida para mostrar la factura
+const showInvoice = (saleData: any) => {
+  console.log('📋 Datos COMPLETOS de la venta para factura:', saleData); 
+  
+  // ✅ CORRECCIÓN: Navegar por la estructura anidada de la respuesta
+  let responseData = saleData;
+  
+  // Si existe saleData.data, usamos ese nivel
+  if (saleData.data) {
+    responseData = saleData.data;
+    
+    // Si dentro de data hay otro data, usamos ese (estructura anidada)
+    if (saleData.data.data) {
+      responseData = saleData.data.data;
+    }
+  }
+  
+  console.log('🔍 Datos extraídos para factura:', responseData);
+
+  // 1. Formatear fecha actual
+  const now = new Date();
+  const formattedDate = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}-${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+  
+  // 2. ✅ CORRECCIÓN: Obtener números de tickets de la estructura correcta
+  let ticketNumbers = [];
+  
+  // Intentar diferentes ubicaciones posibles de details
+  if (responseData.details && Array.isArray(responseData.details)) {
+    ticketNumbers = responseData.details.map((detail: any) => {
+      return String(detail.number).padStart(4, '0');
+    });
+  } else if (responseData.data && responseData.data.details) {
+    ticketNumbers = responseData.data.details.map((detail: any) => {
+      return String(detail.number).padStart(4, '0');
+    });
+  } else {
+    // Si no hay details en la respuesta, usar los tickets que enviamos
+    if (selectionMode.value === 'manual') {
+      ticketNumbers = selectedManualTickets.value.map(num => String(num).padStart(4, '0'));
+    } else if (randomTicketsResult.value) {
+      ticketNumbers = randomTicketsResult.value.successful.map(t => String(t.number).padStart(4, '0'));
+    } else {
+      ticketNumbers = Array.from({length: Number(form.tickets || 1)}, (_, i) => String(i + 1).padStart(4, '0'));
+    }
+  }
+
+  console.log('🎫 Números de tickets procesados:', ticketNumbers);
+  console.log('📊 Detalles completos de tickets:', responseData.details);
+  
+  // 3. Información del RIFERO (esta parte ya funciona bien)
+  let sellerName = 'Rifa Play';
+  if (selectedProduct.value) {
+    const p = selectedProduct.value;
+    if (p.rifero) {
+      sellerName = p.rifero;
+    } else if (p.seller && (p.seller.name || p.seller.first_name)) {
+      sellerName = `${p.seller.name || p.seller.first_name} ${p.seller.last_name || ''}`.trim();
+    } else if (p.user && (p.user.name || p.user.first_name)) {
+      sellerName = `${p.user.name || p.user.first_name} ${p.user.last_name || ''}`.trim();
+    } else if (p.created_by && (p.created_by.name || p.created_by.first_name)) {
+      sellerName = `${p.created_by.name || p.created_by.first_name} ${p.created_by.last_name || ''}`.trim();
+    }
+  }
+// En la función showInvoice, ANTES del cálculo de moneda, agrega:
+console.log('💱 Moneda seleccionada ID:', selectedCurrencyId.value);
+console.log('💱 Lista de monedas disponibles:', currencies.value);
+console.log('💱 Tasa BCV:', bcvRate.value);
+console.log('💱 Tasa COP:', copRate.value);
+console.log('💱 Precio total USD:', totalPrice.value);
+// 4. Cálculos de moneda - VERSIÓN CORREGIDA
+const selectedCurrency = currencies.value.find(c => c.uuid === selectedCurrencyId.value);
+console.log('💱 Moneda encontrada:', selectedCurrency);
+
+let exchangeRate = '';
+let amountLocal = '';
+let amountLocalCurrencyLabel = '';
+
+if (selectedCurrency) {
+  console.log('💱 Procesando moneda:', selectedCurrency.short_name, selectedCurrency.name);
+  
+  if (selectedCurrency.short_name === 'VES' || selectedCurrency.name.toLowerCase().includes('bolívar')) {
+    const totalUsd = parseFloat(totalPrice.value);
+    const totalBs = totalUsd * bcvRate.value;
+    exchangeRate = `${bcvRate.value.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs/USD`;
+    amountLocal = totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    amountLocalCurrencyLabel = 'Bs';
+    console.log('💱 Cálculo VES:', { totalUsd, totalBs, exchangeRate, amountLocal });
+  } else if (selectedCurrency.short_name === 'COP') {
+    const totalUsd = parseFloat(totalPrice.value);
+    const totalCop = totalUsd * copRate.value;
+    exchangeRate = `${copRate.value.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})} COP/USD`;
+    amountLocal = totalCop.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    amountLocalCurrencyLabel = 'COP';
+    console.log('💱 Cálculo COP:', { totalUsd, totalCop, exchangeRate, amountLocal });
+  } else {
+    // Para otras monedas (USD, etc.)
+    console.log('💱 Moneda no manejada específicamente:', selectedCurrency.short_name);
+    amountLocal = totalPrice.value;
+    amountLocalCurrencyLabel = selectedCurrency.short_name;
+  }
+} else {
+  console.warn('⚠️ No se encontró la moneda seleccionada, usando USD por defecto');
+  amountLocal = totalPrice.value;
+  amountLocalCurrencyLabel = 'USD';
+}
+
+console.log('💱 Resultados finales:', { exchangeRate, amountLocal, amountLocalCurrencyLabel });
+
+  // 5. Información del CLIENTE
+  const clientName = authStore.user?.name || form.nombre || responseData.invoice_data?.name || 'Cliente';
+  const clientId = authStore.user?.natural_profile?.document_number || form.pagoMovilCedula || responseData.invoice_data?.document_number || '';
+  const clientPhone = authStore.user?.phone || form.telefono || responseData.invoice_data?.phone || '';
+
+  // 6. Obtener número de serie de la respuesta
+  const serialNumber = responseData.serial_number || 'PENDIENTE';
+
+  // 7. Asignar datos a billData
+  billData.value = {
+    qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(serialNumber)}`,
+    serialNumber: serialNumber,
+    date: formattedDate,
+    sellerName: sellerName,
+    raffleName: selectedProduct.value?.title || selectedProduct.value?.name || 'Sorteo',
+    selectedNumbers: ticketNumbers,
+    drawDate: selectedProduct.value?.raffle_date ? new Date(selectedProduct.value.raffle_date).toLocaleDateString('es-ES') : 'Por definir',
+    quantity: ticketNumbers.length,
+    price: parseFloat(selectedProduct.value?.ticketPrice || selectedProduct.value?.ticket_price || '0'),
+    total: totalPrice.value,
+    amountUsd: totalPrice.value,
+    exchangeRate: exchangeRate,
+    amountLocalCurrencyLabel: amountLocalCurrencyLabel,
+    amountLocal: amountLocal,
+    clientName: clientName,
+    clientId: clientId,
+    clientPhone: clientPhone
+  };
+
+  console.log('🧾 Datos finales para Bill.vue:', billData.value);
+  showBill.value = true;
+};
+
+// Manejar cierre del modal de factura
+const handleBillClose = () => {
+  showBill.value = false;
+  close(); // Cerrar también el modal de participación
+};
+
+// Manejar descarga de factura
+const handleBillDownload = () => {
+  // Implementar lógica de descarga aquí
+  console.log('Descargando factura...', billData.value);
+  showToast('Descargando comprobante...', 'success');
+};
+
+// Manejar impresión de factura
+const handleBillPrint = () => {
+  // Implementar lógica de impresión aquí
+  window.print();
+  showToast('Imprimiendo comprobante...', 'success');
+};
+
+// Manejar "vender otro ticket"
+const handleSellAnother = () => {
+  showBill.value = false;
+  // Resetear el formulario para una nueva compra
+  resetForm();
+};
+
+// Función para resetear el formulario
+const resetForm = () => {
+  form.tickets = 1;
+  form.metodoPago = '';
+  form.referencia = '';
+  form.pagoMovilCedula = '';
+  form.pagoMovilTelefono = '';
+  form.pagoMovilBanco = '';
+  form.comprobante = null;
+  selectedManualTickets.value = [];
+  randomTicketsResult.value = null;
+  selectionMode.value = 'auto';
+  pagoMovilMode.value = 'manual';
+  error.value = null;
+  
+  // Limpiar timers
+  clearRandomTicketsTimer();
+  bookingTimerStarted.value = false;
+  clearTimer();
+  resetTimer();
+};
+
 const handleConfirm = async () => {
   error.value = null;
   let ticketsToBuy: number[] | undefined = undefined;
@@ -1262,8 +1500,8 @@ const handleConfirm = async () => {
     ticketsToBuy = randomTicketsResult.value.successful.map(t => t.number);
     quantity = ticketsToBuy.length;
   } 
-
-  if (selectionMode.value === 'manual') {
+  // Validación para modo manual
+  else if (selectionMode.value === 'manual') {
     ticketsToBuy = selectedManualTickets.value;
     quantity = ticketsToBuy.length;
     if (quantity === 0) {
@@ -1271,16 +1509,16 @@ const handleConfirm = async () => {
       return;
     }
   } else {
-    quantity = Math.max(1, Number(form.tickets ?? 1));
-    if (quantity > (maxAvailable.value ?? 0)) {
-      error.value = `Solo quedan ${maxAvailable.value} tickets disponibles`;
-      return;
-    }
+    // Fallback - no debería ocurrir
+    error.value = 'Modo de selección no válido';
+    return;
   }
+
+  // Resto de validaciones (método de pago, etc.)
   if (form.metodoPago === 'pago-movil' && pagoMovilMode.value === 'automatico') {
     if (!form.pagoMovilCedula || !form.pagoMovilTelefono || !form.pagoMovilBanco) {
-        error.value = 'Debes completar todos los campos de Pago Móvil Automático.';
-        return;
+      error.value = 'Debes completar todos los campos de Pago Móvil Automático.';
+      return;
     }
     form.referencia = 'AUTOMATIC'; 
     ticketStore.setComprobante(null);
@@ -1290,85 +1528,88 @@ const handleConfirm = async () => {
     return;
   } 
   else if (!form.metodoPago) {
-      error.value = 'Debes seleccionar un método de pago.';
-      return;
+    error.value = 'Debes seleccionar un método de pago.';
+    return;
   }
+
+  // Construir el payload - USAR SIEMPRE ticketsToBuy
   const userId = authStore.user?.id ?? null;
   const initialTickets = initialTicketsCount.value;
   const purchasedTickets = quantity;
   const idempotencyKey = `sale-${userId ?? 'guest'}-${Date.now()}`;
   let phone = '';
+  
   if (authStore.isAuthenticated && authStore.user) {
-    phone = authStore.user.phone || ''
+    phone = authStore.user.phone || '';
   } else {
-    phone = form.telefono || ''
+    phone = form.telefono || '';
   }
+
   const payload: any = {
     raffle_id: selectedProduct.value?.uuid ?? selectedProduct.value?.title,
     user_id: userId,
     details: [],
     payment: {
       payment_method_id: form.metodoPago,
-      currency_id: undefined,
-      current_currency_id: undefined,
+      currency_id: selectedCurrencyId.value,
+      current_currency_id: selectedCurrencyId.value,
       exchange_rate: Number(bcvRate.value) || 1,
       payment_date: new Date().toISOString(),
       transaction_id: form.referencia || `TX-${Date.now()}`,
       entity: form.metodoPago === 'pago-movil' ? form.pagoMovilBanco : undefined,
       idempotency_key: idempotencyKey,
-      // Monto original (en USD) requerido por la API
-      original_amount: (function(){
-        const n = parseFloat(totalPrice.value || '0');
-        return isNaN(n) ? 0 : n;
-      })()
-      ,
-      // Indicar al backend si esta venta proviene de una verificación (pago móvil verificado)
+      original_amount: parseFloat(totalPrice.value || '0') || 0,
       is_verify: (pagoMovilVerifyResult.value && pagoMovilVerifyResult.value.status && pagoMovilVerifyResult.value.status !== 'pendiente') ? true : false
     },
     invoice_data: {
-      // La API espera `document_number` y `document_type`.
-  document_number: authStore.user?.natural_profile?.document_number || form.pagoMovilCedula || null,
+      document_number: authStore.user?.natural_profile?.document_number || form.pagoMovilCedula || null,
       document_type: authStore.user?.natural_profile?.document_type || 'V',
       name: form.nombre || authStore.user?.name || 'Comprador',
       phone,
       address: authStore.user?.natural_profile?.address || 'Direccion',
     }
   };
-  if (selectionMode.value === 'manual' && ticketsToBuy) {
+
+  // ✅ CORRECCIÓN: SIEMPRE usar ticketsToBuy, ya sea modo manual o automático
+  if (ticketsToBuy && ticketsToBuy.length > 0) {
     for (const n of ticketsToBuy) {
-      payload.details.push({ number: String(n).padStart(4, '0'), amount: Number(selectedProduct.value?.ticketPrice ?? 0), prizes: '' });
+      payload.details.push({ 
+        number: String(n).padStart(4, '0'), 
+        amount: Number(selectedProduct.value?.ticketPrice ?? 0), 
+        prizes: '' 
+      });
     }
   } else {
-    try {
-      const avail = ticketStore.getAvailableNumbers(selectedProduct.value?.title ?? selectedProduct.value, quantity);
-      for (const n of avail) {
-        payload.details.push({ number: String(n).padStart(4, '0'), amount: Number(selectedProduct.value?.ticketPrice ?? 0), prizes: '' });
-      }
-    } catch (e: any) {
-      error.value = e?.message || 'No hay suficientes tickets disponibles.';
-      submitting.value = false;
-      return;
-    }
+    // Esto no debería ocurrir debido a las validaciones anteriores
+    error.value = 'No hay tickets seleccionados para comprar.';
+    return;
   }
+
+  // Obtener el UUID del método de pago
   const selectedMethod = paymentMethods.value.find(m => m.slug === form.metodoPago);
   if (selectedMethod) {
     payload.payment.payment_method_id = selectedMethod.uuid;
   }
-  payload.payment.currency_id = selectedCurrencyId.value;
-  payload.payment.current_currency_id = selectedCurrencyId.value;
+
+  // Validar que la moneda esté seleccionada
   if (!payload.payment.currency_id) {
     error.value = 'No se ha configurado la moneda. Selecciona una moneda válida.';
     submitting.value = false;
     return;
   }
+
+  // Formatear fecha para SQL
   function formatSqlDate(d: Date) {
     const pad = (n: number) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
   payload.payment.payment_date = formatSqlDate(new Date(payload.payment.payment_date));
+
+  // Procesar la compra
   submitting.value = true;
   try {
     const res = await PaymentFlowService.createSale(payload, idempotencyKey);
+    
     if (res.data?.status === 'pendiente') {
       pagoMovilVerifyResult.value = {
         success: true,
@@ -1378,32 +1619,50 @@ const handleConfirm = async () => {
       submitting.value = false;
       return;
     }
-    if (res.status === 200 || res.status === 201) {
-      const data = res.data || {};
-      const assignedNumbers: number[] = [];
-      if (data.details && Array.isArray(data.details)) {
-        for (const d of data.details) {
-          const num = Number(d.number);
-          if (!Number.isNaN(num)) assignedNumbers.push(num);
-        }
-      }
-      if (assignedNumbers.length > 0) {
-        ticketStore.generateTicket(form, selectedProduct.value, userId, assignedNumbers);
-      } else {
-        ticketStore.generateTicket(form, selectedProduct.value, userId, ticketsToBuy);
-      }
-      ticketStore.formData.totalPrice = parseFloat(totalPrice.value);
-      ticketStore.formData.totalPriceBs = parseFloat(totalPriceBs.value);
-      emit('confirmed', {
-        initialTickets,
-        purchasedTickets: assignedNumbers.length > 0 ? assignedNumbers.length : purchasedTickets
-      });
+
+   if (res.status === 200 || res.status === 201) {
+  const data = res.data || {};
+  const assignedNumbers: number[] = [];
+  
+  // Extraer números de la respuesta si existen
+  if (data.data && data.data.details && Array.isArray(data.data.details)) {
+    for (const d of data.data.details) {
+      const num = Number(d.number);
+      if (!Number.isNaN(num)) assignedNumbers.push(num);
     }
+  } else if (data.details && Array.isArray(data.details)) {
+    for (const d of data.details) {
+      const num = Number(d.number);
+      if (!Number.isNaN(num)) assignedNumbers.push(num);
+    }
+  }
+
+  // Generar ticket en el store
+  if (assignedNumbers.length > 0) {
+    ticketStore.generateTicket(form, selectedProduct.value, userId, assignedNumbers);
+  } else {
+    // Usar los tickets que enviamos en el payload
+    ticketStore.generateTicket(form, selectedProduct.value, userId, ticketsToBuy);
+  }
+  
+  ticketStore.formData.totalPrice = parseFloat(totalPrice.value);
+  ticketStore.formData.totalPriceBs = parseFloat(totalPriceBs.value);
+  
+  // ✅ Pasar la respuesta completa
+  showInvoice(res);
+  
+  emit('confirmed', {
+    initialTickets,
+    purchasedTickets: assignedNumbers.length > 0 ? assignedNumbers.length : purchasedTickets
+  });
+}
   } catch (err: any) {
     console.error('Error procesando venta:', err);
     if (err && err.data && err.data.errors && err.data.errors.details) {
       const detailsErr = err.data.errors.details;
-      error.value = Array.isArray(detailsErr) ? `Los siguientes números ya no están disponibles: ${detailsErr.join(', ')}` : String(detailsErr);
+      error.value = Array.isArray(detailsErr) 
+        ? `Los siguientes números ya no están disponibles: ${detailsErr.join(', ')}` 
+        : String(detailsErr);
     } else if (err && err.data && err.data.message) {
       error.value = String(err.data.message);
     } else {
@@ -1425,23 +1684,38 @@ async function externalBuy(options: {
 } = {}) {
   try {
     if (typeof options.selectionMode !== 'undefined') {
-      selectionMode.value = options.selectionMode
+      selectionMode.value = options.selectionMode;
     }
+    
     if (Array.isArray(options.selectedManualTickets)) {
-      selectedManualTickets.value = options.selectedManualTickets.slice()
+      selectedManualTickets.value = options.selectedManualTickets.slice();
     }
+    
     if (options.formOverrides && typeof options.formOverrides === 'object') {
-      Object.assign(form, options.formOverrides)
+      Object.assign(form, options.formOverrides);
     }
+    
     if (options.selectedCurrencyId) {
-      selectedCurrencyId.value = options.selectedCurrencyId
+      selectedCurrencyId.value = options.selectedCurrencyId;
+    }
+
+    // ✅ CORRECCIÓN MEJORADA: Para modo automático, simular que tenemos randomTicketsResult
+    if (selectionMode.value === 'auto' && selectedManualTickets.value.length > 0) {
+      // Crear un randomTicketsResult simulado con los tickets que nos pasaron
+      randomTicketsResult.value = {
+        successful: selectedManualTickets.value.map(number => ({ 
+          number, 
+          expires_in_seconds: 60 
+        })),
+        failed: []
+      };
     }
 
     // Llamar a la función interna que maneja la compra
-    await handleConfirm()
+    await handleConfirm();
   } catch (err) {
-    console.error('Error en externalBuy:', err)
-    throw err
+    console.error('Error en externalBuy:', err);
+    throw err;
   }
 }
 
