@@ -5,7 +5,7 @@ on:
     types:
       - closed
     branches:
-      - develop  
+      - develop
   push:
     branches:
       - develop
@@ -22,20 +22,32 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.16.0'
+          node-version: "22.16.0"
+
       - name: Instalar pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 8           
+          version: 8
+
       - name: Instalar dependencias
         run: pnpm install
-        env: 
+        env:
           PNPM_WORKSPACE_ROOT: .
+
       - name: Crear archivo .env desde secrets
         run: |
+          echo "VITE_APP_VERSION=${{secrets.VITE_APP_VERSION_DEV}}">>.env
+          echo "VITE_APP_NAME=${{secrets.VITE_APP_NAME_DEV}}">>.env
           echo "VITE_API_URL=${{secrets.VITE_API_URL_DEV}}">>.env
+          echo "VITE_ECHO_KEY=${{secrets.VITE_ECHO_KEY_DEV}}">>.env
+          echo "VITE_ECHO_WS_HOST=${{secrets.VITE_ECHO_WS_HOST_DEV}}">>.env
+          echo "VITE_ECHO_WS_PORT=${{secrets.VITE_ECHO_WS_PORT_DEV}}">>.env
+          echo "VITE_ECHO_WSS_PORT=${{secrets.VITE_ECHO_WSS_PORT_DEV}}">>.env
+          echo "VITE_ECHO_FORCE_TLS=${{secrets.VITE_ECHO_FORCE_TLS_DEV}}">>.env
+          echo "VITE_ECHO_DISABLE_STATS=${{secrets.VITE_ECHO_DISABLE_STATS_DEV}}">>.env
+          echo "VITE_ECHO_ENABLED_TRANSPORTS=${{secrets.VITE_ECHO_ENABLED_TRANSPORTS_DEV}}">>.env
 
-      - name: Compilar proyecto 
+      - name: Compilar proyecto
         run: pnpm run build -m pwa
 
       - name: Verificar archivos generados
@@ -44,9 +56,9 @@ jobs:
       - name: Subir archivos al servidor (directorio temporal)
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.SSH_HOST_DEV }}
+          username: ${{ secrets.SSH_USERNAME_DEV }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_DEV }}
           source: "dist/*"
           target: "/tmp/rifaplay-dev_temp"
           strip_components: 1
@@ -55,9 +67,9 @@ jobs:
       - name: Mover archivos y establecer permisos en el VPS
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.SSH_HOST_DEV }}
+          username: ${{ secrets.SSH_USERNAME_DEV }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_DEV }}
           script: |
             sudo rm -rf /var/www/rifaplay/store/*
             sudo cp -r /tmp/rifaplay-dev_temp/* /var/www/rifaplay/store

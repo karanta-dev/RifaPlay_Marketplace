@@ -1,0 +1,85 @@
+name: Implementación automatizada
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true) || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.16.0"
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+      - name: Instalar dependencias
+        run: pnpm install
+        env:
+          PNPM_WORKSPACE_ROOT: .
+      - name: Crear archivo .env desde secrets
+        run: |
+          echo "VITE_APP_VERSION=${{ secrets.VITE_APP_VERSION }}">>.env
+          echo "VITE_APP_NAME=${{ secrets.VITE_APP_NAME }}">>.env
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}">>.env
+          echo "VITE_ECHO_KEY=${{ secrets.VITE_ECHO_KEY }}">>.env
+          echo "VITE_ECHO_WS_HOST=${{ secrets.VITE_ECHO_WS_HOST }}">>.env
+          echo "VITE_ECHO_WS_PORT=${{ secrets.VITE_ECHO_WS_PORT }}">>.env
+          echo "VITE_ECHO_WSS_PORT=${{ secrets.VITE_ECHO_WSS_PORT }}">>.env
+          echo "VITE_ECHO_FORCE_TLS=${{ secrets.VITE_ECHO_FORCE_TLS }}">>.env
+          echo "VITE_ECHO_DISABLE_STATS=${{ secrets.VITE_ECHO_DISABLE_STATS }}">>.env
+          echo "VITE_ECHO_ENABLED_TRANSPORTS=${{ secrets.VITE_ECHO_ENABLED_TRANSPORTS }}">>.env
+
+      - name: Compilar proyecto
+        run: pnpm run build -m pwa
+      - name: Verificar archivos generados
+        run: cat .env
+
+      - name: Verificar archivos generados
+        run: ls -R dist
+
+      - name: Subir archivos al servidor (directorio temporal)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "dist/*"
+          target: "/tmp/rifaplay-prod_temp"
+          strip_components: 1
+          rm: true
+
+      - name: Mover archivos y establecer permisos en el VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Crear directorio de destino si no existe, si es necesario
+            sudo mkdir -p /var/www/rifaplay/market
+
+            # Limpiar contenido anterior de /market
+            sudo rm -rf /var/www/rifaplay/market/*
+
+            # Copiar archivos y luego limpiar
+            sudo cp -r /tmp/rifaplay-prod_temp/* /var/www/rifaplay/market
+            sudo chown -R www-data:www-data /var/www/rifaplay/market
+            sudo chmod -R 755 /var/www/rifaplay/market
+
+            # Limpiar directorio temporal después de la copia exitosa
+            rm -rf /tmp/rifaplay-prod_temp
