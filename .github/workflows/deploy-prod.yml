@@ -35,7 +35,8 @@ jobs:
         run: |
           echo "VITE_APP_VERSION=${{ secrets.VITE_APP_VERSION }}">>.env
           echo "VITE_APP_NAME=${{ secrets.VITE_APP_NAME }}">>.env
-          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}">>.env
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}">>.
+          echo "VITE_GTM_ID=${{ secrets.VITE_GTM_ID }}">>.env
           echo "VITE_ECHO_KEY=${{ secrets.VITE_ECHO_KEY }}">>.env
           echo "VITE_ECHO_WS_HOST=${{ secrets.VITE_ECHO_WS_HOST }}">>.env
           echo "VITE_ECHO_WS_PORT=${{ secrets.VITE_ECHO_WS_PORT }}">>.env
