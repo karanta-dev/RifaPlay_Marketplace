@@ -1,4 +1,4 @@
-name: Implementación automatizada
+name: Implementación automatizada production
 
 on:
   pull_request:
@@ -60,7 +60,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "dist/*"
+          source: "dist"
           target: "/tmp/rifaplay-prod_temp"
           strip_components: 1
           rm: true
@@ -79,9 +79,9 @@ jobs:
             sudo rm -rf /var/www/rifaplay/market/*
 
             # Copiar archivos y luego limpiar
-            sudo mv /tmp/rifaplay-prod_temp/* /var/www/rifaplay/market
-            sudo chown -R www-data:www-data /var/www/rifaplay/market
-            sudo chmod -R 755 /var/www/rifaplay/market
+            sudo mv /tmp/rifaplay-prod_temp/* /var/www/rifaplay/market/
+            sudo find /var/www/rifaplay/market/ -type d -exec chmod 755 {} \;
+            sudo find /var/www/rifaplay/market/ -type f -exec chmod 644 {} \;
 
             # Limpiar directorio temporal después de la copia exitosa
             rm -rf /tmp/rifaplay-prod_temp
