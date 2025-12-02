@@ -1,4 +1,4 @@
-name: Implementación automatizada
+name: Implementación automatizada development
 
 on:
   pull_request:
@@ -74,6 +74,7 @@ jobs:
           script: |
             sudo rm -rf /var/www/rifaplay/store/*
             sudo mv /tmp/rifaplay-dev_temp/* /var/www/rifaplay/store/
-            sudo chown -R www-data:www-data /var/www/rifaplay/store
-            sudo chmod -R 755 /var/www/rifaplay/store
+            sudo find /var/www/rifaplay/market/ -type d -exec chmod 755 {} \;
+            sudo find /var/www/rifaplay/market/ -type f -exec chmod 644 {} \;
+            sudo chown -R www-data:www-data /var/www/rifaplay/market
             rm -rf /tmp/rifaplay-dev_temp
