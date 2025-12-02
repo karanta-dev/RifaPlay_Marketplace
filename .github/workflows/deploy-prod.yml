@@ -59,7 +59,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "dist"
+          source: "dist/*"
           target: "/tmp/rifaplay-prod_temp"
           # ELIMINADO strip_components PARA EVITAR ERRORES SILENCIOSOS
           rm: true
@@ -72,20 +72,16 @@ jobs:
           script: |
             # DEBUG: Ver qué carajos se subió realmente
             echo "--- CONTENIDO EN TMP ---"
-            ls -R /tmp/rifaplay-prod_temp
+            sudo ls -R /tmp/rifaplay-prod_temp
             echo "------------------------"
 
             sudo mkdir -p /var/www/rifaplay/market
             sudo rm -rf /var/www/rifaplay/market/*
+            sudo ls  /tmp/rifaplay-prod_temp/dist
 
             # MOVER: Al quitar strip_components, ahora existirá /tmp/.../dist/
             # Movemos el CONTENIDO de dist hacia market
-            if [ -d "/tmp/rifaplay-prod_temp/dist" ]; then
-                sudo mv /tmp/rifaplay-prod_temp/dist/* /var/www/rifaplay/market/
-            else
-                # Fallback por si acaso se subió plano (aunque lo dudo)
-                sudo mv /tmp/rifaplay-prod_temp/* /var/www/rifaplay/market/
-            fi
+            sudo mv /tmp/rifaplay-prod_temp/dist/* /var/www/rifaplay/market/
 
             # Permisos
             sudo chown -R www-data:www-data /var/www/rifaplay/market
@@ -93,6 +89,6 @@ jobs:
 
             # DEBUG FINAL: Ver si ya están los archivos
             echo "--- CONTENIDO FINAL EN MARKET ---"
-            ls -la /var/www/rifaplay/market
+            sudo ls -la /var/www/rifaplay/market
 
-            rm -rf /tmp/rifaplay-prod_temp
+            sudo rm -rf /tmp/rifaplay-prod_temp
