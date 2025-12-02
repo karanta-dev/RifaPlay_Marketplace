@@ -79,7 +79,7 @@ jobs:
             sudo rm -rf /var/www/rifaplay/market/*
 
             # Copiar archivos y luego limpiar
-            sudo mv -r /tmp/rifaplay-prod_temp/* /var/www/rifaplay/market
+            sudo mv /tmp/rifaplay-prod_temp/* /var/www/rifaplay/market
             sudo chown -R www-data:www-data /var/www/rifaplay/market
             sudo chmod -R 755 /var/www/rifaplay/market
 
