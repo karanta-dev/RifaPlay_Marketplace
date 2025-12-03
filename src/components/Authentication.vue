@@ -1,5 +1,10 @@
 <template>
-  <div class="fixed inset-0 backdrop-blur-md backdrop-saturate-150 z-50 flex items-center justify-center p-4">
+  <!-- Fondo del modal -->
+  <div 
+    class="fixed inset-0 backdrop-blur-md backdrop-saturate-150 z-50 flex items-center justify-center p-4"
+    @click.self="handleBackdropClick"
+  >
+    <!-- Contenido del modal -->
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden p-6 animate-fade-in">
       
       <!-- Cerrar - Solo mostrar si está autenticado -->
@@ -105,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useToast } from "vue-toastification";
 
@@ -134,6 +139,27 @@ const maxBirthDate = computed(() => {
   const today = new Date();
   const minAgeDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
   return minAgeDate.toISOString().split('T')[0];
+});
+
+// Función para cerrar al hacer clic fuera
+const handleBackdropClick = () => {
+  emit('close');
+};
+
+// Opcional: Cerrar con tecla Escape
+const handleEscapeKey = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    emit('close');
+  }
+};
+
+// Agregar y remover event listener para Escape
+onMounted(() => {
+  document.addEventListener('keydown', handleEscapeKey);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleEscapeKey);
 });
 
 const handleLogin = async () => {
@@ -250,7 +276,7 @@ const handleRegister = async () => {
     } else {
       toast.error("❌ Error en el registro. Intenta nuevamente", {
         toastClassName: "bg-red-900 text-white font-bold rounded-lg shadow-lg",
-      });
+    });
     }
   } catch (error) {
     toast.error("❌ Error de conexión durante el registro", {
