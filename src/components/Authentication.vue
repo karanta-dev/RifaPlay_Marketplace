@@ -89,14 +89,14 @@
                 <option>Redes sociales</option>
             </select>
             
-            <!-- <input v-model="promoCode" type="text" placeholder="Promo Code (opcional)" class="input  border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+            <!-- <input v-model="promoCode" type="text" placeholder="Promo Code (opcional)" class="input  border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" /> -->
             <button 
               type="submit" 
               :disabled="isLoading"
               class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ isLoading ? 'Registrando...' : 'Registrarse' }}
-            </button> -->
+            </button>
             </form>
 
           <p class="text-sm text-center mt-3">
