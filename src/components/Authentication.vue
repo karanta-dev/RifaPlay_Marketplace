@@ -42,33 +42,33 @@
           <h2 class="text-xl font-bold text-center mb-4">Crear cuenta</h2>
             <form class="flex flex-col gap-3" @submit.prevent="handleRegister">
             <div class="flex gap-2">
-              <input v-model="name" type="text" placeholder="Nombre" class="input flex-1" />
-              <input v-model="last_name" type="text" placeholder="Apellido" class="input flex-1" />
+              <input v-model="name" type="text" placeholder="Nombre" class="input flex-1  border rounded-lg py-2 focus:ring-2 focus:ring-blue-500 outline-none"/>
+              <input v-model="last_name" type="text" placeholder="Apellido" class="input flex-1  border rounded-lg py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
-            <input v-model="email" type="email" placeholder="Correo electrónico" class="input" />
-            <input v-model="password" type="password" placeholder="Contraseña" class="input" />
-            <input v-model="confirmPassword" type="password" placeholder="Confirmar contraseña" class="input" />
+            <input v-model="email" type="email" placeholder="Correo electrónico" class="input  border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+            <input v-model="password" type="password" placeholder="Contraseña" class="input  border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+            <input v-model="confirmPassword" type="password" placeholder="Confirmar contraseña" class="input  border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
             
-            <div class="flex gap-2">
+            <div class="flex gap-2  border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
                 <select class="input w-24">
                 <option value="+58">🇻🇪 +58</option>
                 <option value="+57">🇨🇴 +57</option>
                 <option value="+1">🇺🇸 +1</option>
                 </select>
-                <input v-model="phone" type="tel" placeholder="Teléfono" class="input flex-1" />
+                <input v-model="phone" type="tel" placeholder="Teléfono" class="input flex-1  border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             
             <div class="flex gap-2">
-                <select v-model="idType" class="input w-20">
+                <select v-model="idType" class="input w-20  border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
                 <option value="V">V</option>
                 <option value="J">J</option>
                 <option value="E">E</option>
                 </select>
-                <input v-model="document_number" type="text" placeholder="Cédula de identidad" class="input flex-1" />
+                <input v-model="document_number" type="text" placeholder="Cédula de identidad" class="input flex-1  border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             
             <div>
-              <label class="block text-sm text-gray-600 mb-1">Fecha de nacimiento</label>
+              <label class="block text-sm text-gray-600 mb-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">Fecha de nacimiento</label>
               <input 
                 v-model="birth_date" 
                 type="date" 
@@ -77,21 +77,21 @@
               />
             </div>
             
-            <select class="input">
+            <select class="input  border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
                 <option disabled selected>¿Cómo nos conociste?</option>
                 <option>Publicidad</option>
                 <option>Amigos</option>
                 <option>Redes sociales</option>
             </select>
             
-            <input v-model="promoCode" type="text" placeholder="Promo Code (opcional)" class="input" />
+            <!-- <input v-model="promoCode" type="text" placeholder="Promo Code (opcional)" class="input  border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
             <button 
               type="submit" 
               :disabled="isLoading"
               class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ isLoading ? 'Registrando...' : 'Registrarse' }}
-            </button>
+            </button> -->
             </form>
 
           <p class="text-sm text-center mt-3">
