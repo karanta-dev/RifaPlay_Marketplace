@@ -278,14 +278,38 @@
             </svg>
             <h3 class="section-title text-green-600">MODOS DE PAGO</h3>
           </div>
-
+ <!-- Currency selector -->
+              <div class="mb-4">
+                <label class="input-label" for="currency-select">Moneda</label>
+                <select id="currency-select" v-model="selectedCurrencyId" class="input-field">
+                  <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">
+                    {{ c.name }} ({{ c.short_name }})
+                  </option>
+                </select>
+              </div>
           <p class="text-sm text-gray-500 mb-6 text-center">Selecciona una opción</p>
 
           <div class="payment-methods-wrapper">
-            <div v-for="method in paymentMethods" :key="method.uuid || method.name" :class="getPaymentMethodClass(method)" @click="selectedPaymentMethod = method">
-              <img :src="getPaymentLogo(method)" :alt="method.name" class="w-full h-full object-contain">
-              <svg v-if="selectedPaymentMethod && (selectedPaymentMethod.uuid === method.uuid || selectedPaymentMethod.name === method.name)" class="check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
-            </div>
+            <div 
+  v-for="method in paymentMethods" 
+  :key="method.uuid || method.name" 
+  :class="getPaymentMethodClass(method)"
+  @click="selectedPaymentMethod = method"
+  :data-method="method.slug || method.name?.toLowerCase()"
+>
+  <img 
+    :src="getPaymentLogo(method)" 
+    :alt="method.name" 
+    class="w-full h-full object-contain"
+  >
+  <svg v-if="selectedPaymentMethod && (selectedPaymentMethod.uuid === method.uuid || selectedPaymentMethod.name === method.name)" 
+       class="check-icon" 
+       xmlns="http://www.w3.org/2000/svg" 
+       viewBox="0 0 20 20" 
+       fill="currentColor">
+    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+  </svg>
+</div>
           </div>
           
           <!-- Detalles de la cuenta -->
@@ -316,15 +340,7 @@
                 </div>
               </div>
 
-              <!-- Currency selector -->
-              <div class="mb-4">
-                <label class="input-label" for="currency-select">Moneda</label>
-                <select id="currency-select" v-model="selectedCurrencyId" class="input-field">
-                  <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">
-                    {{ c.name }} ({{ c.short_name }})
-                  </option>
-                </select>
-              </div>
+             
               <div class="account-total">
                 Total: <span class="text-red-600">{{ displayPrice.text }}</span>
                 <span v-if="displayPrice.showUsdRate && displayPrice.rate" class="text-xs text-gray-500"> (Tasa: {{ displayPrice.rate.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }} {{ displayPrice.rateCurrency }})</span>
@@ -1038,7 +1054,9 @@ const getRaffleHighlight = (raffle: Raffle) => {
 
 const getPaymentMethodClass = (method: any) => {
   const base = 'payment-method-box'
-  const isSelected = selectedPaymentMethod.value && (selectedPaymentMethod.value.uuid === method.uuid || selectedPaymentMethod.value.name === method.name)
+  const isSelected = selectedPaymentMethod.value && 
+    (selectedPaymentMethod.value.uuid === method.uuid || 
+     selectedPaymentMethod.value.name === method.name)
   return isSelected ? `${base} selected-payment` : `${base} available-payment`
 }
 
@@ -1954,52 +1972,86 @@ p {
 }
 
 /* Opciones de Pago */
+/* Contenedor principal - mantiene el mismo layout */
 .payment-methods-wrapper {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 1rem;
+    gap: 1.5rem; /* Un poco más de espacio entre iconos */
     margin-bottom: 2rem;
 }
 
+/* Caja de método de pago - sin bordes, más grande */
 .payment-method-box {
-    width: 4rem; /* w-16 */
-    height: 2rem; /* h-8 */
-    border: 2px solid #d1d5db; /* border-2 border-gray-300 */
-    border-radius: 0.5rem; /* rounded-lg */
+    width: 5rem; /* Aumentado de 4rem */
+    height: 5rem; /* Aumentado de 2rem */
+    border: none !important; /* Eliminar borde */
+    border-radius: 12px; /* Bordes suaves */
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.25rem; /* p-1 */
+    padding: 0.75rem; /* Espacio interno */
     position: relative;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
     cursor: pointer;
+    background-color: #f8f9fa; /* Fondo gris muy claro */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* Sombra suave */
 }
 
+/* Efecto hover más sutil */
 .available-payment {
-    opacity: 0.6;
+    opacity: 0.8;
 }
 
 .available-payment:hover {
     opacity: 1;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
+/* Estado seleccionado - sin borde, con color de fondo */
 .selected-payment {
-    border-color: #ff3366; /* border-green-500 */
-    box-shadow: 0 0 0 4px #d1fae5; /* ring-4 ring-green-200 */
+    background-color: #e6f7ef; /* Fondo verde muy claro */
+    box-shadow: 0 4px 16px rgba(102, 204, 153, 0.3);
+    transform: translateY(-3px);
 }
 
-/* Icono de check en Zelle */
+/* Imagen del icono - ocupa todo el espacio disponible */
+.payment-method-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Ajusta la imagen sin deformarla */
+    border-radius: 15px;
+} 
+
+/* Icono de check - reposicionado y más grande */
 .check-icon {
     position: absolute;
-    top: -8px;
-    right: -8px;
-    height: 16px;
-    width: 16px;
+    top: -5px;
+    right: -5px;
+    height: 24px;
+    width: 24px;
     color: white;
     background-color: #10b981;
     border-radius: 50%;
     border: 2px solid white;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* --- ESTILOS PARA DIFERENTES MÉTODOS DE PAGO --- */
+
+/* Si quieres que algunos métodos específicos tengan estilos diferentes */
+.payment-method-box[data-method="pago-movil"] {
+    background-color: #f0f9ff; /* Azul muy claro para Pago Móvil */
+}
+
+.payment-method-box[data-method="binance"] {
+    background-color: #fef7e6; /* Amarillo muy claro para Binance */
+}
+
+.payment-method-box[data-method="zelle"] {
+    background-color: #f0f4ff; /* Azul claro para Zelle */
 }
 
 /* Detalle de Cuenta */
@@ -2336,6 +2388,33 @@ p {
   .section-title-large {
       font-size: 1.75rem;
   }
+ .payment-methods-wrapper {
+        gap: 1rem;
+    }
+    
+    .payment-method-box {
+        width: 5rem;
+        height: 5rem;
+        padding: 0.5rem;
+    }
+    
+    .check-icon {
+        height: 20px;
+        width: 20px;
+        top: -4px;
+        right: -4px;
+    }
+}
+@media (max-width: 480px) {
+    .payment-methods-wrapper {
+        gap: 0.75rem;
+    }
+    
+    .payment-method-box {
+        width: 4.5rem;
+        height: 4.5rem;
+        padding: 0.4rem;
+    }
 }
 
 /* Estilos para el footer */
