@@ -38,14 +38,21 @@
 
         <form @submit.prevent="handleConfirm" class="space-y-6 relative z-10 flex-grow overflow-y-auto pr-2 pb-16">
           <template v-if="!authStore.isAuthenticated">
-            <div class="p-6 bg-black/20 rounded-xl border border-white/10 text-center">
-              <p class="text-white text-lg font-semibold mb-2">Necesitas iniciar sesión</p>
-              <p class="text-gray-300 mb-4">Debes estar autenticado para comprar tickets. Inicia sesión o regístrate para continuar y guardar tus tickets en tu cuenta (Solo mayores de 18).</p>
-              <div class="flex justify-center gap-3">
-                <button type="button" @click="triggerAuth" class="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-500">Iniciar sesión / Registrarse</button>
-                <button type="button" @click="close" class="px-5 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-500">Cerrar</button>
-              </div>
-            </div>
+             <div class="p-6 bg-black/20 rounded-xl border border-white/10 text-center">
+      <p class="text-white text-lg font-semibold mb-2">Necesitas iniciar sesión</p>
+      <p class="text-gray-300 mb-4">Debes estar autenticado para comprar tickets. Inicia sesión o regístrate para continuar y guardar tus tickets en tu cuenta (Solo mayores de 18).</p>
+      <div class="flex justify-center gap-3">
+        <!-- Cambiar este botón para emitir un evento -->
+        <button 
+          type="button" 
+          @click="openAuthModal" 
+          class="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-500"
+        >
+          Iniciar sesión / Registrarse
+        </button>
+        <button type="button" @click="close" class="px-5 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-500">Cerrar</button>
+      </div>
+    </div>
           </template>
 
           <template v-else>
@@ -426,7 +433,7 @@ defineProps<{
   open: boolean;
 }>();
 
-const emit = defineEmits(['close', 'confirmed', 'time-expired']);
+const emit = defineEmits(['close', 'confirmed', 'time-expired', 'open-auth']);
 const { showToast } = useToast();
 const ticketStore = useTicketStore();
 const authStore = useAuthStore();
@@ -473,6 +480,13 @@ const selectedMethodHasStructured = computed(() => {
   const m: any = selectedPaymentMethod.value
   return !!(m && m.structured_data)
 })
+
+// Modificar o agregar la función openAuthModal
+const openAuthModal = () => {
+  close(); // Cierra el modal actual de participación
+  authStore.showLoginModal = true; // Abre el modal de autenticación
+};
+
 
 /**
  * Try to map common structured_data keys into existing form fields
