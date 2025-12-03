@@ -157,41 +157,26 @@ fetchPaymentMethods: async (): Promise<PaymentMethod[]> => {
         // - un path relativo sin slash (ej: '48.../icon.png')
         // - un objeto images: [{ url, path }]
         // Normalizamos y construimos una `logoUrl` absoluta usando `apiClient.defaults.baseURL` cuando haga falta.
-        let rawIcon: any = item.logo_url || item.icon || (item.images && Array.isArray(item.images) && item.images[0] && (item.images[0].url || item.images[0].path)) || item.image || null;
-        let logoUrl = null as string | null;
-        if (rawIcon) {
-          try {
-            // Si viene como objeto con { url } o { path }
-            if (typeof rawIcon === 'object' && rawIcon !== null) {
-              rawIcon = rawIcon.url || rawIcon.path || String(rawIcon);
-            }
+       let rawIcon = item.logo_url || item.icon || null;
+let logoUrl = null;
 
-            if (typeof rawIcon === 'string') {
-              rawIcon = rawIcon.trim();
-              // Si es una URL absoluta, usarla tal cual
-              if (/^https?:\/\//i.test(rawIcon)) {
-                logoUrl = rawIcon;
-              } else {
-                // Construir URL absoluta relativa a apiClient.defaults.baseURL
-                const base = apiClient.defaults.baseURL || '';
-                try {
-                  // normalizar entradas como 'path/to/file' o '/path/to/file'
-                  // new URL manejará correctamente la concatenación
-                  logoUrl = new URL(rawIcon.replace(/^\/*/, '/'), base).toString();
-                } catch (err) {
-                  // Fallback manual conservador
-                  const baseTrim = (base || '').replace(/\/$/, '');
-                  logoUrl = rawIcon.startsWith('/') ? `${baseTrim}${rawIcon}` : `${baseTrim}/${rawIcon}`;
-                }
-              }
-            } else {
-              // cualquier otro tipo, forzar a string
-              logoUrl = String(rawIcon);
-            }
-          } catch (e) {
-            logoUrl = String(rawIcon);
-          }
-        }
+if (rawIcon) {
+  try {
+    if (typeof rawIcon === 'string') {
+      // Quitar la barra inicial si existe
+      const path = rawIcon.startsWith('/') ? rawIcon.slice(1) : rawIcon;
+      
+      // Construir URL con /storage
+      const base = apiClient.defaults.baseURL || 'https://api-rifaplay.karanta.dev/api/v1';
+      const assetsBase = base.replace('/api/v1', '');
+      logoUrl = `${assetsBase}/storage/${path}`;
+    }
+  } catch (e) {
+    console.error('Error procesando ícono:', e);
+    logoUrl = null;
+  }
+}
+
 
         // Procesar structured_data: puede venir como string JSON, objeto o null
         let structured = item.structured_data ?? item.fields ?? null

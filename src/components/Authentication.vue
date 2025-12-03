@@ -33,7 +33,7 @@
             </form>
           <div class="flex justify-between mt-4 text-sm">
             <a href="#" class="text-blue-600 hover:underline">Olvidé mi contraseña</a>
-            <!-- <button @click="mode = 'register'" class="text-blue-600 hover:underline">Registrarse</button> -->
+          <button @click="mode = 'register'" class="text-blue-600 hover:underline">Registrarse</button> 
           </div>
         </div>
 
