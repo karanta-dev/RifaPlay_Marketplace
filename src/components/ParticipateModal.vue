@@ -900,10 +900,10 @@ watch([currentQty, bcvRate, selectedProduct], ([qty, rate, product]) => {
   deep: true
 });
 
-function triggerAuth() {
-  close();
-  window.dispatchEvent(new CustomEvent('open-auth'))
-}
+// function triggerAuth() {
+//   close();
+//   window.dispatchEvent(new CustomEvent('open-auth'))
+// }
 
 function detectPrefixFromPhone(rawPhone: string | undefined | null) {
   const prefixes = ['0412', '0414', '0424', '0416', '0422']
