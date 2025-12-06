@@ -62,6 +62,22 @@ button:focus-visible {
   padding: 2em;
 }
 
+/* Estilo global para asegurar que modales y dropdowns tengan prioridad */
+.vue-modal,
+.vue-dropdown,
+.modal-backdrop {
+  z-index: 9998 !important;
+}
+
+/* Asegurar que el dropdown del perfil tenga máxima prioridad */
+nav .relative > div.absolute {
+  z-index: 9999 !important;
+}
+
+/* Si usas algún modal o overlay */
+.modal-overlay {
+  z-index: 9997 !important;
+}
 /* #app {
   max-width: 1280px;
   margin: 0 auto;

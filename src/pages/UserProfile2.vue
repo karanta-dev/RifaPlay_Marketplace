@@ -1309,13 +1309,17 @@ onMounted(() => {
   min-height: 100vh;
 }
 
-/* --- Navbar Estilo Premium --- */
+.lgtangueta-container .navbar {
+  z-index: 30 !important;
+}
+
+/* O también puedes hacer: */
 .navbar {
-  background-color: #111; /* Fondo Negro Intenso */
+  background-color: #111;
   padding-bottom: 10px;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 30 !important;
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 

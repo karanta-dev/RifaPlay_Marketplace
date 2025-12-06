@@ -2,7 +2,7 @@
   <!-- Mobile Navigation Bar -->
   <nav
     :class="[
-      'fixed bottom-0 left-0 w-full bg-gradient-to-r from-blue-950 via-blue-900 to-purple-900 text-white shadow-xl sm:hidden transition-transform duration-300 z-40 casino-mobile-nav',
+      'fixed bottom-0 left-0 w-full bg-gradient-to-r from-gray-900 via-blue-900 to-gray-800 text-white shadow-xl sm:hidden transition-transform duration-300 z-40 casino-mobile-nav',
       isVisible ? 'translate-y-0' : 'translate-y-full'
     ]"
   >
