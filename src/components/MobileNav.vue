@@ -1,220 +1,359 @@
 <template>
-  <!-- Mobile Navigation Bar -->
   <nav
     :class="[
-      'fixed bottom-0 left-0 w-full bg-gradient-to-r from-gray-900 via-blue-900 to-gray-800 text-white shadow-xl sm:hidden transition-transform duration-300 z-40 casino-mobile-nav',
+      'fixed bottom-0 left-0 w-full z-50 transition-transform duration-300 ease-out',
+      'shadow-[0_-4px_20px_rgba(0,0,0,0.5)]',
       isVisible ? 'translate-y-0' : 'translate-y-full'
     ]"
+    :style="{
+      backgroundColor: colorStore.isRiferoPage ? colorStore.navbarBg : '#0f172a',
+      borderTop: colorStore.isRiferoPage ? `1px solid ${colorStore.primary}30` : '1px solid rgba(255,255,255,0.1)'
+    }"
+    style="padding-bottom: env(safe-area-inset-bottom);"
   >
-    <!-- Iconos casino flotantes -->
-    <i class="fas fa-coins text-yellow-400 absolute left-4 top-2 opacity-30 text-lg casino-float"></i>
-    <i class="fas fa-dice text-green-400 absolute right-4 top-2 opacity-30 text-lg casino-float"></i>
-    <i class="fas fa-ticket-alt text-orange-400 absolute left-1/2 top-2 opacity-30 text-lg casino-float"></i>
-    
-    <div class="flex justify-around items-center py-0">
-      <!-- Home -->
+    <div class="flex justify-between items-end h-16 px-4 w-full relative">
+
+      <!-- Inicio -->
       <button
         @click="goHome"
-        class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none casino-btn"
+        class="flex-1 flex flex-col items-center justify-center pb-3 h-full bg-transparent border-none shadow-none focus:outline-none group"
       >
-        <i class="fas fa-home text-yellow-300 mb-1 text-xl"></i>
-        Inicio
+        <div class="relative flex flex-col items-center">
+          <span v-if="isActive('home')" 
+                class="absolute -top-3 w-8 h-[3px] rounded-full"
+                :style="{
+                  backgroundColor: colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff',
+                  boxShadow: colorStore.isRiferoPage ? `0 0 12px ${colorStore.textPrimary}` : '0 0 12px rgba(255,255,255,0.8)'
+                }"></span>
+          
+          <i class="fas fa-home text-2xl mb-1 transition-all duration-300 group-hover:scale-110"
+             :class="{
+               'scale-110': isActive('home')
+             }"
+             :style="{
+               color: isActive('home') 
+                 ? (colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff')
+                 : (colorStore.isRiferoPage ? colorStore.textPrimary + 'CC' : '#e2e8f0'),
+               filter: isActive('home') && colorStore.isRiferoPage ? `drop-shadow(0 0 6px ${colorStore.textPrimary})` : 'none'
+             }"></i>
+          <span class="text-[11px] font-bold tracking-wide transition-all duration-300 group-hover:font-extrabold"
+                :style="{
+                  color: isActive('home')
+                    ? (colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff')
+                    : (colorStore.isRiferoPage ? colorStore.textPrimary + 'CC' : '#e2e8f0'),
+                  textShadow: isActive('home') && colorStore.isRiferoPage ? `0 0 8px ${colorStore.textPrimary}` : 'none'
+                }">
+            Inicio
+          </span>
+        </div>
       </button>
 
-      <!-- Search -->
+      <!-- Buscar -->
       <button
         @click="goSearch"
-        class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none casino-btn"
+        class="flex-1 flex flex-col items-center justify-center pb-3 h-full bg-transparent border-none shadow-none focus:outline-none group"
       >
-        <i class="fas fa-search text-green-300 mb-1 text-xl"></i>
-        Buscar
+        <div class="relative flex flex-col items-center">
+          <span v-if="isActive('search')" 
+                class="absolute -top-3 w-8 h-[3px] rounded-full"
+                :style="{
+                  backgroundColor: colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff',
+                  boxShadow: colorStore.isRiferoPage ? `0 0 12px ${colorStore.textPrimary}` : '0 0 12px rgba(255,255,255,0.8)'
+                }"></span>
+
+          <i class="fas fa-search text-2xl mb-1 transition-all duration-300 group-hover:scale-110"
+             :class="{
+               'scale-110': isActive('search')
+             }"
+             :style="{
+               color: isActive('search')
+                 ? (colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff')
+                 : (colorStore.isRiferoPage ? colorStore.textPrimary + 'CC' : '#e2e8f0'),
+               filter: isActive('search') && colorStore.isRiferoPage ? `drop-shadow(0 0 6px ${colorStore.textPrimary})` : 'none'
+             }"></i>
+          <span class="text-[11px] font-bold tracking-wide transition-all duration-300 group-hover:font-extrabold"
+                :style="{
+                  color: isActive('search')
+                    ? (colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff')
+                    : (colorStore.isRiferoPage ? colorStore.textPrimary + 'CC' : '#e2e8f0'),
+                  textShadow: isActive('search') && colorStore.isRiferoPage ? `0 0 8px ${colorStore.textPrimary}` : 'none'
+                }">
+            Buscar
+          </span>
+        </div>
       </button>
 
-      <!-- Tickets -->
+      <!-- Mis Tickets -->
       <button
         @click="goTickets"
-        class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none casino-btn"
+        class="flex-1 flex flex-col items-center justify-center pb-3 h-full bg-transparent border-none shadow-none focus:outline-none group"
       >
-        <i class="fas fa-ticket text-green-300 mb-1 text-xl"></i>
-        Mis Tickets
+        <div class="relative flex flex-col items-center">
+          <span v-if="isActive('my-tickets') || route.path.includes('/tickets')" 
+                class="absolute -top-3 w-8 h-[3px] rounded-full"
+                :style="{
+                  backgroundColor: colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff',
+                  boxShadow: colorStore.isRiferoPage ? `0 0 12px ${colorStore.textPrimary}` : '0 0 12px rgba(255,255,255,0.8)'
+                }"></span>
+
+          <i class="fas fa-ticket-alt text-2xl mb-1 transition-all duration-300 group-hover:scale-110"
+             :class="{
+               'scale-110': (isActive('my-tickets') || route.path.includes('/tickets'))
+             }"
+             :style="{
+               color: (isActive('my-tickets') || route.path.includes('/tickets'))
+                 ? (colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff')
+                 : (colorStore.isRiferoPage ? colorStore.textPrimary + 'CC' : '#e2e8f0'),
+               filter: (isActive('my-tickets') || route.path.includes('/tickets')) && colorStore.isRiferoPage ? `drop-shadow(0 0 6px ${colorStore.textPrimary})` : 'none'
+             }"></i>
+          <span class="text-[11px] font-bold tracking-wide transition-all duration-300 group-hover:font-extrabold"
+                :style="{
+                  color: (isActive('my-tickets') || route.path.includes('/tickets'))
+                    ? (colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff')
+                    : (colorStore.isRiferoPage ? colorStore.textPrimary + 'CC' : '#e2e8f0'),
+                  textShadow: (isActive('my-tickets') || route.path.includes('/tickets')) && colorStore.isRiferoPage ? `0 0 8px ${colorStore.textPrimary}` : 'none'
+                }">
+             Tickets
+          </span>
+        </div>
       </button>
 
-      <!-- Support -->
-      <div class="relative">
+      <!-- Soporte -->
+      <div class="flex-1 relative h-full flex items-end justify-center pb-3">
         <button 
           @click="toggleSupport"
-          class="flex flex-col items-center text-sm hover:text-yellow-400 bg-transparent focus:outline-none casino-btn"
+          class="w-full h-full flex flex-col items-center justify-center bg-transparent border-none shadow-none focus:outline-none group"
         >
-          <i class="fas fa-life-ring text-orange-300 mb-1 text-xl"></i>
-          Soporte
+          <div class="relative flex flex-col items-center">
+            <span v-if="supportOpen" 
+                  class="absolute -top-3 w-8 h-[3px] rounded-full"
+                  :style="{
+                    backgroundColor: colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff',
+                    boxShadow: colorStore.isRiferoPage ? `0 0 12px ${colorStore.textPrimary}` : '0 0 12px rgba(255,255,255,0.8)'
+                  }"></span>
+
+            <i class="fas fa-life-ring text-2xl mb-1 transition-all duration-300 group-hover:scale-110"
+               :class="{
+                 'scale-110': supportOpen
+               }"
+               :style="{
+                 color: supportOpen
+                   ? (colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff')
+                   : (colorStore.isRiferoPage ? colorStore.textPrimary + 'CC' : '#e2e8f0'),
+                 filter: supportOpen && colorStore.isRiferoPage ? `drop-shadow(0 0 6px ${colorStore.textPrimary})` : 'none'
+               }"></i>
+            <span class="text-[11px] font-bold tracking-wide transition-all duration-300 group-hover:font-extrabold"
+                  :style="{
+                    color: supportOpen
+                      ? (colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff')
+                      : (colorStore.isRiferoPage ? colorStore.textPrimary + 'CC' : '#e2e8f0'),
+                    textShadow: supportOpen && colorStore.isRiferoPage ? `0 0 8px ${colorStore.textPrimary}` : 'none'
+                  }">
+              Soporte
+            </span>
+          </div>
         </button>
 
-        <!-- Menú desplegable de soporte - Z-INDEX CORREGIDO -->
-        <transition name="support-fade">
+        <transition name="pop-up">
           <div
             v-if="supportOpen"
-            class="fixed bottom-16 left-4 right-4 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-4 border border-yellow-400/30 backdrop-blur-sm z-50 mx-auto max-w-sm"
+            class="absolute bottom-[4.5rem] -right-2 w-64 rounded-2xl shadow-2xl p-2 z-50 origin-bottom-right"
+            :style="{
+              backgroundColor: colorStore.isRiferoPage ? colorStore.cardBg : '#1e293b',
+              border: colorStore.isRiferoPage ? `2px solid ${colorStore.textPrimary}` : '2px solid #ffffff',
+              boxShadow: colorStore.isRiferoPage 
+                ? `0 10px 40px rgba(0,0,0,0.3), 0 0 30px ${colorStore.textPrimary}40`
+                : '0 10px 40px rgba(0,0,0,0.3), 0 0 30px rgba(255,255,255,0.3)'
+            }"
           >
-            <!-- Encabezado -->
-            <div class="text-center mb-3">
-              <h3 class="text-white font-bold text-sm">Soporte</h3>
-              <p class="text-gray-300 text-xs">¿Necesitas ayuda?</p>
-            </div>
+            <div class="absolute -bottom-2 right-8 w-4 h-4 rotate-45"
+                 :style="{
+                   backgroundColor: colorStore.isRiferoPage ? colorStore.cardBg : '#1e293b',
+                   borderRight: colorStore.isRiferoPage ? `2px solid ${colorStore.textPrimary}` : '2px solid #ffffff',
+                   borderBottom: colorStore.isRiferoPage ? `2px solid ${colorStore.textPrimary}` : '2px solid #ffffff'
+                 }"></div>
 
-            <!-- Opciones de soporte -->
-            <div class="space-y-2">
-              <button
-                @click="goToSupport"
-                class="w-full flex items-center gap-3 p-3 text-white bg-gray-700/80 hover:bg-gray-600/80 rounded-xl transition-colors group border border-gray-600 text-sm"
-              >
-                <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                  <i class="fas fa-question-circle text-blue-400 text-sm"></i>
+            <div class="flex flex-col gap-1 relative z-10">
+              <button @click="goToSupport" 
+                      class="flex items-center gap-3 p-3 rounded-xl transition-all duration-300 text-left bg-transparent border-none w-full hover:scale-[1.02] active:scale-[0.98]"
+                      :style="{
+                        backgroundColor: colorStore.isRiferoPage ? colorStore.textPrimary + '15' : 'rgba(255, 255, 255, 0.1)'
+                      }">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300"
+                     :style="{ 
+                       backgroundColor: colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff',
+                       boxShadow: colorStore.isRiferoPage ? `0 0 10px ${colorStore.textPrimary}` : '0 0 10px rgba(255, 255, 255, 0.8)'
+                     }">
+                  <i class="fas fa-question text-sm"
+                     :style="{ color: colorStore.isRiferoPage ? colorStore.cardBg : '#1e293b' }"></i>
                 </div>
-                <span class="text-sm font-medium">Centro de Ayuda</span>
+                <div>
+                  <p class="text-sm font-bold leading-none"
+                     :style="{ color: colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff' }">Ayuda</p>
+                  <p class="text-[10px] mt-1"
+                     :style="{ color: colorStore.isRiferoPage ? colorStore.textPrimary + 'CC' : '#e2e8f0' }">Preguntas frecuentes</p>
+                </div>
               </button>
-
-              <button
-                @click="openWhatsApp"
-                class="w-full flex items-center gap-3 p-3 text-white bg-gray-700/80 hover:bg-gray-600/80 rounded-xl transition-colors group border border-gray-600 text-sm"
-              >
-                <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
-                  <i class="fab fa-whatsapp text-green-400 text-sm"></i>
+              
+              <button @click="openWhatsApp" 
+                      class="flex items-center gap-3 p-3 rounded-xl transition-all duration-300 text-left bg-transparent border-none w-full hover:scale-[1.02] active:scale-[0.98]"
+                      :style="{
+                        backgroundColor: colorStore.isRiferoPage ? colorStore.textPrimary + '15' : 'rgba(255, 255, 255, 0.1)'
+                      }">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300"
+                     :style="{ 
+                       backgroundColor: colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff',
+                       boxShadow: colorStore.isRiferoPage ? `0 0 10px ${colorStore.textPrimary}` : '0 0 10px rgba(255, 255, 255, 0.8)'
+                     }">
+                  <i class="fab fa-whatsapp text-sm"
+                     :style="{ color: colorStore.isRiferoPage ? colorStore.cardBg : '#1e293b' }"></i>
                 </div>
-                <span class="text-sm font-medium">WhatsApp</span>
+                <div>
+                  <p class="text-sm font-bold leading-none"
+                     :style="{ color: colorStore.isRiferoPage ? colorStore.textPrimary : '#ffffff' }">WhatsApp</p>
+                  <p class="text-[10px] mt-1"
+                     :style="{ color: colorStore.isRiferoPage ? colorStore.textPrimary + 'CC' : '#e2e8f0' }">Chat directo</p>
+                </div>
               </button>
             </div>
           </div>
         </transition>
       </div>
+
     </div>
 
-    <!-- Overlay para cerrar soporte - Z-INDEX CORREGIDO -->
-    <transition name="fade">
-      <div
-        v-if="supportOpen"
-        class="fixed inset-0 z-40"
-        @click="supportOpen = false"
-      ></div>
-    </transition>
+    <div
+      v-if="supportOpen"
+      class="fixed inset-0 top-0 left-0 bg-black/50 z-[-1] backdrop-blur-[1px]"
+      @click="supportOpen = false"
+    ></div>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
+import { ref, onMounted, onUnmounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useColorStore } from '@/stores/useColorStore'
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
+const colorStore = useColorStore();
 
 const isVisible = ref(true);
 const supportOpen = ref(false);
 let lastScrollY = window.scrollY;
 
+const isActive = (routeName: string) => {
+  if (routeName === 'my-tickets' && route.path.includes('/tickets')) return true;
+  return route.name === routeName;
+};
+
+// Cerrar menú al cambiar ruta
+watch(() => route.fullPath, () => {
+  supportOpen.value = false;
+});
+
 const handleScroll = () => {
-  if (window.scrollY > lastScrollY) {
+  const currentScrollY = window.scrollY;
+  if (Math.abs(currentScrollY - lastScrollY) < 10) return;
+  
+  if (currentScrollY > lastScrollY && currentScrollY > 50) {
     isVisible.value = false;
-  } else if (window.scrollY < lastScrollY) {
+    supportOpen.value = false;
+  } else if (currentScrollY < lastScrollY) {
     isVisible.value = true;
   }
-  lastScrollY = window.scrollY;
+  lastScrollY = currentScrollY;
 };
 
-// Métodos de navegación
-const goHome = () => {
-  router.push({ name: "home" });
-  supportOpen.value = false;
-};
-
-const goSearch = () => {
-  router.push({ name: "search" });
-  supportOpen.value = false;
-};
-
+const goHome = () => { if(route.name !== 'home') router.push({ name: "home" }); };
+const goSearch = () => { if(route.name !== 'search') router.push({ name: "search" }); };
 const goTickets = () => {
   const userId = authStore.user?.id ?? 'guest'
   router.push({ name: 'my-tickets', params: { userId } });
-  supportOpen.value = false;
 };
 
-// Funciones de soporte
-const toggleSupport = () => {
-  supportOpen.value = !supportOpen.value;
-};
+const toggleSupport = () => { supportOpen.value = !supportOpen.value; };
 
 const goToSupport = () => {
   supportOpen.value = false;
-  alert('Redirigiendo al Centro de Ayuda - Página en desarrollo');
+  router.push({ name: 'support' });
 };
 
 const openWhatsApp = () => {
   supportOpen.value = false;
-  const message = 'Hola, necesito ayuda con RifaPlay';
-  const phoneNumber = '1234567890';
-  window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
+  window.open('https://wa.me/123456789', '_blank');
 };
 
-// Cerrar soporte al presionar Escape
-const handleEscape = (event: KeyboardEvent) => {
-  if (event.key === 'Escape' && supportOpen.value) {
-    supportOpen.value = false;
-  }
-};
-
-onMounted(() => {
-  window.addEventListener("scroll", handleScroll);
-  document.addEventListener('keydown', handleEscape);
+onMounted(() => { 
+  window.addEventListener("scroll", handleScroll); 
 });
 
-onUnmounted(() => {
-  window.removeEventListener("scroll", handleScroll);
-  document.removeEventListener('keydown', handleEscape);
+onUnmounted(() => { 
+  window.removeEventListener("scroll", handleScroll); 
 });
 </script>
 
 <style scoped>
-.casino-mobile-nav {
-  box-shadow: 0 0 24px 4px #ffd70033, 0 0 8px 2px #00336699;
-}
-.casino-btn {
-  animation: casinoBtnPulse 1.2s infinite alternate;
+/* Asegura que no haya estilos globales de botones interfiriendo */
+button {
+  background-color: transparent;
 }
 
-.casino-float {
-  position: absolute;
-  animation: floatCasino 8s linear infinite;
+.pop-up-enter-active,
+.pop-up-leave-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes floatCasino {
-  0% { transform: translateY(0) scale(1); opacity: 0.3; }
-  50% { transform: translateY(-10px) scale(1.1); opacity: 0.5; }
-  100% { transform: translateY(-20px) scale(1); opacity: 0.3; }
+.pop-up-enter-from,
+.pop-up-leave-to {
+  opacity: 0;
+  transform: scale(0.9) translateY(10px);
 }
 
-/* Animaciones para el menú desplegable */
-.support-fade-enter-active,
-.support-fade-leave-active {
+/* Efecto hover para los botones */
+.group:hover i {
+  transform: scale(1.1);
+}
+
+.group:hover span {
+  font-weight: 900;
+}
+
+/* Efecto glow para iconos activos */
+i {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Efecto de pulso para indicadores activos */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.absolute span {
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+/* Mejorar el contraste de los iconos */
+i, span {
   transition: all 0.3s ease;
 }
 
-.support-fade-enter-from {
-  opacity: 0;
-  transform: translateY(10px) scale(0.95);
+/* Hover más suave */
+.group:hover i {
+  opacity: 1;
 }
 
-.support-fade-leave-to {
-  opacity: 0;
-  transform: translateY(10px) scale(0.95);
-}
-
-/* Animación para el overlay */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+.group:hover span {
+  opacity: 1;
 }
 </style>
