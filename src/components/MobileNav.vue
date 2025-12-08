@@ -1,7 +1,7 @@
 <template>
   <nav
     :class="[
-      'fixed bottom-0 left-0 w-full z-50 transition-transform duration-300 ease-out',
+      'md:hidden fixed bottom-0 left-0 w-full z-50 transition-transform duration-300 ease-out',
       'shadow-[0_-4px_20px_rgba(0,0,0,0.5)]',
       isVisible ? 'translate-y-0' : 'translate-y-full'
     ]"
