@@ -130,11 +130,18 @@
               <p v-if="!loadingCurrencies && currencies.length === 0" class="text-red-400 text-sm">No hay monedas disponibles.</p>
 
             <div class="space-y-4">
-              <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
-              <select v-model="form.metodoPago" class="input-custom" :required="!authStore.isAuthenticated" :disabled="loadingMethods">
-                <option value="" disabled :selected="!form.metodoPago">{{ loadingMethods ? 'Cargando métodos...' : 'Seleccionar método de pago' }}</option>
-                <option v-for="method in paymentMethods" :key="method.uuid" :value="method.slug">{{ method.name }}</option>
-              </select>
+  <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
+  <select v-model="form.metodoPago" class="input-custom" required>
+    <option value="" disabled :selected="!form.metodoPago">Seleccionar método de pago</option>
+    <option v-for="method in paymentMethods" :key="method.uuid" :value="method.uuid">
+      {{ method.name }} {{ method.is_default ? '' : '' }}
+    </option>
+  </select>
+
+<!-- Mostrar mensaje si no hay métodos configurados -->
+<p v-if="paymentMethods.length === 0" class="text-red-400 text-sm mt-2">
+  ⚠️ Este rifero no tiene métodos de pago configurados.
+</p>
               <!-- Mostrar structured_data parseado del método seleccionado (si existe) -->
               <div v-if="selectedMethodHasStructured && parsedStructured" class="mt-3 p-3 bg-black/20 rounded-lg text-sm text-white/90 border border-white/10">
                 <p class="font-semibold text-cyan-300 mb-2">🔎 Datos del método seleccionado</p>
@@ -149,92 +156,49 @@
               
                 <!-- Campo de Referencia (Transaction ID) -->
   <!-- Mostrar para todos los métodos excepto pago-movil en modo automático -->
-  <div v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')" class="mt-4">
+<div v-if="!(isPagoMovilSelected && pagoMovilMode === 'automatico')" class="mt-4">
     <label class="font-semibold text-white text-lg">🔖 Referencia de pago</label>
     <input v-model="form.referencia" type="text" placeholder="Ingresa el número de referencia" class="input-custom" required />
     <p class="text-gray-400 text-sm mt-1">Número de referencia, comprobante o transacción de tu pago.</p>
   </div>
               <!-- Sección de Pago Móvil -->
-              <div v-if="form.metodoPago === 'pago-movil'" class="mt-4">
-                <div class="flex flex-col sm:flex-row bg-black/30 rounded-xl p-1 border border-cyan-500/30 shadow-lg">
-                  <button type="button" @click="pagoMovilMode = 'manual'" :class="{'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'manual', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'manual'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-cyan-500/30">
-                    <div class="flex items-center justify-center gap-2">
-                      <span class="text-lg">👤</span>
-                      <span>Manual</span>
-                    </div>
-                  </button>
-                  <button type="button" @click="pagoMovilMode = 'automatico'" :class="{'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'automatico', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'automatico'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-emerald-500/30">
-                    <div class="flex items-center justify-center gap-2">
-                      <span class="text-lg">⚡</span>
-                      <span>Automático</span>
-                    </div>
-                  </button>
-                </div>
-                
-                <!-- Modo Manual - Mostrar información del rifero -->
-                <div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30 relative">
-                  <div class="flex justify-between items-start mb-2">
-                    <p class="flex items-center gap-2 text-cyan-400 font-semibold">
-                      <!-- <span>📱</span> Datos para Pago Móvil del Rifero -->
-                    </p>
-                    <!-- <button type="button" @click="copyPagoMovilData($event)" class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all duration-200 text-xs border border-cyan-400/30" title="Copiar datos al portapapeles">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      Copiar
-                    </button> -->
-                  </div>
-                  
-                  <!-- Mostrar información específica del rifero -->
-                  <!-- <div v-if="paymentMethods.length > 0">
-                    <div v-for="method in paymentMethods.filter(m => m.slug === 'pago-movil')" :key="method.uuid" class="space-y-2 mb-4 p-3 bg-cyan-500/10 rounded-lg">
-                      <div class="flex items-center justify-between">
-                        <p class="font-semibold text-cyan-300">{{ method.name }}</p>
-                        <span v-if="method.is_default" class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">Principal</span>
-                      </div>
-                      <div class="space-y-1 text-sm">
-                        <p class="flex items-center gap-2">
-                          <span class="text-cyan-400">🏦</span> 
-                          Banco: <strong>{{ method.bank_name }} ({{ method.bank_code }})</strong>
-                        </p>
-                        <p class="flex items-center gap-2">
-                          <span class="text-cyan-400">📋</span> 
-                          C.I: <strong>{{ method.document_number }}</strong>
-                        </p>
-                        <p class="flex items-center gap-2">
-                          <span class="text-cyan-400">👤</span> 
-                          Titular: <strong>{{ method.holder_name }}</strong>
-                        </p>
-                        <p class="flex items-center gap-2">
-                          <span class="text-cyan-400">📞</span> 
-                          Teléfono: <strong>{{ method.account_number }}</strong>
-                        </p>
-                        <p v-if="method.description" class="flex items-center gap-2 text-cyan-200/80">
-                          <span class="text-cyan-400">📝</span> 
-                          Observación: {{ method.description }}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div v-else class="text-yellow-400 text-sm">
-                    ⚠️ No se encontraron métodos de pago móvil configurados por el rifero
-                  </div> -->
-                </div>
-                
-                <!-- Modo Automático -->
-                <div v-else-if="pagoMovilMode === 'automatico'" class="space-y-4">
-                  <h3 class="font-semibold text-cyan-300 text-lg">Ingrese los datos de pago móvil</h3>
-                  <input v-model="form.pagoMovilCedula" type="text" placeholder="🔢 Número de cédula" class="input-custom" maxlength="8" />
-                  <input v-model="form.pagoMovilTelefono" type="tel" placeholder="📞 Número de teléfono" class="input-custom" maxlength="11" />
-                  <select v-model="form.pagoMovilBanco" class="input-custom" :disabled="loadingBanks">
-                    <option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
-                    <option v-for="bank in banks" :key="bank.uuid" :value="bank.uuid">{{ bank.name }}</option>
-                  </select>
-                  <p v-if="!loadingBanks && banks.length === 0" class="text-red-400 text-sm mt-1">No se pudieron cargar los bancos.</p>
-                </div>
-              </div>
+            <div v-if="isPagoMovilSelected" class="mt-4">
+  <div class="flex flex-col sm:flex-row bg-black/30 rounded-xl p-1 border border-cyan-500/30 shadow-lg">
+    <button type="button" @click="pagoMovilMode = 'manual'" :class="{'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'manual', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'manual'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-cyan-500/30">
+      <div class="flex items-center justify-center gap-2">
+        <span class="text-lg">👤</span>
+        <span>Manual</span>
+      </div>
+    </button>
+    <button type="button" @click="pagoMovilMode = 'automatico'" :class="{'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'automatico', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'automatico'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-emerald-500/30">
+      <div class="flex items-center justify-center gap-2">
+        <span class="text-lg">⚡</span>
+        <span>Automático</span>
+      </div>
+    </button>
+  </div>
+  
+  <!-- Modo Manual - Mostrar información del rifero -->
+  <div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30 relative">
+    <!-- ... contenido del modo manual ... -->
+  </div>
+  
+  <!-- Modo Automático -->
+  <div v-else-if="pagoMovilMode === 'automatico'" class="space-y-4">
+    <h3 class="font-semibold text-cyan-300 text-lg">Ingrese los datos de pago móvil</h3>
+    <input v-model="form.pagoMovilCedula" type="text" placeholder="🔢 Número de cédula" class="input-custom" maxlength="8" />
+    <input v-model="form.pagoMovilTelefono" type="tel" placeholder="📞 Número de teléfono" class="input-custom" maxlength="11" />
+    <select v-model="form.pagoMovilBanco" class="input-custom" :disabled="loadingBanks">
+      <option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
+      <option v-for="bank in banks" :key="bank.uuid" :value="bank.uuid">{{ bank.name }}</option>
+    </select>
+    <p v-if="!loadingBanks && banks.length === 0" class="text-red-400 text-sm mt-1">No se pudieron cargar los bancos.</p>
+  </div>
+</div>
+
               
               <!-- Para otros métodos de pago, mostrar la información específica del rifero (solo si NO hay structured_data) -->
-              <div v-else-if="form.metodoPago && form.metodoPago !== 'pago-movil' && !selectedMethodHasStructured" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
+<div v-else-if="form.metodoPago && !isPagoMovilSelected && !selectedMethodHasStructured" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
                 <div v-for="method in paymentMethods.filter(m => m.slug === form.metodoPago)" :key="method.uuid" class="space-y-2">
                   <p class="font-semibold text-cyan-400 mb-2">{{ method.name }}</p>
                   
@@ -287,15 +251,15 @@
             </div>
 
             <div class="space-y-4">
-              <div v-if="form.metodoPago === 'pago-movil' && pagoMovilMode === 'manual'" class="mt-2">
-                <button type="button" class="w-full py-2 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30 font-semibold" @click="pagoMovilNeedsReverify ? (showReverifyModal = true) : handleVerifyPagoMovil()" :disabled="verifyingPagoMovil || reverifySubmitting">
-                  <span v-if="verifyingPagoMovil">Verificando...</span>
-                  <span v-else-if="pagoMovilNeedsReverify">Volver a verificar</span>
-                  <span v-else>Ya pagué</span>
-                </button>
-                <p v-if="pagoMovilVerifyResult" :class="{'text-green-400': pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente', 'text-yellow-400': pagoMovilVerifyResult.status === 'pendiente', 'text-red-400': !pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente'}" class="mt-2 text-sm">{{ pagoMovilVerifyResult.message }}</p>
-              </div>
-              <div v-if="!(form.metodoPago === 'pago-movil' && pagoMovilMode === 'automatico')">
+              <div v-if="isPagoMovilSelected && pagoMovilMode === 'manual'" class="mt-2">
+  <button type="button" class="w-full py-2 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30 font-semibold" @click="pagoMovilNeedsReverify ? (showReverifyModal = true) : handleVerifyPagoMovil()" :disabled="verifyingPagoMovil || reverifySubmitting">
+    <span v-if="verifyingPagoMovil">Verificando...</span>
+    <span v-else-if="pagoMovilNeedsReverify">Volver a verificar</span>
+    <span v-else>Ya pagué</span>
+  </button>
+  <p v-if="pagoMovilVerifyResult" :class="{'text-green-400': pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente', 'text-yellow-400': pagoMovilVerifyResult.status === 'pendiente', 'text-red-400': !pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente'}" class="mt-2 text-sm">{{ pagoMovilVerifyResult.message }}</p>
+</div>
+<div v-if="!(isPagoMovilSelected && pagoMovilMode === 'automatico')">
                 <label class="block font-semibold text-white mb-3 text-lg">📎 Comprobante de pago (opcional)</label>
                 <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange"/>
                 <button type="button" @click="triggerFileDialog" class="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30">📸 Insertar imagen del comprobante</button>
@@ -439,7 +403,7 @@ const ticketStore = useTicketStore();
 const authStore = useAuthStore();
 const gridStore = useGridStore();
 const paymentStore = usePaymentStore();
-const { paymentMethods, banks, currencies } = storeToRefs(paymentStore);
+const { banks, currencies } = storeToRefs(paymentStore);
 const { selectedProduct, isParticipateModalOpen } = storeToRefs(gridStore);
 const loadingRandomTickets = ref(false);
 const randomTicketsResult = ref<{
@@ -461,6 +425,68 @@ const bcvRate = computed(() => paymentStore.bcvRate);
 const loadingRates = computed(() => paymentStore.loadingRates);
 const copRate = computed(() => paymentStore.copRate);
 // const paymentMethods = ref<PaymentMethod[]>([])
+const paymentMethods = computed(() => {
+  if (!selectedProduct.value?.seller?.payment_methods) {
+    console.log('⚠️ No hay seller o payment_methods:', selectedProduct.value?.seller);
+    return [];
+  }
+  
+  const methods = selectedProduct.value.seller.payment_methods;
+  console.log('💳 Métodos de pago del rifero:', methods);
+  
+  return methods.map(method => {
+    // Parsear structured_data si existe
+    let parsedStructuredData = null;
+    if (method.structured_data) {
+      try {
+        parsedStructuredData = typeof method.structured_data === 'string' 
+          ? JSON.parse(method.structured_data) 
+          : method.structured_data;
+      } catch (e) {
+        console.warn('Error parseando structured_data:', e);
+      }
+    }
+    
+    // Crear slug basado en el nombre del método
+    const slug = method.method_name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    
+    return {
+      uuid: method.uuid,
+      name: method.method_name,
+      slug: slug,
+      is_default: method.is_default || false,
+      // Extraer campos comunes del structured_data
+      bank_name: parsedStructuredData?.Banco || parsedStructuredData?.banco || '',
+      bank_code: parsedStructuredData?.CodigoBanco || parsedStructuredData?.codigo || '',
+      account_number: parsedStructuredData?.Cuenta || parsedStructuredData?.Telefono || parsedStructuredData?.telefono || '',
+      holder_name: parsedStructuredData?.Titular || parsedStructuredData?.Nombre || '',
+      document_number: parsedStructuredData?.Cedula || parsedStructuredData?.cedula || '',
+      description: method.observation || '',
+      structured_data: method.structured_data,
+      parsed_structured_data: parsedStructuredData,
+      icon: method.icon || '',
+      currency_id: method.currency_id,
+      created_at: method.created_at,
+      updated_at: method.updated_at
+    };
+  });
+});
+
+// 🔥 Depuración para verificar
+watch(selectedProduct, (newProduct) => {
+  if (newProduct) {
+    console.log('🎯 Producto seleccionado:', {
+      title: newProduct.title,
+      hasSeller: !!newProduct.seller,
+      seller: newProduct.seller,
+      paymentMethods: paymentMethods.value
+    });
+  }
+}, { immediate: true });
+
 const loadingMethods = ref(false)
 // const currencies = ref<Currency[]>([])
 const loadingCurrencies = ref(false)
@@ -733,6 +759,31 @@ const displayPrice = computed(() => {
   }
 });
 
+const isPagoMovilSelected = computed(() => {
+  if (!selectedPaymentMethod.value) return false;
+  
+  // Verificar por nombre del método (case insensitive)
+  const methodName = selectedPaymentMethod.value.name.toLowerCase();
+  return methodName.includes('pago') && methodName.includes('movil');
+});
+
+// Detecta si el método seleccionado es Transferencia
+const isTransferenciaSelected = computed(() => {
+  if (!selectedPaymentMethod.value) return false;
+  
+  const methodName = selectedPaymentMethod.value.name.toLowerCase();
+  return methodName.includes('transferencia');
+});
+
+// También puedes crear un slug para comparación
+const selectedMethodSlug = computed(() => {
+  if (!selectedPaymentMethod.value) return '';
+  return selectedPaymentMethod.value.name
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+});
 const handleTimeExpired = async () => {
   showToast('⏰ El tiempo para completar la compra ha expirado. Los tickets han sido liberados.', 'error', 5000);
   
@@ -1111,8 +1162,10 @@ const buildSalePayload = (verificationData: any = null) => {
   } else {
     phone = form.pagoMovilTelefono || form.telefono || ''
   }
+  
   let ticketsToBuy: number[] | undefined = undefined;
   let quantity = 0;
+  
   if (selectionMode.value === 'manual') {
     ticketsToBuy = selectedManualTickets.value;
     quantity = ticketsToBuy.length;
@@ -1125,6 +1178,7 @@ const buildSalePayload = (verificationData: any = null) => {
       ticketsToBuy = Array.from({length: quantity}, (_, i) => i + 1);
     }
   }
+  
   const details: any[] = [];
   if (ticketsToBuy) {
     for (const n of ticketsToBuy) {
@@ -1135,16 +1189,18 @@ const buildSalePayload = (verificationData: any = null) => {
       });
     }
   }
-  const selectedMethod = paymentMethods.value.find(m => m.slug === form.metodoPago);
-  const paymentMethodId = selectedMethod ? selectedMethod.uuid : form.metodoPago;
+  
+  // ✅ Ahora form.metodoPago ya es el UUID del método de pago
+  const paymentMethodId = form.metodoPago;
   const referencia = verificationData?.referencia || form.referencia || `TX-${Date.now()}`;
   const idempotencyKey = `sale-${userId ?? 'guest'}-${Date.now()}`;
+  
   const payload: any = {
     raffle_id: selectedProduct.value?.uuid ?? selectedProduct.value?.title,
     user_id: userId,
     details: details,
     payment: {
-      payment_method_id: paymentMethodId,
+      payment_method_id: paymentMethodId, // ✅ Ya es UUID
       currency_id: selectedCurrencyId.value,
       current_currency_id: selectedCurrencyId.value,
       exchange_rate: Number(bcvRate.value) || 1,
@@ -1159,9 +1215,7 @@ const buildSalePayload = (verificationData: any = null) => {
         monto_verificado: verificationData.monto,
         referencia_verificada: verificationData.referencia,
         status: verificationData.status
-      } : undefined
-      ,
-      // Indicar al backend si esta venta proviene de una verificación (pago móvil verificado)
+      } : undefined,
       is_verify: !!verificationData
     },
     invoice_data: {
@@ -1171,10 +1225,12 @@ const buildSalePayload = (verificationData: any = null) => {
       address: authStore.user?.natural_profile?.address || 'Direccion',
     }
   };
+  
   function formatSqlDate(d: Date) {
     const pad = (n: number) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
+  
   payload.payment.payment_date = formatSqlDate(new Date(payload.payment.payment_date));
   return { payload, idempotencyKey, quantity, ticketsToBuy };
 };
@@ -1361,6 +1417,7 @@ watch(selectionMode, (newMode) => {
 
 onMounted(() => {
   console.log('✅ ParticipateModal montado - usando datos ya cargados en App.vue')
+  console.log('💰 Métodos de pago disponibles:', paymentMethods.value);
 
   // // Cargar los datos desde App.vue
   // fetchBcvRate()
@@ -1620,7 +1677,7 @@ const handleConfirm = async () => {
   }
 
   // Resto de validaciones (método de pago, etc.)
-if (form.metodoPago === 'pago-movil' && pagoMovilMode.value === 'automatico') {
+if (isPagoMovilSelected.value && pagoMovilMode.value === 'automatico') {
   if (!form.pagoMovilCedula || !form.pagoMovilTelefono || !form.pagoMovilBanco) {
     error.value = 'Debes completar todos los campos de Pago Móvil Automático.';
     return;

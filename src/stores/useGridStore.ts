@@ -35,43 +35,69 @@ export const useGridStore = defineStore('grid', {
     },
 
     actions: {
-        async fetchProductList(page = 1, perPage = 16) {
-            this.isLoadingList = true;
-            try {
-                const response = await RaffleService.getAll(page, perPage);
-                
-                if (!response || !Array.isArray(response.data)) {
-                    console.error("Respuesta de API inválida al buscar productos:", response);
-                    this.products = [];
-                    return;
-                }
+async fetchProductList(page = 1, perPage = 16) {
+  this.isLoadingList = true;
+  try {
+    const response = await RaffleService.getAll(page, perPage);
+    
+    if (!response || !Array.isArray(response.data)) {
+      console.error("Respuesta de API inválida al buscar productos:", response);
+      this.products = [];
+      return;
+    }
 
-                this.products = response.data
-                .filter(r => r && r.uuid)
-                .map((r: any) => ({
-                    uuid: r.uuid,
-                    title: r.name,
-                    description: r.description,
-                    ticketsMax: r.end_range,
-                    drawDate: r.raffle_date,
-                    ticketPrice: parseFloat(r.ticket_price),
-                    rifero: r.seller ? `${r.seller.name} ${r.seller.last_name}`.trim() : "Anónimo",
-                    images: r.images?.map((img: any) => img.url) ?? [],
-                    categories: r.prizes?.[0]?.category ? [r.prizes[0].category.name] : [],
-                    status: r.status,
-                    ticketsVendidos: 0,
-                    isProgressLoading: false,
-                }));
+    this.products = response.data
+    .filter(r => r && r.uuid)
+    .map((r: any) => {
+      console.log('🎯 Rifa procesada en GridStore:', {
+        name: r.name,
+        hasSeller: !!r.seller,
+        hasPaymentMethods: !!r.seller?.payment_methods,
+        paymentMethodsCount: r.seller?.payment_methods?.length || 0
+      });
+      
+      return {
+        uuid: r.uuid,
+        title: r.name,
+        description: r.description,
+        ticketsMax: r.end_range,
+        drawDate: r.raffle_date,
+        ticketPrice: parseFloat(r.ticket_price),
+        rifero: r.seller ? `${r.seller.name} ${r.seller.last_name}`.trim() : "Anónimo",
+        // 🔥 Ahora r.seller ya debería tener payment_methods desde RaffleService
+        seller: r.seller ? {
+          uuid: r.seller.uuid,
+          name: r.seller.name,
+          last_name: r.seller.last_name,
+          photo: r.seller.photo,
+          payment_methods: r.seller.payment_methods || []
+        } : null,
+        images: r.images?.map((img: any) => img.url) ?? [],
+        categories: r.prizes?.[0]?.category ? [r.prizes[0].category.name] : [],
+        status: r.status,
+        ticketsVendidos: 0,
+        isProgressLoading: false,
+      };
+    });
 
-                this.pagination = response.meta || null;
+    this.pagination = response.meta || null;
 
-            } catch (error) {
-                console.error("Error al cargar la lista de productos:", error);
-                this.products = [];
-            } finally {
-                this.isLoadingList = false;
-            }
-        },
+    // ✅ Depuración adicional
+    console.log('📋 Resumen de productos cargados:');
+    this.products.forEach((p, i) => {
+      console.log(`  ${i + 1}. ${p.title}:`, {
+        seller: p.seller?.name,
+        paymentMethods: p.seller?.payment_methods?.length || 0
+      });
+    });
+
+  } catch (error) {
+    console.error("Error al cargar la lista de productos:", error);
+    this.products = [];
+  } finally {
+    this.isLoadingList = false;
+  }
+},
 
         async fetchAvailableTickets(raffleId: string) {
             try {

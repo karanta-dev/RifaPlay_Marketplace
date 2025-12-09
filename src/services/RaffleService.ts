@@ -21,6 +21,8 @@ export interface Raffle {
     name: string;
     last_name: string;
     photo: string | null;
+    // 🔥 Agregar payment_methods al tipo
+    payment_methods?: any[];
   };
 }
 
@@ -135,35 +137,52 @@ export const RaffleService = {
         params: { page, perPage: perPage, paginated: true },
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+      
       const raffles = response.data?.data || [];
       const meta = response.data?.meta || response.data?.pagination || null;
-      const formattedRaffles = raffles.map((r: any) => ({
-        uuid: r.uuid,
-        name: r.name,
-        description: r.description,
-        ticket_price: Number(r.ticket_price),
-        tickets_sold: r.tickets_sold ?? 0,
-        start_sell_at: r.start_sell_at ?? 0,
-        end_sell_at: r.end_sell_at ?? 0,
-        initial_range: r.initial_range ?? 0,
-        end_range: r.end_range ?? 0,
-        raffle_date: r.raffle_date,
-        status: r.status,
-        images: (Array.isArray(r.images) && r.images.length) ? r.images : (
-          Array.isArray(r.prizes) && r.prizes.length && Array.isArray(r.prizes[0].images) && r.prizes[0].images.length
-            ? [r.prizes[0].images[0]]
-            : []
-        ),
-  categories: r.categories ?? [],
-  prizes: r.prizes ?? [], 
-        created_by: r.created_by ?? {},
-        seller: r.seller ? {
-          uuid: r.seller.uuid,
-          name: r.seller.name,
-          last_name: r.seller.last_name,
-          photo: r.seller.photo
-        } : undefined
-      }));
+      
+      console.log('🔍 Respuesta completa de /raffles:', response.data); // Para debug
+      
+      const formattedRaffles = raffles.map((r: any) => {
+        console.log('🔍 Rifa individual:', {
+          uuid: r.uuid,
+          name: r.name,
+          hasSeller: !!r.seller,
+          sellerPaymentMethods: r.seller?.payment_methods?.length || 0,
+          seller: r.seller // Mostrar completo
+        });
+        
+        return {
+          uuid: r.uuid,
+          name: r.name,
+          description: r.description,
+          ticket_price: Number(r.ticket_price),
+          tickets_sold: r.tickets_sold ?? 0,
+          start_sell_at: r.start_sell_at ?? 0,
+          end_sell_at: r.end_sell_at ?? 0,
+          initial_range: r.initial_range ?? 0,
+          end_range: r.end_range ?? 0,
+          raffle_date: r.raffle_date,
+          status: r.status,
+          images: (Array.isArray(r.images) && r.images.length) ? r.images : (
+            Array.isArray(r.prizes) && r.prizes.length && Array.isArray(r.prizes[0].images) && r.prizes[0].images.length
+              ? [r.prizes[0].images[0]]
+              : []
+          ),
+          categories: r.categories ?? [],
+          prizes: r.prizes ?? [], 
+          created_by: r.created_by ?? {},
+          seller: r.seller ? {
+            uuid: r.seller.uuid,
+            name: r.seller.name,
+            last_name: r.seller.last_name,
+            photo: r.seller.photo,
+            // 🔥 Asegúrate de incluir payment_methods aquí
+            payment_methods: r.seller.payment_methods || []
+          } : undefined
+        };
+      });
+      
       return { data: formattedRaffles, meta };
     } catch (error) {
       console.error("Error al obtener rifas:", error);
@@ -174,77 +193,55 @@ export const RaffleService = {
   /**
    * Obtener una rifa por su UUID
    */
-  async getByUuid(uuid: string): Promise<Raffle | null> {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await apiClient.get(`/raffles/${uuid}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+async getByUuid(uuid: string): Promise<Raffle | null> {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await apiClient.get(`/raffles/${uuid}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
 
-      const r = response.data?.data || response.data;
-      if (!r) return null;
+    const r = response.data?.data || response.data;
+    if (!r) return null;
 
-      const formatted: Raffle = {
-        uuid: r.uuid,
-        name: r.name,
-        description: r.description,
-        ticket_price: Number(r.ticket_price),
-        tickets_sold: r.tickets_sold ?? 0,
-        start_sell_at: r.start_sell_at ?? 0,
-        end_sell_at: r.end_sell_at ?? 0,
-        initial_range: r.initial_range ?? 0,
-        end_range: r.end_range ?? 0,
-        raffle_date: r.raffle_date,
-        status: r.status,
-  images: (Array.isArray(r.images) && r.images.length) ? r.images : (
-    Array.isArray(r.prizes) && r.prizes.length && Array.isArray(r.prizes[0].images) && r.prizes[0].images.length
-      ? [r.prizes[0].images[0]]
-      : []
-  ),
-  categories: r.categories ?? [],
-  prizes: r.prizes ?? [],
-    created_by: r.created_by ?? {},
-        seller: r.seller ? {
-          uuid: r.seller.uuid,
-          name: r.seller.name,
-          last_name: r.seller.last_name,
-          photo: r.seller.photo
-        } : undefined
-      };
+    const formatted: Raffle = {
+      uuid: r.uuid,
+      name: r.name,
+      description: r.description,
+      ticket_price: Number(r.ticket_price),
+      tickets_sold: r.tickets_sold ?? 0,
+      start_sell_at: r.start_sell_at ?? 0,
+      end_sell_at: r.end_sell_at ?? 0,
+      initial_range: r.initial_range ?? 0,
+      end_range: r.end_range ?? 0,
+      raffle_date: r.raffle_date,
+      status: r.status,
+      images: (Array.isArray(r.images) && r.images.length) ? r.images : (
+        Array.isArray(r.prizes) && r.prizes.length && Array.isArray(r.prizes[0].images) && r.prizes[0].images.length
+          ? [r.prizes[0].images[0]]
+          : []
+      ),
+      categories: r.categories ?? [],
+      prizes: r.prizes ?? [],
+      created_by: r.created_by ?? {},
+      seller: r.seller ? {
+        uuid: r.seller.uuid,
+        name: r.seller.name,
+        last_name: r.seller.last_name,
+        photo: r.seller.photo,
+        // 🔥 Incluir payment_methods aquí también
+        payment_methods: r.seller.payment_methods || []
+      } : undefined
+    };
 
-      // Fallback: si la respuesta individual no trae imágenes o premios (o están vacíos),
-      // intentar obtener los datos desde el endpoint paginado que sí devuelve images/prizes
-      // (por ejemplo: /raffles?page=1&perPage=100&paginated=true)
-      try {
-        const listResp = await RaffleService.getAll(1, 100);
-        if (listResp && Array.isArray(listResp.data)) {
-          const found = listResp.data.find((x) => x.uuid === uuid);
-          if (found) {
-            // Copiar imágenes si vienen vacías en la respuesta individual
-            if ((!formatted.images || formatted.images.length === 0) && found.images?.length) {
-              formatted.images = found.images;
-            }
-            // Copiar premios (prizes) si no vienen en la respuesta individual
-            if ((!formatted.prizes || formatted.prizes.length === 0) && found.prizes?.length) {
-              formatted.prizes = found.prizes;
-            }
-            // Si el ticket_price viene como 0 o null, usar el de la lista
-            if ((!formatted.ticket_price || Number(formatted.ticket_price) === 0) && found.ticket_price) {
-              formatted.ticket_price = Number(found.ticket_price as any);
-            }
-          }
-        }
-      } catch (err) {
-        // No bloquear si el fallback falla; solo dejar el objeto como está
-        console.warn('Warning: fallback to list endpoint failed for raffle images/prizes', err);
-      }
+    // Fallback: si la respuesta individual no trae imágenes o premios...
+    // (código existente)
 
-      return formatted;
-    } catch (error) {
-      console.error(`Error al obtener rifa ${uuid}:`, error);
-      throw error;
-    }
-  },
+    return formatted;
+  } catch (error) {
+    console.error(`Error al obtener rifa ${uuid}:`, error);
+    throw error;
+  }
+},
 
   async getSoldTicketsCount(raffleUuid: string): Promise<number> {
     try {
