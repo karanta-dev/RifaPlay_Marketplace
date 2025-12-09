@@ -290,64 +290,102 @@
           <p class="text-sm text-gray-500 mb-6 text-center">Selecciona una opción</p>
 
           <div class="payment-methods-wrapper">
-            <div 
-  v-for="method in paymentMethods" 
-  :key="method.uuid || method.name" 
-  :class="getPaymentMethodClass(method)"
-  @click="selectedPaymentMethod = method"
-  :data-method="method.slug || method.name?.toLowerCase()"
->
-  <img 
-    :src="getPaymentLogo(method)" 
-    :alt="method.name" 
-    class="w-full h-full object-contain"
-  >
-  <svg v-if="selectedPaymentMethod && (selectedPaymentMethod.uuid === method.uuid || selectedPaymentMethod.name === method.name)" 
-       class="check-icon" 
-       xmlns="http://www.w3.org/2000/svg" 
-       viewBox="0 0 20 20" 
-       fill="currentColor">
-    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-  </svg>
-</div>
-          </div>
-          
-          <!-- Detalles de la cuenta -->
-          <div class="account-details-box">
-            <div class="account-header">
-              <div class="flex items-center">
-                <span class="text-xs font-semibold uppercase text-gray-600 mr-2">ZINU</span>
-                <span class="text-green-600 font-bold">@</span>
-              </div>
-              <span class="text-red-500 text-sm cursor-pointer hover:underline">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9.247a3.75 3.75 0 100 5.506 7.502 7.502 0 01-2.434 2.894 1.5 1.5 0 00-2.388-.13 1.5 1.5 0 00-.13 2.388A10.517 10.517 0 0012 22.5c5.78 0 10.5-4.72 10.5-10.5S17.78 1.5 12 1.5A10.517 10.517 0 003.504 5.234a1.5 1.5 0 00.13 2.388 1.5 1.5 0 002.388.13c.48-.38.937-.777 1.346-1.22z"/></svg>
-              </span>
-            </div>
-            
-              <div class="account-info">
-                <p><strong>TITULAR:</strong> {{ sellerName }}</p>
-                <!-- <p><strong>CORREO:</strong> {{ sellerEmail }}</p> -->
-              </div>
-
-              <!-- Mostrar campos dinámicos del método de pago seleccionado -->
-              <div v-if="selectedPaymentMethod && structuredFields.length > 0" class="payment-structured-data mt-4">
-                <h4 class="text-sm font-semibold text-gray-700 mb-2">Metodo seleccionado</h4>
-                <div class="text-sm text-gray-800 mb-2">{{ selectedPaymentVariable || 'Ninguno seleccionado' }}</div>
-                <h4 class="text-sm font-semibold text-gray-700 mb-2">Detalles del método seleccionado</h4>
-                <div v-for="field in structuredFields" :key="field.key || field.label" class="mb-2">
-                  <label class="block text-xs text-gray-800 mb-1">{{ field.label || field.key }}:</label>
-                  <div class="text-sm text-gray-800">{{ field.value }}</div>
-                </div>
-              </div>
-
-             
-              <div class="account-total">
-                Total: <span class="text-red-600">{{ displayPrice.text }}</span>
-                <span v-if="displayPrice.showUsdRate && displayPrice.rate" class="text-xs text-gray-500"> (Tasa: {{ displayPrice.rate.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }} {{ displayPrice.rateCurrency }})</span>
-                <span v-if="displayPrice.showUsdPrice" class="text-xs text-gray-500"> (Referencia: ${{ totalPrice.toFixed(2) }} USD)</span>
-                ({{ selectedTicketsCount }} boleto{{ selectedTicketsCount !== 1 ? 's' : '' }})
-              </div>
-          </div>
+    <div 
+      v-for="method in paymentMethods" 
+      :key="method.uuid" 
+      :class="getPaymentMethodClass(method)"
+      @click="selectedPaymentMethod = method"
+      :data-method="method.slug"
+    >
+      <img 
+        :src="getPaymentLogo(method)" 
+        :alt="method.name" 
+        class="w-full h-full object-contain"
+      >
+      <svg v-if="selectedPaymentMethod && selectedPaymentMethod.uuid === method.uuid" 
+           class="check-icon" 
+           xmlns="http://www.w3.org/2000/svg" 
+           viewBox="0 0 20 20" 
+           fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      </svg>
+    </div>
+  </div>
+  
+  <!-- Detalles de la cuenta - Mejorado para mostrar structured_data -->
+  <div class="account-details-box">
+    <div class="account-header">
+      <div class="flex items-center">
+        <span class="text-xs font-semibold uppercase text-gray-600 mr-2">
+          {{ selectedPaymentMethod?.name || 'Método de pago' }}
+        </span>
+        <span v-if="selectedPaymentMethod?.is_default" class="text-green-600 font-bold text-xs">
+          (Principal)
+        </span>
+      </div>
+      <button 
+        v-if="parsedStructured" 
+        @click="copyPaymentData"
+        class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all duration-200 text-xs border border-cyan-400/30"
+        title="Copiar datos al portapapeles"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+        Copiar
+      </button>
+    </div>
+    
+    <!-- Información del rifero -->
+    <div class="account-info mb-3">
+      <p v-if="sellerName"><strong>TITULAR:</strong> {{ sellerName }}</p>
+    </div>
+    
+    <!-- Mostrar datos estructurados como en ParticipateModal -->
+    <div v-if="parsedStructured" class="payment-structured-data mt-4 p-3 bg-cyan-500/10 rounded-lg">
+      <h4 class="text-sm font-semibold text-cyan-700 mb-2">Detalles del método seleccionado</h4>
+      <div class="space-y-1 text-sm">
+        <div v-for="(value, key) in parsedStructured" :key="key" class="flex items-center gap-2">
+          <span class="text-cyan-600">📌</span> 
+          {{ key }}: <strong>{{ value }}</strong>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mostrar campos mapeados si no hay structured_data -->
+    <div v-else-if="selectedPaymentMethod" class="payment-structured-data mt-4 p-3 bg-gray-100 rounded-lg">
+      <h4 class="text-sm font-semibold text-gray-700 mb-2">Detalles del método seleccionado</h4>
+      <div class="space-y-1 text-sm">
+        <p class="flex items-center gap-2" v-if="selectedPaymentMethod.bank_name">
+          <span class="text-gray-600">🏦</span> 
+          Banco: <strong>{{ selectedPaymentMethod.bank_name }}</strong>
+        </p>
+        <p class="flex items-center gap-2" v-if="selectedPaymentMethod.document_number">
+          <span class="text-gray-600">📋</span> 
+          Cédula: <strong>{{ selectedPaymentMethod.document_number }}</strong>
+        </p>
+        <p class="flex items-center gap-2" v-if="selectedPaymentMethod.holder_name">
+          <span class="text-gray-600">👤</span> 
+          Titular: <strong>{{ selectedPaymentMethod.holder_name }}</strong>
+        </p>
+        <p class="flex items-center gap-2" v-if="selectedPaymentMethod.account_number">
+          <span class="text-gray-600">📞</span> 
+          Teléfono/Cuenta: <strong>{{ selectedPaymentMethod.account_number }}</strong>
+        </p>
+        <p v-if="selectedPaymentMethod.description" class="flex items-center gap-2 text-gray-600">
+          <span class="text-gray-600">📝</span> 
+          Observación: {{ selectedPaymentMethod.description }}
+        </p>
+      </div>
+    </div>
+    
+    <div class="account-total mt-4">
+      Total: <span class="text-red-600">{{ displayPrice.text }}</span>
+      <span v-if="displayPrice.showUsdRate && displayPrice.rate" class="text-xs text-gray-500"> (Tasa: {{ displayPrice.rate.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }} {{ displayPrice.rateCurrency }})</span>
+      <span v-if="displayPrice.showUsdPrice" class="text-xs text-gray-500"> (Referencia: ${{ totalPrice.toFixed(2) }} USD)</span>
+      ({{ selectedTicketsCount }} boleto{{ selectedTicketsCount !== 1 ? 's' : '' }})
+    </div>
+  </div>
 
           <!-- Sección de comprobante de pago -->
           <div class="section-divider">
@@ -556,8 +594,9 @@ const animationDuration = ref<number>(2000)
 // const currentTicketPage = ref<number>(1)
 
 // Métodos de pago provenientes del backend
-const paymentMethods = ref<PaymentMethod[]>([])
-const selectedPaymentMethod = ref<PaymentMethod | null>(null)
+// const paymentMethods = ref<PaymentMethod[]>([])
+
+const selectedPaymentMethod = ref<any | null>(null)
 const loadingPaymentMethods = ref(false)
 
 // Exponer el nombre/variable del método seleccionado para mostrar en UI fácilmente
@@ -641,6 +680,95 @@ const riferoProfileLink = computed(() => {
   // Fallback si no hay seller info
   return '/'
 })
+
+const paymentMethods = computed(() => {
+  if (!raffle.value?.seller?.payment_methods) {
+    console.log('⚠️ No hay seller o payment_methods:', raffle.value?.seller);
+    return [];
+  }
+  
+  const methods = raffle.value.seller.payment_methods;
+  console.log('💳 Métodos de pago del rifero (desde raffle):', methods);
+  
+  return methods.map((method: any) => {
+    // Parsear structured_data si existe
+    let parsedStructuredData = null;
+    if (method.structured_data) {
+      try {
+        parsedStructuredData = typeof method.structured_data === 'string' 
+          ? JSON.parse(method.structured_data) 
+          : method.structured_data;
+      } catch (e) {
+        console.warn('Error parseando structured_data:', e);
+      }
+    }
+    
+    // Crear slug basado en el nombre del método
+    const slug = method.method_name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    
+    // Obtener el icono - asegurarse de que sea una URL completa
+    let iconUrl = method.icon || '';
+    if (iconUrl && !iconUrl.startsWith('http')) {
+      // Construir URL completa si es relativa
+      iconUrl = `https://api-rifaplay.karanta.dev/storage${iconUrl.startsWith('/') ? iconUrl : '/' + iconUrl}`;
+    }
+    
+    return {
+      uuid: method.uuid,
+      name: method.method_name,
+      slug: slug,
+      is_default: method.is_default || false,
+      // Extraer campos comunes del structured_data
+      bank_name: parsedStructuredData?.Banco || parsedStructuredData?.banco || '',
+      bank_code: parsedStructuredData?.CodigoBanco || parsedStructuredData?.codigo || '',
+      account_number: parsedStructuredData?.Cuenta || parsedStructuredData?.Telefono || parsedStructuredData?.telefono || '',
+      holder_name: parsedStructuredData?.Titular || parsedStructuredData?.Nombre || '',
+      document_number: parsedStructuredData?.Cedula || parsedStructuredData?.cedula || '',
+      description: method.observation || '',
+      structured_data: method.structured_data,
+      parsed_structured_data: parsedStructuredData,
+      icon: iconUrl, // 🔥 Ahora es una URL completa
+      currency_id: method.currency_id,
+      created_at: method.created_at,
+      updated_at: method.updated_at
+    };
+  });
+});
+// Computed para detectar si es Pago Móvil (igual que en ParticipateModal)
+const isPagoMovilSelected = computed(() => {
+  if (!selectedPaymentMethod.value) return false;
+  
+  const methodName = selectedPaymentMethod.value.name.toLowerCase();
+  return methodName.includes('pago') && methodName.includes('movil');
+});
+
+// Computed para structured data parseada (igual que en ParticipateModal)
+const parsedStructured = computed(() => {
+  if (!selectedPaymentMethod.value) return null;
+  
+  const method = selectedPaymentMethod.value;
+  const sd = method.structured_data;
+  if (!sd) return null;
+  
+  try {
+    return typeof sd === 'string' ? JSON.parse(sd) : sd;
+  } catch (e) {
+    console.warn('No se pudo parsear structured_data:', e);
+    return null;
+  }
+});
+
+// Watch para seleccionar automáticamente el método por defecto
+watch(paymentMethods, (methods) => {
+  if (methods.length > 0 && !selectedPaymentMethod.value) {
+    // Seleccionar el método por defecto o el primero
+    const defaultMethod = methods.find(m => m.is_default) || methods[0];
+    selectedPaymentMethod.value = defaultMethod;
+  }
+}, { immediate: true });
 // Valores para los campos dinámicos de structured_data
 // structuredFields devuelve un array de { key, label, value } para mostrar como texto (no editables)
 const structuredFieldValues = ref<Record<string, any>>({})
@@ -683,7 +811,33 @@ const sellerName = computed(() => {
 })
 
 
+const copyPaymentData = async () => {
+  if (!selectedPaymentMethod.value) {
+    showToast('No se encontró información de pago', 'error');
+    return;
+  }
 
+  let textToCopy = '';
+  
+  if (parsedStructured.value) {
+    for (const [key, value] of Object.entries(parsedStructured.value)) {
+      textToCopy += `${key}: ${value}\n`;
+    }
+  } else {
+    if (selectedPaymentMethod.value.bank_name) textToCopy += `Banco: ${selectedPaymentMethod.value.bank_name}\n`;
+    if (selectedPaymentMethod.value.document_number) textToCopy += `Cédula: ${selectedPaymentMethod.value.document_number}\n`;
+    if (selectedPaymentMethod.value.holder_name) textToCopy += `Titular: ${selectedPaymentMethod.value.holder_name}\n`;
+    if (selectedPaymentMethod.value.account_number) textToCopy += `Teléfono/Cuenta: ${selectedPaymentMethod.value.account_number}\n`;
+  }
+  
+  try {
+    await navigator.clipboard.writeText(textToCopy.trim());
+    showToast('Datos copiados al portapapeles', 'success');
+  } catch (err) {
+    console.error('Error al copiar al portapapeles:', err);
+    showToast('Error al copiar datos', 'error');
+  }
+};
 
 const displayedImages = computed(() => {
   if (!raffle.value?.images) return []
@@ -952,12 +1106,8 @@ async function confirmFromProfile() {
     return
   }
 
-  const metodoPago = selectedPaymentMethod.value ? 
-    ((selectedPaymentMethod.value as any).slug || 
-     (selectedPaymentMethod.value as any).uuid || 
-     (selectedPaymentMethod.value as any).name) : 
-    undefined
-
+  // ✅ Usar el UUID del método de pago (igual que ParticipateModal)
+  const metodoPago = selectedPaymentMethod.value?.uuid
   // ✅ CORRECCIÓN: Determinar qué tickets enviar según el modo de selección
   let ticketsToSend: number[] = []
   
@@ -1001,20 +1151,18 @@ async function confirmFromProfile() {
     return
   }
 
-  try {
+   try {
     await modal.externalBuy({
       selectionMode: selectionMode.value,
       selectedManualTickets: ticketsToSend,
       formOverrides: {
         referencia: referenciaPago.value,
-        metodoPago: metodoPago
+        metodoPago: metodoPago  // ✅ Enviar UUID, no slug
       },
       selectedCurrencyId: selectedCurrencyId.value
     })
     
     showToast('✅ Compra procesada exitosamente', 'success')
-    
-    // ✅ RESETEO DEL FORMULARIO después de una compra exitosa
     resetForm()
     
   } catch (err: any) {
@@ -1056,7 +1204,7 @@ const getPaymentMethodClass = (method: any) => {
   const base = 'payment-method-box'
   const isSelected = selectedPaymentMethod.value && 
     (selectedPaymentMethod.value.uuid === method.uuid || 
-     selectedPaymentMethod.value.name === method.name)
+     selectedPaymentMethod.value.slug === method.slug)
   return isSelected ? `${base} selected-payment` : `${base} available-payment`
 }
 
@@ -1067,36 +1215,51 @@ const getPrizeImage = (prize: Prize) => {
 
 // Obtener URL absoluta del logo del método de pago
 const getPaymentLogo = (method: any) => {
-  const candidate = method?.logoUrl || method?.original_data?.icon || method?.original_data?.logo_url || method?.original_data?.image || null
-  const placeholder = '/default.png'
-  if (!candidate) return placeholder
-  try {
-    if (typeof candidate === 'string') {
-      if (candidate.startsWith('http://') || candidate.startsWith('https://')) return candidate
-      if (candidate.startsWith('/')) return `${apiClient.defaults.baseURL?.replace(/\/$/, '')}${candidate}`
-      return `${apiClient.defaults.baseURL?.replace(/\/$/, '')}/${candidate}`
-    }
-    return placeholder
-  } catch (e) {
-    return String(candidate) || placeholder
+  console.log('🖼️ Procesando icono para método:', method.name, method.icon);
+  
+  // Si no hay icono, usar un placeholder
+  if (!method.icon) {
+    console.log('⚠️ Método sin icono, usando placeholder');
+    return '/default.png';
   }
-}
-
-// Cargar métodos de pago desde el backend
-const loadPaymentMethods = async () => {
-  loadingPaymentMethods.value = true
-  try {
-    const methods = await PaymentFlowService.fetchPaymentMethods()
-    paymentMethods.value = methods
-    // Preseleccionar el método por defecto si existe
-    const def = methods.find(m => m.is_default) || methods[0]
-    if (def) selectedPaymentMethod.value = def
-  } catch (err) {
-    console.warn('No se pudieron cargar métodos de pago:', err)
-  } finally {
-    loadingPaymentMethods.value = false
+  
+  const icon = method.icon;
+  
+  // Si ya es una URL completa (comienza con http:// o https://)
+  if (typeof icon === 'string' && (icon.startsWith('http://') || icon.startsWith('https://'))) {
+    console.log('✅ Icono ya es URL completa:', icon);
+    return icon;
   }
-}
+  
+  // Si es una ruta relativa que comienza con storage/
+  if (typeof icon === 'string' && icon.includes('storage/')) {
+    // La API ya proporciona URLs completas para storage
+    const baseURL = 'https://api-rifaplay.karanta.dev/storage';
+    const cleanIcon = icon.startsWith('/') ? icon : `/${icon}`;
+    const fullUrl = `${baseURL}${cleanIcon}`;
+    console.log('🔗 URL construida desde storage:', fullUrl);
+    return fullUrl;
+  }
+  
+  // Fallback
+  console.log('⚠️ No se pudo procesar el icono, usando placeholder');
+  return '/default.png';
+};
+// // Cargar métodos de pago desde el backend
+// const loadPaymentMethods = async () => {
+//   loadingPaymentMethods.value = true
+//   try {
+//     const methods = await PaymentFlowService.fetchPaymentMethods()
+//     paymentMethods.value = methods
+//     // Preseleccionar el método por defecto si existe
+//     const def = methods.find(m => m.is_default) || methods[0]
+//     if (def) selectedPaymentMethod.value = def
+//   } catch (err) {
+//     console.warn('No se pudieron cargar métodos de pago:', err)
+//   } finally {
+//     loadingPaymentMethods.value = false
+//   }
+// }
 
 // Inicializar valores de structured fields cuando cambia el método seleccionado
 watch(selectedPaymentMethod, (newVal) => {
@@ -1221,7 +1384,10 @@ const loadRaffleData = async () => {
     }
     raffle.value = raffleResponse
 
-    // Establecer la rifa cargada como selectedProduct en gridStore (igual que ParticipateModal)
+    console.log('🎯 Rifa cargada:', raffleResponse)
+    console.log('💳 Métodos de pago del seller:', raffleResponse.seller?.payment_methods)
+
+    // Establecer la rifa en gridStore
     try {
       const gridStore = useGridStore()
       const productObj = {
@@ -1237,13 +1403,14 @@ const loadRaffleData = async () => {
         status: raffleResponse.status,
         ticketsVendidos: raffleResponse.tickets_sold ?? null,
         isProgressLoading: false,
+        seller: raffleResponse.seller // Importante: incluir el seller
       }
       gridStore.selectedProduct = productObj
-      // también solicitar disponibles
       gridStore.fetchAvailableTickets(productObj.uuid)
     } catch (e) {
       console.warn('No se pudo setear gridStore.selectedProduct:', e)
     }
+
 
     // Cargar premios de la rifa
     const prizesResponse = await PrizeService.getRafflePrizes(raffleId)
@@ -1272,7 +1439,7 @@ const loadRaffleData = async () => {
 onMounted(() => {
   loadRaffleData()
   // cargar métodos de pago
-  loadPaymentMethods()
+  // loadPaymentMethods()
 
   // Cargar monedas y tasas desde el paymentStore (igual que ParticipateModal)
   try {

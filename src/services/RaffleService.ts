@@ -21,7 +21,6 @@ export interface Raffle {
     name: string;
     last_name: string;
     photo: string | null;
-    // 🔥 Agregar payment_methods al tipo
     payment_methods?: any[];
   };
 }
@@ -133,7 +132,7 @@ export const RaffleService = {
   async getAll(page = 1, perPage = 10): Promise<PaginatedResponse<Raffle>> {
     try {
       const token = localStorage.getItem("token");
-      const response = await apiClient.get('/raffles', {
+      const response = await apiClient.get('/public-raffles', {
         params: { page, perPage: perPage, paginated: true },
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

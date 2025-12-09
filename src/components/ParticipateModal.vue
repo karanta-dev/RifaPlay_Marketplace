@@ -5,22 +5,14 @@
 
   <transition name="scale-fade">
     <div v-if="isParticipateModalOpen" class="fixed inset-0 z-50" @click.self="close">
-      <div
-        class="bg-gradient-to-br from-blue-900 to-gray-800 relative transition-all duration-300 border-purple-400/30 flex flex-col w-screen h-screen p-4 sm:p-6"
-      >
-        <button
-          v-if="authStore.isAuthenticated"
-          class="absolute top-4 right-4 z-30 bg-transparent border-none p-1"
-          @click="close"
-          aria-label="Cerrar"
-        >
+      <div class="bg-gradient-to-br from-blue-900 to-gray-800 relative transition-all duration-300 border-purple-400/30 flex flex-col w-screen h-screen p-4 sm:p-6">
+        
+        <!-- Botón de cerrar -->
+        <button v-if="authStore.isAuthenticated" class="absolute top-4 right-4 z-30 bg-transparent border-none p-1" @click="close" aria-label="Cerrar">
           <XMarkIcon class="h-5 w-5 text-white/70 hover:text-white transition-colors" />
         </button>
 
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-        </svg>
-
+        <!-- Header -->
         <div class="relative z-10 mb-4 flex-shrink-0 flex items-center justify-between gap-2">   
           <div class="flex items-center justify-left gap-3">
             <img src="/rifaLogo.png" alt="Slot" class="h-10 sm:h-16 w-auto" />
@@ -28,45 +20,49 @@
               Compra de tickets
             </h2>
           </div>
-          <div v-if="selectionMode === 'manual' && bookingTimerStarted" 
-                 class="flex items-center gap-2 rounded-lg px-4 py-2 transition-all duration-300"
-                 :class="timerClasses">
-              <div class="w-3 h-3 rounded-full animate-pulse" :class="pulseClass"></div>
-             <span class="font-mono text-base sm:text-lg font-bold" :class="timerTextClass">{{ formattedTime }}</span>
-            </div>
+          <div v-if="selectionMode === 'manual' && bookingTimerStarted" class="flex items-center gap-2 rounded-lg px-4 py-2 transition-all duration-300" :class="timerClasses">
+            <div class="w-3 h-3 rounded-full animate-pulse" :class="pulseClass"></div>
+            <span class="font-mono text-base sm:text-lg font-bold" :class="timerTextClass">{{ formattedTime }}</span>
+          </div>
         </div>
 
+        <!-- Formulario principal -->
         <form @submit.prevent="handleConfirm" class="space-y-6 relative z-10 flex-grow overflow-y-auto pr-2 pb-16">
+          
+          <!-- Si NO está autenticado -->
           <template v-if="!authStore.isAuthenticated">
-             <div class="p-6 bg-black/20 rounded-xl border border-white/10 text-center">
-      <p class="text-white text-lg font-semibold mb-2">Necesitas iniciar sesión</p>
-      <p class="text-gray-300 mb-4">Debes estar autenticado para comprar tickets. Inicia sesión o regístrate para continuar y guardar tus tickets en tu cuenta (Solo mayores de 18).</p>
-      <div class="flex justify-center gap-3">
-        <!-- Cambiar este botón para emitir un evento -->
-        <button 
-          type="button" 
-          @click="openAuthModal" 
-          class="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-500"
-        >
-          Iniciar sesión / Registrarse
-        </button>
-        <button type="button" @click="close" class="px-5 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-500">Cerrar</button>
-      </div>
-    </div>
+            <div class="p-6 bg-black/20 rounded-xl border border-white/10 text-center">
+              <p class="text-white text-lg font-semibold mb-2">Necesitas iniciar sesión</p>
+              <p class="text-gray-300 mb-4">Debes estar autenticado para comprar tickets. Inicia sesión o regístrate para continuar y guardar tus tickets en tu cuenta (Solo mayores de 18).</p>
+              <div class="flex justify-center gap-3">
+                <button type="button" @click="openAuthModal" class="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-500">
+                  Iniciar sesión / Registrarse
+                </button>
+                <button type="button" @click="close" class="px-5 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-500">Cerrar</button>
+              </div>
+            </div>
           </template>
 
+          <!-- Si ESTÁ autenticado -->
           <template v-else>
+            
+            <!-- Modo de selección -->
             <div class="flex flex-col sm:flex-row justify-center gap-4 p-4 bg-black/30 rounded-xl border border-white/10">
               <label class="flex items-center space-x-3 cursor-pointer group">
-                <div class="relative"><input type="radio" v-model="selectionMode" value="auto" class="h-5 w-5 text-cyan-500 border-gray-300 focus:ring-cyan-500 bg-transparent"/></div>
+                <div class="relative">
+                  <input type="radio" v-model="selectionMode" value="auto" class="h-5 w-5 text-cyan-500 border-gray-300 focus:ring-cyan-500 bg-transparent"/>
+                </div>
                 <span class="font-semibold text-white group-hover:text-cyan-300 transition-colors">Selección Automática</span>
               </label>
               <label class="flex items-center space-x-3 cursor-pointer group">
-                <div class="relative"><input type="radio" v-model="selectionMode" value="manual" class="h-5 w-5 text-cyan-500 border-gray-300 focus:ring-cyan-500 bg-transparent"/></div>
+                <div class="relative">
+                  <input type="radio" v-model="selectionMode" value="manual" class="h-5 w-5 text-cyan-500 border-gray-300 focus:ring-cyan-500 bg-transparent"/>
+                </div>
                 <span class="font-semibold text-white group-hover:text-cyan-300 transition-colors">Selección Manual</span>
               </label>
             </div>
 
+            <!-- Modo Automático -->
             <div v-if="selectionMode === 'auto'" class="space-y-4">
               <div class="p-5 bg-black/30 rounded-xl border border-cyan-500/30">
                 <label class="font-semibold text-cyan-300 mb-3 block text-lg">🎲 Cantidad de tickets (Automático)</label>
@@ -75,13 +71,7 @@
                   <div class="text-sm text-white whitespace-nowrap">Disponibles: <strong class="text-yellow-400">{{ maxAvailable }}</strong></div>
                 </div>
                 
-                <!-- Botón para obtener tickets aleatorios -->
-                <button 
-                  type="button" 
-                  @click="fetchRandomTickets"
-                  :disabled="loadingRandomTickets || !form.tickets || form.tickets < 1"
-                  class="w-full mt-4 py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-purple-400/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button type="button" @click="fetchRandomTickets" :disabled="loadingRandomTickets || !form.tickets || form.tickets < 1" class="w-full mt-4 py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-purple-400/30 disabled:opacity-50 disabled:cursor-not-allowed">
                   <span v-if="loadingRandomTickets">🔄 Obteniendo tickets...</span>
                   <span v-else>🎯 Obtener Tickets Aleatorios</span>
                 </button>
@@ -98,11 +88,7 @@
                 </div>
                 
                 <div class="grid grid-cols-4 gap-2 mb-3">
-                  <div 
-                    v-for="ticket in randomTicketsResult.successful" 
-                    :key="ticket.number"
-                    class="bg-green-500/20 border border-green-400/50 rounded-lg p-2 text-center"
-                  >
+                  <div v-for="ticket in randomTicketsResult.successful" :key="ticket.number" class="bg-green-500/20 border border-green-400/50 rounded-lg p-2 text-center">
                     <span class="text-green-300 font-bold text-sm">{{ String(ticket.number).padStart(4, '0') }}</span>
                   </div>
                 </div>
@@ -113,7 +99,7 @@
                 </p>
               </div>
 
-              <!-- Mostrar tickets fallidos si los hay -->
+              <!-- Tickets fallidos -->
               <div v-if="randomTicketsResult?.failed?.length" class="p-4 bg-black/40 rounded-xl border border-orange-500/30">
                 <h3 class="font-semibold text-orange-400 text-lg mb-2">⚠️ Tickets No Disponibles</h3>
                 <p class="text-orange-300 text-sm">
@@ -121,29 +107,37 @@
                 </p>
               </div>
             </div>
+
+            <!-- TicketGrid para modo manual -->
             <TicketGrid v-if="selectionMode === 'manual' && selectedProduct" :raffleId="selectedProduct.uuid" @update:selected="handleSelectionUpdate" />
               
+            <!-- Moneda -->
             <label class="font-semibold text-white text-lg">💱 Moneda</label>
-              <select v-model="selectedCurrencyId" :disabled="loadingCurrencies" class="select-custom">
-                <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">{{ c.name }} ({{ c.short_name }})</option>
-              </select>
-              <p v-if="!loadingCurrencies && currencies.length === 0" class="text-red-400 text-sm">No hay monedas disponibles.</p>
+            <select v-model="selectedCurrencyId" :disabled="loadingCurrencies" class="select-custom">
+              <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">{{ c.name }} ({{ c.short_name }})</option>
+            </select>
+            <p v-if="!loadingCurrencies && currencies.length === 0" class="text-red-400 text-sm">No hay monedas disponibles.</p>
 
+            <!-- Método de Pago -->
             <div class="space-y-4">
-  <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
-  <select v-model="form.metodoPago" class="input-custom" required>
-    <option value="" disabled :selected="!form.metodoPago">Seleccionar método de pago</option>
-    <option v-for="method in paymentMethods" :key="method.uuid" :value="method.uuid">
-      {{ method.name }} {{ method.is_default ? '' : '' }}
-    </option>
-  </select>
+              <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
+              <select v-model="form.metodoPago" class="input-custom" required>
+                <option value="" disabled :selected="!form.metodoPago">Seleccionar método de pago</option>
+                <option v-for="method in paymentMethods" :key="method.uuid" :value="method.uuid">
+                  {{ method.name }} {{ method.is_default ? '' : '' }}
+                </option>
+              </select>
+              
+              <!-- Mensaje si no hay métodos -->
+              <div v-if="paymentMethods.length === 0" class="mt-2 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                <p class="text-yellow-400 text-sm">
+                  ⚠️ Este rifero no tiene métodos de pago configurados. 
+                  Por favor, contacta al rifero directamente o selecciona otra rifa.
+                </p>
+              </div>
 
-<!-- Mostrar mensaje si no hay métodos configurados -->
-<p v-if="paymentMethods.length === 0" class="text-red-400 text-sm mt-2">
-  ⚠️ Este rifero no tiene métodos de pago configurados.
-</p>
-              <!-- Mostrar structured_data parseado del método seleccionado (si existe) -->
-              <div v-if="selectedMethodHasStructured && parsedStructured" class="mt-3 p-3 bg-black/20 rounded-lg text-sm text-white/90 border border-white/10">
+              <!-- Structured data general (NO para Pago Móvil) -->
+              <div v-if="shouldShowGeneralStructuredData" class="mt-3 p-3 bg-black/20 rounded-lg text-sm text-white/90 border border-white/10">
                 <p class="font-semibold text-cyan-300 mb-2">🔎 Datos del método seleccionado</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div v-for="(v, k) in parsedStructured" :key="k" class="flex items-start gap-2">
@@ -152,119 +146,160 @@
                   </div>
                 </div>
               </div>
-              <p v-if="!loadingMethods && paymentMethods.length === 0" class="text-red-400 text-sm">No se pudieron cargar métodos de pago.</p>
               
-                <!-- Campo de Referencia (Transaction ID) -->
-  <!-- Mostrar para todos los métodos excepto pago-movil en modo automático -->
-<div v-if="!(isPagoMovilSelected && pagoMovilMode === 'automatico')" class="mt-4">
-    <label class="font-semibold text-white text-lg">🔖 Referencia de pago</label>
-    <input v-model="form.referencia" type="text" placeholder="Ingresa el número de referencia" class="input-custom" required />
-    <p class="text-gray-400 text-sm mt-1">Número de referencia, comprobante o transacción de tu pago.</p>
-  </div>
-              <!-- Sección de Pago Móvil -->
-            <div v-if="isPagoMovilSelected" class="mt-4">
-  <div class="flex flex-col sm:flex-row bg-black/30 rounded-xl p-1 border border-cyan-500/30 shadow-lg">
-    <button type="button" @click="pagoMovilMode = 'manual'" :class="{'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'manual', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'manual'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-cyan-500/30">
-      <div class="flex items-center justify-center gap-2">
-        <span class="text-lg">👤</span>
-        <span>Manual</span>
-      </div>
-    </button>
-    <button type="button" @click="pagoMovilMode = 'automatico'" :class="{'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'automatico', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'automatico'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-emerald-500/30">
-      <div class="flex items-center justify-center gap-2">
-        <span class="text-lg">⚡</span>
-        <span>Automático</span>
-      </div>
-    </button>
-  </div>
-  
-  <!-- Modo Manual - Mostrar información del rifero -->
-  <div v-if="pagoMovilMode === 'manual'" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30 relative">
-    <!-- ... contenido del modo manual ... -->
-  </div>
-  
-  <!-- Modo Automático -->
-  <div v-else-if="pagoMovilMode === 'automatico'" class="space-y-4">
-    <h3 class="font-semibold text-cyan-300 text-lg">Ingrese los datos de pago móvil</h3>
-    <input v-model="form.pagoMovilCedula" type="text" placeholder="🔢 Número de cédula" class="input-custom" maxlength="8" />
-    <input v-model="form.pagoMovilTelefono" type="tel" placeholder="📞 Número de teléfono" class="input-custom" maxlength="11" />
-    <select v-model="form.pagoMovilBanco" class="input-custom" :disabled="loadingBanks">
-      <option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
-      <option v-for="bank in banks" :key="bank.uuid" :value="bank.uuid">{{ bank.name }}</option>
-    </select>
-    <p v-if="!loadingBanks && banks.length === 0" class="text-red-400 text-sm mt-1">No se pudieron cargar los bancos.</p>
-  </div>
-</div>
+              <!-- Referencia de pago (excepto Pago Móvil automático) -->
+              <div v-if="!(isPagoMovilSelected && pagoMovilMode === 'automatico')" class="mt-4">
+                <label class="font-semibold text-white text-lg">🔖 Referencia de pago</label>
+                <input v-model="form.referencia" type="text" placeholder="Ingresa el número de referencia" class="input-custom" required />
+                <p class="text-gray-400 text-sm mt-1">Número de referencia, comprobante o transacción de tu pago.</p>
+              </div>
 
-              
-              <!-- Para otros métodos de pago, mostrar la información específica del rifero (solo si NO hay structured_data) -->
-<div v-else-if="form.metodoPago && !isPagoMovilSelected && !selectedMethodHasStructured" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30">
-                <div v-for="method in paymentMethods.filter(m => m.slug === form.metodoPago)" :key="method.uuid" class="space-y-2">
-                  <p class="font-semibold text-cyan-400 mb-2">{{ method.name }}</p>
-                  
-                  <div v-if="method.slug === 'transferencia'" class="space-y-1">
-                    <p class="flex items-center gap-2">
-                      <span class="text-cyan-400">🏦</span> 
-                      Banco: <strong>{{ method.bank_name }} ({{ method.bank_code }})</strong>
+              <!-- SECCIÓN PAGO MÓVIL -->
+              <div v-if="isPagoMovilSelected" class="mt-4">
+                
+                <!-- Selector de modo (Manual/Automático) -->
+                <div class="flex flex-col sm:flex-row bg-black/30 rounded-xl p-1 border border-cyan-500/30 shadow-lg">
+                  <button type="button" @click="pagoMovilMode = 'manual'" :class="{'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'manual', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'manual'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-cyan-500/30">
+                    <div class="flex items-center justify-center gap-2">
+                      <span class="text-lg">👤</span>
+                      <span>Manual</span>
+                    </div>
+                  </button>
+                  <button type="button" @click="pagoMovilMode = 'automatico'" :class="{'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg transform scale-105': pagoMovilMode === 'automatico', 'text-white/70 hover:text-white bg-transparent': pagoMovilMode !== 'automatico'}" class="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ease-out backdrop-blur-sm border border-transparent hover:border-emerald-500/30">
+                    <div class="flex items-center justify-center gap-2">
+                      <span class="text-lg">⚡</span>
+                      <span>Automático</span>
+                    </div>
+                  </button>
+                </div>
+                
+                <!-- Modo Manual: Mostrar información del rifero -->
+                <div v-if="pagoMovilMode === 'manual' && isPagoMovilSelected" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30 relative mt-4">
+                  <div class="flex justify-between items-start mb-2">
+                    <p class="flex items-center gap-2 text-cyan-400 font-semibold">
+                      <span>📱</span> Datos para Pago Móvil del Rifero
                     </p>
-                    <p class="flex items-center gap-2">
-                      <span class="text-cyan-400">📋</span> 
-                      Número de Cuenta: <strong>{{ method.account_number }}</strong>
-                    </p>
-                    <p class="flex items-center gap-2">
-                      <span class="text-cyan-400">👤</span> 
-                      Titular: <strong>{{ method.holder_name }}</strong>
-                    </p>
-                    <p class="flex items-center gap-2">
-                      <span class="text-cyan-400">📋</span> 
-                      C.I: <strong>{{ method.document_number }}</strong>
-                    </p>
+                    <button type="button" @click="copyPagoMovilData($event)" class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all duration-200 text-xs border border-cyan-400/30" title="Copiar datos al portapapeles">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Copiar
+                    </button>
                   </div>
                   
-                  <div v-else class="space-y-1">
-                    <p class="flex items-center gap-2" v-if="method.account_number">
+                  <div v-if="selectedPaymentMethod" class="space-y-2 mb-4 p-3 bg-cyan-500/10 rounded-lg">
+                    <div class="flex items-center justify-between">
+                      <p class="font-semibold text-cyan-300">{{ selectedPaymentMethod.name }}</p>
+                      <span v-if="selectedPaymentMethod.is_default" class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">Principal</span>
+                    </div>
+                    
+                    <!-- Mostrar structured_data parseado si existe -->
+                    <div v-if="parsedStructured" class="space-y-1 text-sm">
+                      <div v-for="(value, key) in parsedStructured" :key="key" class="flex items-center gap-2">
+                        <span class="text-cyan-400">📌</span> 
+                        {{ key }}: <strong>{{ value }}</strong>
+                      </div>
+                    </div>
+                    
+                    <!-- Mostrar campos mapeados si no hay structured_data -->
+                    <div v-else class="space-y-1 text-sm">
+                      <p class="flex items-center gap-2" v-if="selectedPaymentMethod.bank_name">
+                        <span class="text-cyan-400">🏦</span> 
+                        Banco: <strong>{{ selectedPaymentMethod.bank_name }}</strong>
+                      </p>
+                      <p class="flex items-center gap-2" v-if="selectedPaymentMethod.document_number">
+                        <span class="text-cyan-400">📋</span> 
+                        Cédula: <strong>{{ selectedPaymentMethod.document_number }}</strong>
+                      </p>
+                      <p class="flex items-center gap-2" v-if="selectedPaymentMethod.holder_name">
+                        <span class="text-cyan-400">👤</span> 
+                        Titular: <strong>{{ selectedPaymentMethod.holder_name }}</strong>
+                      </p>
+                      <p class="flex items-center gap-2" v-if="selectedPaymentMethod.account_number">
+                        <span class="text-cyan-400">📞</span> 
+                        Teléfono: <strong>{{ selectedPaymentMethod.account_number }}</strong>
+                      </p>
+                      <p v-if="selectedPaymentMethod.description" class="flex items-center gap-2 text-cyan-200/80">
+                        <span class="text-cyan-400">📝</span> 
+                        Observación: {{ selectedPaymentMethod.description }}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div v-else class="text-yellow-400 text-sm">
+                    ⚠️ No se encontraron métodos de pago móvil configurados por el rifero
+                  </div>
+                </div>
+                
+                <!-- Modo Automático: Campos para ingresar datos -->
+                <div v-else-if="pagoMovilMode === 'automatico'" class="space-y-4 mt-4">
+                  <h3 class="font-semibold text-cyan-300 text-lg">Ingrese los datos de pago móvil</h3>
+                  <input v-model="form.pagoMovilCedula" type="text" placeholder="🔢 Número de cédula" class="input-custom" maxlength="8" />
+                  <input v-model="form.pagoMovilTelefono" type="tel" placeholder="📞 Número de teléfono" class="input-custom" maxlength="11" />
+                  <select v-model="form.pagoMovilBanco" class="input-custom" :disabled="loadingBanks">
+                    <option value="" disabled>{{ loadingBanks ? 'Cargando bancos...' : '🏦 Seleccionar banco' }}</option>
+                    <option v-for="bank in banks" :key="bank.uuid" :value="bank.uuid">{{ bank.name }}</option>
+                  </select>
+                  <p v-if="!loadingBanks && banks.length === 0" class="text-red-400 text-sm mt-1">No se pudieron cargar los bancos.</p>
+                </div>
+              </div>
+              
+              <!-- Otros métodos de pago (NO Pago Móvil y SIN structured_data) -->
+              <div v-else-if="form.metodoPago && !isPagoMovilSelected && !parsedStructured" class="p-4 bg-black/40 rounded-lg text-sm text-white border border-cyan-500/30 mt-4">
+                <div v-if="selectedPaymentMethod" class="space-y-2">
+                  <p class="font-semibold text-cyan-400 mb-2">{{ selectedPaymentMethod.name }}</p>
+                  
+                  <div class="space-y-1">
+                    <p class="flex items-center gap-2" v-if="selectedPaymentMethod.account_number">
                       <span class="text-cyan-400">🔢</span> 
-                      Cuenta/Usuario: <strong>{{ method.account_number }}</strong>
+                      Cuenta/Usuario: <strong>{{ selectedPaymentMethod.account_number }}</strong>
                     </p>
-                    <p class="flex items-center gap-2" v-if="method.holder_name">
+                    <p class="flex items-center gap-2" v-if="selectedPaymentMethod.holder_name">
                       <span class="text-cyan-400">👤</span> 
-                      Titular: <strong>{{ method.holder_name }}</strong>
+                      Titular: <strong>{{ selectedPaymentMethod.holder_name }}</strong>
                     </p>
-                    <p class="flex items-center gap-2" v-if="method.bank_name">
+                    <p class="flex items-center gap-2" v-if="selectedPaymentMethod.bank_name">
                       <span class="text-cyan-400">🏦</span> 
-                      Banco: <strong>{{ method.bank_name }}</strong>
+                      Banco: <strong>{{ selectedPaymentMethod.bank_name }}</strong>
                     </p>
-                    <p class="flex items-center gap-2" v-if="method.description">
+                    <p class="flex items-center gap-2" v-if="selectedPaymentMethod.document_number">
+                      <span class="text-cyan-400">📋</span> 
+                      Cédula: <strong>{{ selectedPaymentMethod.document_number }}</strong>
+                    </p>
+                    <p class="flex items-center gap-2" v-if="selectedPaymentMethod.description">
                       <span class="text-cyan-400">📝</span> 
-                      Observación: {{ method.description }}
+                      Observación: {{ selectedPaymentMethod.description }}
                     </p>
                   </div>
                 </div>
                 
-                <!-- Mensaje si no hay métodos específicos configurados -->
-                <div v-if="paymentMethods.filter(m => m.slug === form.metodoPago).length === 0" class="text-yellow-400 text-sm">
-                  ⚠️ El rifero no tiene configurado este método de pago específicamente
+                <div v-else class="text-yellow-400 text-sm">
+                  ⚠️ No se encontró información detallada para este método de pago
                 </div>
               </div>
-              
-            
             </div>
 
+            <!-- Botones de acción y comprobante -->
             <div class="space-y-4">
+              <!-- Botón de verificación para Pago Móvil manual -->
               <div v-if="isPagoMovilSelected && pagoMovilMode === 'manual'" class="mt-2">
-  <button type="button" class="w-full py-2 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30 font-semibold" @click="pagoMovilNeedsReverify ? (showReverifyModal = true) : handleVerifyPagoMovil()" :disabled="verifyingPagoMovil || reverifySubmitting">
-    <span v-if="verifyingPagoMovil">Verificando...</span>
-    <span v-else-if="pagoMovilNeedsReverify">Volver a verificar</span>
-    <span v-else>Ya pagué</span>
-  </button>
-  <p v-if="pagoMovilVerifyResult" :class="{'text-green-400': pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente', 'text-yellow-400': pagoMovilVerifyResult.status === 'pendiente', 'text-red-400': !pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente'}" class="mt-2 text-sm">{{ pagoMovilVerifyResult.message }}</p>
-</div>
-<div v-if="!(isPagoMovilSelected && pagoMovilMode === 'automatico')">
+                <button type="button" class="w-full py-2 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30 font-semibold" @click="pagoMovilNeedsReverify ? (showReverifyModal = true) : handleVerifyPagoMovil()" :disabled="verifyingPagoMovil || reverifySubmitting">
+                  <span v-if="verifyingPagoMovil">Verificando...</span>
+                  <span v-else-if="pagoMovilNeedsReverify">Volver a verificar</span>
+                  <span v-else>Ya pagué</span>
+                </button>
+                <p v-if="pagoMovilVerifyResult" :class="{'text-green-400': pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente', 'text-yellow-400': pagoMovilVerifyResult.status === 'pendiente', 'text-red-400': !pagoMovilVerifyResult.success && pagoMovilVerifyResult.status !== 'pendiente'}" class="mt-2 text-sm">{{ pagoMovilVerifyResult.message }}</p>
+              </div>
+              
+              <!-- Comprobante de pago (excepto Pago Móvil automático) -->
+              <div v-if="!(isPagoMovilSelected && pagoMovilMode === 'automatico')">
                 <label class="block font-semibold text-white mb-3 text-lg">📎 Comprobante de pago (opcional)</label>
                 <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange"/>
                 <button type="button" @click="triggerFileDialog" class="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-cyan-400/30">📸 Insertar imagen del comprobante</button>
                 <p v-if="form.comprobante" class="text-sm text-green-400 mt-2 flex items-center gap-2"><span>✅</span> Archivo seleccionado: {{ form.comprobante.name }}</p>
-                <div v-if="previewUrl" class="mt-3"><img :src="previewUrl" alt="preview" class="max-h-40 object-contain border-2 border-cyan-500/50 rounded-xl shadow-lg" /></div>
+                <div v-if="previewUrl" class="mt-3">
+                  <img :src="previewUrl" alt="preview" class="max-h-40 object-contain border-2 border-cyan-500/50 rounded-xl shadow-lg" />
+                </div>
               </div>
             </div>
 
@@ -274,15 +309,11 @@
                 <p class="text-lg font-bold text-white">
                   Precio: <strong class="text-2xl text-yellow-400 ml-2">{{ displayPrice.text }}</strong>
                 </p>
-                <span 
-                  v-if="displayPrice.showUsdRate && displayPrice.rate" 
-                  class="text-sm text-gray-400"
-                >
+                <span v-if="displayPrice.showUsdRate && displayPrice.rate" class="text-sm text-gray-400">
                   (Tasa: {{ displayPrice.rate.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }} {{ displayPrice.rateCurrency }})
                 </span>
               </div>
               
-              <!-- Mostrar precio en USD como referencia solo si no es la moneda principal -->
               <div v-if="displayPrice.showUsdPrice" class="text-right space-y-2">
                 <p class="text-lg font-bold text-white">
                   Precio: <span class="text-2xl text-yellow-400 ml-2">{{ totalPrice }} USD</span>
@@ -294,8 +325,10 @@
               </div>
             </div>
 
+            <!-- Mensaje de error -->
             <div v-if="error" class="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm">⚠️ {{ error }}</div>
 
+            <!-- Botones de acción finales -->
             <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6">
               <button type="button" @click="close" class="w-full sm:w-auto px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-300 transform hover:scale-105 border border-gray-500/30">Cancelar</button>
               <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-bold rounded-xl hover:from-yellow-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-yellow-400/30" :disabled="currentQty === 0 || submitting">
@@ -306,6 +339,7 @@
           </template>
         </form>
 
+        <!-- Modal de re-verificación -->
         <teleport to="body">
           <transition name="fade">
             <div v-if="showReverifyModal" class="fixed inset-0 z-[9999] flex items-center justify-center px-4">
@@ -353,30 +387,32 @@
       </div>
     </div>
   </transition>
-<Bill
-  :open="showBill"
-  :qr-url="billData.qrUrl"
-  :serial-number="billData.serialNumber"
-  :date="billData.date"
-  :seller-name="billData.sellerName"  
-  :raffle-name="billData.raffleName"
-  :selected-numbers="billData.selectedNumbers"
-  :draw-date="billData.drawDate"
-  :quantity="billData.quantity"
-  :price="billData.price"
-  :total="billData.total"
-  :amount-usd="billData.amountUsd"
-  :exchange-rate="billData.exchangeRate"
-  :amount-local-currency-label="billData.amountLocalCurrencyLabel"
-  :amount-local="billData.amountLocal"
-  :client-name="billData.clientName"
-  :client-id="billData.clientId"
-  :client-phone="billData.clientPhone"
-  @close="handleBillClose"
-  @download="handleBillDownload"
-  @print="handleBillPrint"
-  @sell-another="handleSellAnother"
-/>
+
+  <!-- Componente Bill -->
+  <Bill
+    :open="showBill"
+    :qr-url="billData.qrUrl"
+    :serial-number="billData.serialNumber"
+    :date="billData.date"
+    :seller-name="billData.sellerName"  
+    :raffle-name="billData.raffleName"
+    :selected-numbers="billData.selectedNumbers"
+    :draw-date="billData.drawDate"
+    :quantity="billData.quantity"
+    :price="billData.price"
+    :total="billData.total"
+    :amount-usd="billData.amountUsd"
+    :exchange-rate="billData.exchangeRate"
+    :amount-local-currency-label="billData.amountLocalCurrencyLabel"
+    :amount-local="billData.amountLocal"
+    :client-name="billData.clientName"
+    :client-id="billData.clientId"
+    :client-phone="billData.clientPhone"
+    @close="handleBillClose"
+    @download="handleBillDownload"
+    @print="handleBillPrint"
+    @sell-another="handleSellAnother"
+  />
 </template>
 
 <script setup lang="ts">
@@ -955,7 +991,56 @@ watch([currentQty, bcvRate, selectedProduct], ([qty, rate, product]) => {
 //   close();
 //   window.dispatchEvent(new CustomEvent('open-auth'))
 // }
+// Determina si mostrar structured_data general
+const shouldShowGeneralStructuredData = computed(() => {
+  return selectedMethodHasStructured.value && parsedStructured.value && !isPagoMovilSelected.value;
+});
 
+// Función para copiar datos de Pago Móvil
+const copyPagoMovilData = async (event: Event) => {
+  if (!selectedPaymentMethod.value) {
+    showToast('No se encontró información de pago móvil del rifero', 'error');
+    return;
+  }
+
+  let textToCopy = '';
+  
+  if (parsedStructured.value) {
+    for (const [key, value] of Object.entries(parsedStructured.value)) {
+      textToCopy += `${key}: ${value}\n`;
+    }
+  } else {
+    if (selectedPaymentMethod.value.bank_name) textToCopy += `Banco: ${selectedPaymentMethod.value.bank_name}\n`;
+    if (selectedPaymentMethod.value.document_number) textToCopy += `Cédula: ${selectedPaymentMethod.value.document_number}\n`;
+    if (selectedPaymentMethod.value.holder_name) textToCopy += `Titular: ${selectedPaymentMethod.value.holder_name}\n`;
+    if (selectedPaymentMethod.value.account_number) textToCopy += `Teléfono: ${selectedPaymentMethod.value.account_number}\n`;
+  }
+  
+  try {
+    await navigator.clipboard.writeText(textToCopy.trim());
+    const button = event?.currentTarget as HTMLElement;
+    if (button) {
+      const originalHTML = button.innerHTML;
+      button.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        ¡Copiado!
+      `;
+      button.classList.add('bg-green-600', 'hover:bg-green-700');
+      button.classList.remove('bg-cyan-600', 'hover:bg-cyan-700');
+      setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.remove('bg-green-600', 'hover:bg-green-700');
+        button.classList.add('bg-cyan-600', 'hover:bg-cyan-700');
+      }, 2000);
+    }
+    showToast('Datos copiados al portapapeles', 'success');
+  } catch (err) {
+    console.error('Error al copiar al portapapeles:', err);
+    showToast('Error al copiar datos', 'error');
+  }
+};
 function detectPrefixFromPhone(rawPhone: string | undefined | null) {
   const prefixes = ['0412', '0414', '0424', '0416', '0422']
   let detectedPrefix = '0414'
