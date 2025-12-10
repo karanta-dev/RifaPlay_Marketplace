@@ -564,6 +564,8 @@ import { storeToRefs } from 'pinia'
 import { usePaymentStore } from '@/stores/usePaymentStore'
 import { useRoute } from 'vue-router'
 import { RaffleService, PrizeService, type Raffle, type Prize } from '@/services/RaffleService'
+import type { RaffleImage } from '@/services/RaffleService'
+
 // import { PaymentFlowService, type PaymentMethod } from '@/services/PaymentFlow'
 // import apiClient from '@/services/api'
 import { useGridStore } from '@/stores/useGridStore'
@@ -839,11 +841,18 @@ const copyPaymentData = async () => {
   }
 };
 
-const displayedImages = computed(() => {
-  if (!raffle.value?.images) return []
+const displayedImages = computed<RaffleImage[]>(() => {
+  if (!raffle.value?.images || raffle.value.images.length === 0) {
+    console.log('⚠️ No hay imágenes disponibles para esta rifa')
+    return []
+  }
+  
+  console.log('📸 Imágenes disponibles:', raffle.value.images)
+  
   // Tomar solo las primeras 2 imágenes
   return raffle.value.images.slice(0, 2)
 })
+
 
 const ticketPrice = computed(() => {
   // ticket_price normalmente es un number desde el servicio; usar Number() por seguridad
@@ -1215,7 +1224,6 @@ const getPrizeImage = (prize: Prize) => {
 
 // Obtener URL absoluta del logo del método de pago
 const getPaymentLogo = (method: any) => {
-  console.log('🖼️ Procesando icono para método:', method.name, method.icon);
   
   // Si no hay icono, usar un placeholder
   if (!method.icon) {
@@ -1376,41 +1384,55 @@ const loadRaffleData = async () => {
   }
 
   try {
-    // Cargar datos de la rifa
+    // Cargar datos de la rifa desde el endpoint individual (este NO trae imágenes)
     const raffleResponse = await RaffleService.getByUuid(raffleId)
     if (!raffleResponse) {
       loading.value = false
       return
     }
-    raffle.value = raffleResponse
+    
+    console.log('🎯 Rifa cargada desde endpoint individual (sin imágenes):', raffleResponse)
 
-    console.log('🎯 Rifa cargada:', raffleResponse)
-    console.log('💳 Métodos de pago del seller:', raffleResponse.seller?.payment_methods)
+    // Ahora cargar las imágenes desde public-raffles
+    console.log('🖼️ Cargando imágenes desde public-raffles...')
+    const listResponse = await RaffleService.getAll(1, 100)
+    const raffleInList = listResponse.data.find(r => r.uuid === raffleId)
+    
+    // Crear el objeto rifa con las imágenes del listado
+    const raffleWithImages = {
+      ...raffleResponse,
+      // Si encontramos la rifa en el listado, usar sus imágenes
+      images: raffleInList?.images || []
+    }
+    
+    raffle.value = raffleWithImages
+
+    console.log('✅ Rifa con imágenes:', raffleWithImages)
+    console.log('🖼️ Imágenes cargadas:', raffleWithImages.images)
 
     // Establecer la rifa en gridStore
     try {
       const gridStore = useGridStore()
       const productObj = {
-        uuid: raffleResponse.uuid,
-        title: raffleResponse.name,
-        description: raffleResponse.description || '',
-        ticketsMax: raffleResponse.end_range || 100,
-        drawDate: raffleResponse.raffle_date,
-        ticketPrice: Number(raffleResponse.ticket_price) || 0,
-        rifero: raffleResponse.seller ? `${raffleResponse.seller.name} ${raffleResponse.seller.last_name || ''}`.trim() : 'Rifero',
-        images: raffleResponse.images?.map((i: any) => i.url) ?? [],
+        uuid: raffleWithImages.uuid,
+        title: raffleWithImages.name,
+        description: raffleWithImages.description || '',
+        ticketsMax: raffleWithImages.end_range || 100,
+        drawDate: raffleWithImages.raffle_date,
+        ticketPrice: Number(raffleWithImages.ticket_price) || 0,
+        rifero: raffleWithImages.seller ? `${raffleWithImages.seller.name} ${raffleWithImages.seller.last_name || ''}`.trim() : 'Rifero',
+        images: raffleWithImages.images?.map((img: any) => img.url) || [], // Extraer solo las URLs
         categories: [],
-        status: raffleResponse.status,
-        ticketsVendidos: raffleResponse.tickets_sold ?? null,
+        status: raffleWithImages.status,
+        ticketsVendidos: raffleWithImages.tickets_sold ?? null,
         isProgressLoading: false,
-        seller: raffleResponse.seller // Importante: incluir el seller
+        seller: raffleWithImages.seller
       }
       gridStore.selectedProduct = productObj
       gridStore.fetchAvailableTickets(productObj.uuid)
     } catch (e) {
       console.warn('No se pudo setear gridStore.selectedProduct:', e)
     }
-
 
     // Cargar premios de la rifa
     const prizesResponse = await PrizeService.getRafflePrizes(raffleId)
@@ -1434,6 +1456,13 @@ const loadRaffleData = async () => {
     loading.value = false
   }
 }
+watch(raffle, (newRaffle) => {
+  if (newRaffle) {
+    console.log('🖼️ Rifa cargada:', newRaffle);
+    console.log('🖼️ Imágenes disponibles:', newRaffle.images);
+    console.log('🖼️ displayedImages:', displayedImages.value);
+  }
+}, { immediate: true });
 
 // Lifecycle hooks
 onMounted(() => {
