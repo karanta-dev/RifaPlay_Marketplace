@@ -564,8 +564,8 @@ import { storeToRefs } from 'pinia'
 import { usePaymentStore } from '@/stores/usePaymentStore'
 import { useRoute } from 'vue-router'
 import { RaffleService, PrizeService, type Raffle, type Prize } from '@/services/RaffleService'
-import { PaymentFlowService, type PaymentMethod } from '@/services/PaymentFlow'
-import apiClient from '@/services/api'
+// import { PaymentFlowService, type PaymentMethod } from '@/services/PaymentFlow'
+// import apiClient from '@/services/api'
 import { useGridStore } from '@/stores/useGridStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import TicketGrid from '@/components/TicketGrid.vue'
@@ -597,15 +597,15 @@ const animationDuration = ref<number>(2000)
 // const paymentMethods = ref<PaymentMethod[]>([])
 
 const selectedPaymentMethod = ref<any | null>(null)
-const loadingPaymentMethods = ref(false)
+// const loadingPaymentMethods = ref(false)
 
 // Exponer el nombre/variable del método seleccionado para mostrar en UI fácilmente
-const selectedPaymentVariable = computed(() => {
-  const m = selectedPaymentMethod.value
-  if (!m) return ''
-  // preferimos la propiedad explicitamente mapeada, luego el nombre legible
-  return (m as any).variable_name || (m as any).method_name || m.name || ''
-})
+// const selectedPaymentVariable = computed(() => {
+//   const m = selectedPaymentMethod.value
+//   if (!m) return ''
+//   // preferimos la propiedad explicitamente mapeada, luego el nombre legible
+//   return (m as any).variable_name || (m as any).method_name || m.name || ''
+// })
 
 // Referencia de pago ingresada por el usuario (campo de comprobante)
 const referenciaPago = ref('')
@@ -738,12 +738,12 @@ const paymentMethods = computed(() => {
   });
 });
 // Computed para detectar si es Pago Móvil (igual que en ParticipateModal)
-const isPagoMovilSelected = computed(() => {
-  if (!selectedPaymentMethod.value) return false;
+// const isPagoMovilSelected = computed(() => {
+//   if (!selectedPaymentMethod.value) return false;
   
-  const methodName = selectedPaymentMethod.value.name.toLowerCase();
-  return methodName.includes('pago') && methodName.includes('movil');
-});
+//   const methodName = selectedPaymentMethod.value.name.toLowerCase();
+//   return methodName.includes('pago') && methodName.includes('movil');
+// });
 
 // Computed para structured data parseada (igual que en ParticipateModal)
 const parsedStructured = computed(() => {
@@ -773,32 +773,32 @@ watch(paymentMethods, (methods) => {
 // structuredFields devuelve un array de { key, label, value } para mostrar como texto (no editables)
 const structuredFieldValues = ref<Record<string, any>>({})
 
-const structuredFields = computed(() => {
-  const method = selectedPaymentMethod.value
-  const raw = method?.structured_data || method?.original_data?.structured_data || null
-  if (!raw) return []
+// const structuredFields = computed(() => {
+//   const method = selectedPaymentMethod.value
+//   const raw = method?.structured_data || method?.original_data?.structured_data || null
+//   if (!raw) return []
 
-  if (Array.isArray(raw)) {
-    return raw.map((f: any) => ({
-      key: f.key || f.name || f.label,
-      label: f.label || f.name || f.key,
-      value: f.value ?? f.default ?? f.example ?? ''
-    }))
-  }
+//   if (Array.isArray(raw)) {
+//     return raw.map((f: any) => ({
+//       key: f.key || f.name || f.label,
+//       label: f.label || f.name || f.key,
+//       value: f.value ?? f.default ?? f.example ?? ''
+//     }))
+//   }
 
-  if (typeof raw === 'object') {
-    // Puede ser un objeto con pares primitivos: {"BINANCE":"41213411"}
-    return Object.keys(raw).map(k => {
-      const v = raw[k]
-      if (v !== null && (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')) {
-        return { key: k, label: k, value: String(v) }
-      }
-      return { key: k, label: raw[k]?.label || k, value: raw[k]?.value ?? raw[k]?.default ?? '' }
-    })
-  }
+//   if (typeof raw === 'object') {
+//     // Puede ser un objeto con pares primitivos: {"BINANCE":"41213411"}
+//     return Object.keys(raw).map(k => {
+//       const v = raw[k]
+//       if (v !== null && (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')) {
+//         return { key: k, label: k, value: String(v) }
+//       }
+//       return { key: k, label: raw[k]?.label || k, value: raw[k]?.value ?? raw[k]?.default ?? '' }
+//     })
+//   }
 
-  return []
-})
+//   return []
+// })
 
 // Computed properties
 const sellerName = computed(() => {

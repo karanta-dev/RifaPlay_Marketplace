@@ -423,7 +423,7 @@ import { useTicketStore } from '@/stores/useTicketStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useGridStore } from '@/stores/useGridStore';
 import { RaffleService } from '@/services/RaffleService';
-import { PaymentFlowService, type Currency} from '@/services/PaymentFlow';
+import { PaymentFlowService, type Currency, type PaymentMethod} from '@/services/PaymentFlow';
 import Bill from './Bill.vue';
 import { usePaymentStore } from '@/stores/usePaymentStore';
 import { useBookingTimer } from '@/composables/useBookingTimer';
@@ -464,13 +464,15 @@ const copRate = computed(() => paymentStore.copRate);
 const paymentMethods = computed(() => {
   if (!selectedProduct.value?.seller?.payment_methods) {
     console.log('⚠️ No hay seller o payment_methods:', selectedProduct.value?.seller);
-    return [];
+    return [] as PaymentMethod[];
   }
   
-  const methods = selectedProduct.value.seller.payment_methods;
+  // Cast a PaymentMethod[] ya que viene del backend
+  const methods = selectedProduct.value.seller.payment_methods as any[];
+  
   console.log('💳 Métodos de pago del rifero:', methods);
   
-  return methods.map(method => {
+  return methods.map((method: any): PaymentMethod => {
     // Parsear structured_data si existe
     let parsedStructuredData = null;
     if (method.structured_data) {
@@ -489,6 +491,7 @@ const paymentMethods = computed(() => {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
     
+    // ✅ Devolver objeto que cumple con la interfaz PaymentMethod
     return {
       uuid: method.uuid,
       name: method.method_name,
@@ -502,12 +505,14 @@ const paymentMethods = computed(() => {
       document_number: parsedStructuredData?.Cedula || parsedStructuredData?.cedula || '',
       description: method.observation || '',
       structured_data: method.structured_data,
-      parsed_structured_data: parsedStructuredData,
-      icon: method.icon || '',
-      currency_id: method.currency_id,
-      created_at: method.created_at,
-      updated_at: method.updated_at
-    };
+      // Propiedades opcionales según tu interfaz
+      variable_name: method.method_name.toLowerCase().replace(/\s+/g, '_'),
+      original_data: method,
+      logoUrl: method.logo_url || method.icon || '',
+      is_active: method.is_active ?? true,
+      // Las propiedades dinámicas ([key: string]: any) permiten añadir extras
+      parsed_structured_data: parsedStructuredData
+    } as PaymentMethod;
   });
 });
 
@@ -523,7 +528,7 @@ watch(selectedProduct, (newProduct) => {
   }
 }, { immediate: true });
 
-const loadingMethods = ref(false)
+// const loadingMethods = ref(false)
 // const currencies = ref<Currency[]>([])
 const loadingCurrencies = ref(false)
 const selectedCurrencyId = ref<string | undefined>(undefined)
@@ -804,22 +809,22 @@ const isPagoMovilSelected = computed(() => {
 });
 
 // Detecta si el método seleccionado es Transferencia
-const isTransferenciaSelected = computed(() => {
-  if (!selectedPaymentMethod.value) return false;
+// const isTransferenciaSelected = computed(() => {
+//   if (!selectedPaymentMethod.value) return false;
   
-  const methodName = selectedPaymentMethod.value.name.toLowerCase();
-  return methodName.includes('transferencia');
-});
+//   const methodName = selectedPaymentMethod.value.name.toLowerCase();
+//   return methodName.includes('transferencia');
+// });
 
 // También puedes crear un slug para comparación
-const selectedMethodSlug = computed(() => {
-  if (!selectedPaymentMethod.value) return '';
-  return selectedPaymentMethod.value.name
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-});
+// const selectedMethodSlug = computed(() => {
+//   if (!selectedPaymentMethod.value) return '';
+//   return selectedPaymentMethod.value.name
+//     .toLowerCase()
+//     .replace(/\s+/g, '-')
+//     .normalize('NFD')
+//     .replace(/[\u0300-\u036f]/g, '');
+// });
 const handleTimeExpired = async () => {
   showToast('⏰ El tiempo para completar la compra ha expirado. Los tickets han sido liberados.', 'error', 5000);
   

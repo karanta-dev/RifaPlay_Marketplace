@@ -166,9 +166,7 @@
               }"
               :style="colorStore.isRiferoPage ? {
                 color: colorStore.textSecondary,
-                '&:hover': {
-                  backgroundColor: colorStore.primary + '10'
-                }
+               
               } : {}"
             >
               Mis tickets
@@ -181,9 +179,7 @@
               }"
               :style="colorStore.isRiferoPage ? {
                 color: colorStore.textSecondary,
-                '&:hover': {
-                  backgroundColor: colorStore.primary + '10'
-                }
+                
               } : {}"
             >
               Ver mi perfil
