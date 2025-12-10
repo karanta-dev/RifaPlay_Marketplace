@@ -1166,12 +1166,12 @@ async function confirmFromProfile() {
       selectedManualTickets: ticketsToSend,
       formOverrides: {
         referencia: referenciaPago.value,
-        metodoPago: metodoPago  // ✅ Enviar UUID, no slug
+        metodoPago: metodoPago  
       },
       selectedCurrencyId: selectedCurrencyId.value
     })
     
-    showToast('✅ Compra procesada exitosamente', 'success')
+    showToast('Compra procesada exitosamente', 'success')
     resetForm()
     
   } catch (err: any) {

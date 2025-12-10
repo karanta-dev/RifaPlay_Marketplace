@@ -29,6 +29,7 @@
               <div class="flex gap-4 mt-2 text-sm">
                 <span class="text-green-400">✅ Ganados: {{ stats.won }}</span>
                 <span class="text-yellow-400">⏳ En curso: {{ stats.inProgress }}</span>
+                <span class="text-gray-400">⏱️ Pendientes: {{ stats.pending }}</span>
                 <span class="text-blue-400">🎟️ Total: {{ stats.total }}</span>
               </div>
             </div>
@@ -59,7 +60,7 @@
               <option value="all">Todos los estados</option>
               <option value="En transcurso">En transcurso</option>
               <option value="Ganador">Ganados</option>
-              <option value="Perdiste">Perdidos</option>
+              <option value="Pendiente">Pendientes</option>
             </select>
             <select v-model="categoryFilter" class="p-3 rounded-lg bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
               <option value="all">Todas las categorías</option>
@@ -99,9 +100,10 @@
 
             <div class="relative z-10 mb-3">
               <img 
-                :src="ticketInfo.product.images?.[0] || '/default.png'" 
-                alt="product" 
+                :src="getProductImage(ticketInfo.product)" 
+                :alt="ticketInfo.product.title"
                 class="w-full h-32 object-cover rounded-lg border border-gray-600 shadow-md"
+                @error="handleImageError"
               />
               <div class="absolute top-2 right-2">
                 <span 
@@ -118,36 +120,61 @@
             <div class="relative z-10">
               <div class="mb-3">
                 <h3 class="text-lg font-bold text-white drop-shadow line-clamp-2 mb-1">
-                  {{ ticketInfo.product.title }}
+                  {{ ticketInfo.product.title || 'Rifa sin nombre' }}
                 </h3>
                 <div class="flex justify-between items-center">
                   <div class="text-xs text-gray-400 flex items-center gap-1">
-                    <span>🎲 {{ ticketInfo.product.rifero }}</span>
+                    <span>🎫 Ticket #{{ ticketInfo.ticket.ticketNumber }}</span>
                   </div>
                   <div class="text-right">
-                    <div class="text-xs text-gray-400">Ticket</div>
-                    <div class="font-mono text-lg text-yellow-300 drop-shadow">
-                      #{{ ticketInfo.ticket.ticketNumber }}
+                    <div class="text-xs text-gray-400">Factura</div>
+                    <div class="font-mono text-sm text-yellow-300 drop-shadow">
+                      {{ ticketInfo.invoiceNumber }}
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div class="mb-3">
-                <span class="px-2 py-1 bg-gray-700 rounded text-xs text-gray-300">
+              <div class="mb-3 flex flex-wrap gap-2">
+                <span v-if="ticketInfo.product.categories.length > 0" class="px-2 py-1 bg-gray-700 rounded text-xs text-gray-300">
                   {{ getFirstCategory(ticketInfo.product.categories) }}
+                </span>
+                <span v-if="ticketInfo.product.paymentMethod" class="px-2 py-1 bg-blue-900/50 rounded text-xs text-blue-300">
+                  {{ ticketInfo.product.paymentMethod }}
+                </span>
+                <span v-if="ticketInfo.product.rifero" class="px-2 py-1 bg-purple-900/50 rounded text-xs text-purple-300">
+                  {{ ticketInfo.product.rifero }}
                 </span>
               </div>
 
               <div class="text-xs text-gray-400 space-y-1">
                 <div class="flex items-center gap-1">
-                  <span>📅 {{ formatDateShort(ticketInfo.product.drawDate ?? '') }}</span>
+                  <span>📅 Comprado: {{ formatDateShort(ticketInfo.purchaseDate ?? '') }}</span>
                 </div>
-                <div v-if="isUpcoming(ticketInfo.product.drawDate)" class="text-orange-400">
-                  ⏰ {{ getTimeRemaining(ticketInfo.product.drawDate) }}
+                <div v-if="ticketInfo.product.drawDate && isUpcoming(ticketInfo.product.drawDate)" class="text-orange-400">
+                  ⏰ Sorteo: {{ formatDateShort(ticketInfo.product.drawDate) }}
+                  <span class="ml-1">({{ getTimeRemaining(ticketInfo.product.drawDate) }})</span>
                 </div>
                 <div v-else-if="ticketInfo.status === 'En transcurso'" class="text-yellow-400">
                   ⏳ Esperando sorteo
+                </div>
+                <div v-else-if="ticketInfo.status === 'Pendiente'" class="text-gray-400">
+                  ⏱️ Pendiente de verificación
+                </div>
+                <div v-if="ticketInfo.product.ticketPrice" class="text-green-400">
+                  💰 Precio: ${{ ticketInfo.product.ticketPrice }}
+                </div>
+                <div v-if="ticketInfo.product.progress" class="text-xs">
+                  <div class="flex justify-between mb-1">
+                    <span>Progreso:</span>
+                    <span>{{ ticketInfo.product.ticketsSold }}/{{ ticketInfo.product.ticketsMax }}</span>
+                  </div>
+                  <div class="w-full bg-gray-700 rounded-full h-1.5">
+                    <div 
+                      class="bg-yellow-500 h-1.5 rounded-full" 
+                      :style="{ width: `${ticketInfo.product.progress}%` }"
+                    ></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -161,7 +188,9 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { InvoiceService, type Invoice } from '@/services/InvoiceService' //
+import { useGridStore } from '@/stores/useGridStore'
+import { InvoiceService, type Invoice } from '@/services/InvoiceService'
+// import { RaffleService } from '@/services/RaffleService'
 
 // --- Interfaces para la vista ---
 interface UiTicket {
@@ -171,10 +200,15 @@ interface UiTicket {
 
 interface UiProduct {
   title: string
-  rifero: string
   categories: string[]
   images: string[]
   drawDate: string
+  paymentMethod: string
+  rifero: string
+  ticketPrice: number
+  ticketsMax: number
+  ticketsSold: number
+  progress: number
 }
 
 interface TicketItem {
@@ -182,10 +216,14 @@ interface TicketItem {
   ticket: UiTicket
   product: UiProduct
   status: string
+  purchaseDate: string
+  invoiceNumber: string
+  raffleId: string
 }
 
 // --- Stores ---
 const authStore = useAuthStore()
+const gridStore = useGridStore()
 
 // --- Estados Locales ---
 const invoices = ref<Invoice[]>([])
@@ -203,9 +241,19 @@ const fetchMyTickets = async () => {
   
   isLoading.value = true
   try {
-    // Usamos el servicio existente que retorna las facturas con la estructura anidada
-    const data = await InvoiceService.getMyInvoices() 
+    // 1. Cargar facturas/tickets
+    const data = await InvoiceService.getMyInvoices()
     invoices.value = data
+    console.log("Facturas cargadas:", data)
+    
+    // 2. Cargar lista de rifas del gridStore (ya incluye imágenes)
+    if (gridStore.products.length === 0) {
+      console.log("Cargando rifas desde GridStore...")
+      await gridStore.fetchProductList(1, 100) // Cargar muchas rifas
+    }
+    
+    console.log("Rifas cargadas en GridStore:", gridStore.products.length)
+    
   } catch (error) {
     console.error("Error cargando tickets:", error)
   } finally {
@@ -217,62 +265,94 @@ onMounted(() => {
   fetchMyTickets()
 })
 
+// --- Función para buscar rifa en el GridStore ---
+const findRaffleInGridStore = (raffleId: string) => {
+  // Primero buscar en el gridStore
+  const raffle = gridStore.products.find(p => p.uuid === raffleId)
+  if (raffle) {
+    console.log(`✅ Rifa ${raffleId} encontrada en GridStore:`, raffle.title)
+    return raffle
+  }
+  
+  // Si no está en GridStore, intentar cargarla individualmente
+  console.log(`⚠️ Rifa ${raffleId} no encontrada en GridStore`)
+  return null
+}
+
 // --- Computed: Transformación de Datos API a Vista ---
+// En la sección de transformación de datos en MyTickets.vue
 const userTickets = computed<TicketItem[]>(() => {
-  // Aplanamos la estructura: Factura -> Tickets[] -> Ticket Individual
   return invoices.value.flatMap((invoice) => {
-    // Si la factura no tiene rifa asociada (caso raro), la saltamos
-    if (!invoice.raffle) return []
+    if (!invoice.itemable) return []
 
-    const raffle = invoice.raffle
+    const ticketData = invoice.itemable
+    const raffleId = ticketData.raffle_id
     
-    // Mapeamos los datos de la rifa al formato del producto
-    const product: UiProduct = {
-      title: raffle.name || 'Rifa sin nombre',
-      rifero: raffle.seller ? `${raffle.seller.name} ${raffle.seller.last_name}` : 'Desconocido',
-      categories: raffle.categories?.map(c => c.name) || [],
-      images: raffle.images?.map(i => i.url) || [],
-      drawDate: raffle.raffle_date || ''
-    }
+    // Buscar rifa en GridStore
+    const raffle = findRaffleInGridStore(raffleId)
+    
+    // Obtener método de pago - AHORA SÍ EXISTE
+    const paymentMethod = invoice.payments?.[0]?.payment_method?.method_name || 'Sin método'
 
-    // Calculamos el estado general basado en la fecha (si ya pasó o no)
-    const now = Date.now()
-    const drawTime = product.drawDate ? new Date(product.drawDate).getTime() : 0
-    const isPast = drawTime > 0 && drawTime <= now
-
-    // Iteramos sobre los tickets dentro de esta factura
-    return (invoice.tickets || []).map((t) => {
+    // Para cada detalle en el ticket (puede haber múltiples números)
+    return (ticketData.details || [{ number: ticketData.ticket_number }]).map((detail, index) => {
+      // Determinar estado basado en is_winner y status
+      // AHORA podemos acceder a ticketData.status
       let status = 'En transcurso'
-
-      if (t.is_winner) {
+      
+      if (ticketData.is_winner === true) {
         status = 'Ganador'
-      } else if (isPast) {
-        status = 'Perdiste'
+      } else if (ticketData.status === 'Pendiente') {
+        status = 'Pendiente'
+      } else if (ticketData.is_winner === false) {
+        status = 'Finalizado'
       } else {
         status = 'En transcurso'
       }
 
+      // Calcular progreso
+      const ticketsMax = raffle?.ticketsMax || 0
+      const ticketsSold = raffle?.ticketsVendidos || 0
+      const progress = ticketsMax > 0 ? Math.round((ticketsSold / ticketsMax) * 100) : 0
+
+      // Información de la rifa
+      const productInfo: UiProduct = {
+        title: raffle?.title || `Rifa #${raffleId?.substring(0, 8) || 'Desconocida'}`,
+        categories: raffle?.categories || [],
+        images: raffle?.images || [],
+        drawDate: raffle?.drawDate || '',
+        paymentMethod,
+        rifero: raffle?.rifero || 'Desconocido',
+        ticketPrice: raffle?.ticketPrice || 0,
+        ticketsMax,
+        ticketsSold,
+        progress
+      }
+
       return {
-        uniqueKey: `${invoice.uuid}-${t.number}`,
+        uniqueKey: `${invoice.uuid}-${detail.number}-${index}`,
         ticket: {
-          ticketNumber: t.number,
-          isWinner: t.is_winner
+          ticketNumber: detail.number,
+          isWinner: ticketData.is_winner
         },
-        product,
-        status
+        product: productInfo,
+        status,
+        purchaseDate: invoice.created_at || '',
+        invoiceNumber: invoice.invoice_number,
+        raffleId
       }
     })
   })
 })
-
 // --- Computed: Filtrado ---
 const filteredTickets = computed(() => {
   return userTickets.value.filter(item => {
     // Búsqueda
     const matchesSearch = searchQuery.value === '' || 
       item.product.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      item.product.rifero.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      item.ticket.ticketNumber.includes(searchQuery.value)
+      item.ticket.ticketNumber.includes(searchQuery.value) ||
+      item.invoiceNumber.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      item.product.rifero.toLowerCase().includes(searchQuery.value.toLowerCase())
 
     // Estado
     const matchesStatus = statusFilter.value === 'all' || item.status === statusFilter.value
@@ -283,7 +363,7 @@ const filteredTickets = computed(() => {
 
     // Fecha
     const matchesDate = dateFilter.value === 'all' || 
-      matchesDateFilter(item.product.drawDate, dateFilter.value)
+      matchesDateFilter(item.purchaseDate, dateFilter.value)
 
     return matchesSearch && matchesStatus && matchesCategory && matchesDate
   })
@@ -294,7 +374,8 @@ const stats = computed(() => {
   const total = userTickets.value.length
   const won = userTickets.value.filter(t => t.status === 'Ganador').length
   const inProgress = userTickets.value.filter(t => t.status === 'En transcurso').length
-  return { total, won, inProgress }
+  const pending = userTickets.value.filter(t => t.status === 'Pendiente').length
+  return { total, won, inProgress, pending }
 })
 
 // --- Categorías disponibles (para el select) ---
@@ -314,7 +395,6 @@ const hasActiveFilters = computed(() => {
 })
 
 // --- Helpers de Fecha y Utilidades ---
-
 function formatDateShort(d: string) {
   if (!d) return 'Sin fecha'
   const dt = new Date(d)
@@ -328,12 +408,27 @@ function formatDateShort(d: string) {
 
 function statusClass(s: string) {
   if (s === 'Ganador') return 'bg-emerald-500 text-white'
-  if (s === 'Perdiste') return 'bg-red-600 text-white'
+  if (s === 'Pendiente') return 'bg-gray-500 text-white'
+  if (s === 'Finalizado') return 'bg-red-600 text-white'
   return 'bg-yellow-500 text-black'
 }
 
 function getFirstCategory(categories?: string[]) {
   return categories && categories.length > 0 ? categories[0] : 'Sin categoría'
+}
+
+function getProductImage(product: UiProduct) {
+  // Tomar la primera imagen disponible
+  if (product.images && product.images.length > 0) {
+    return product.images[0]
+  }
+  // Imagen por defecto
+  return '/default.png'
+}
+
+function handleImageError(event: Event) {
+  const img = event.target as HTMLImageElement
+  img.src = '/default.png'
 }
 
 function isUpcoming(drawDate?: string) {
@@ -352,14 +447,16 @@ function getTimeRemaining(drawDate?: string) {
   
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
   
   if (days > 0) return `${days}d ${hours}h`
-  return `${hours}h`
+  if (hours > 0) return `${hours}h ${minutes}m`
+  return `${minutes}m`
 }
 
-function matchesDateFilter(drawDate: string, filter: string): boolean {
-  if (!drawDate) return false
-  const date = new Date(drawDate)
+function matchesDateFilter(purchaseDate: string, filter: string): boolean {
+  if (!purchaseDate) return false
+  const date = new Date(purchaseDate)
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -388,6 +485,7 @@ function clearAllFilters() {
 .bg-emerald-500 { box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
 .bg-red-600 { box-shadow: 0 0 8px rgba(220, 38, 38, 0.6); }
 .bg-yellow-500 { box-shadow: 0 0 8px rgba(234, 179, 8, 0.6); }
+.bg-gray-500 { box-shadow: 0 0 8px rgba(107, 114, 128, 0.6); }
 
 .line-clamp-2 {
   display: -webkit-box;

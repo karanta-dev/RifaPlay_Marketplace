@@ -1,6 +1,49 @@
 // src/services/InvoiceService.ts
 import apiClient from "./api";
 
+// Interfaces basadas en la respuesta real del backend
+export interface Payment {
+  uuid: string;
+  original_amount: string;
+  current_currency_amount: string;
+  exchange_rate: string;
+  payment_date: string;
+  status: string;
+  transaction_id: string;
+  payment_method?: {
+    uuid: string;
+    method_name: string;
+    currency?: {
+      name: string;
+      short_name: string;
+    };
+  };
+}
+
+export interface TicketDetail {
+  uuid: string;
+  number: string;
+  raffle_ticket_id: string;
+}
+
+export interface Itemable {
+  uuid: string;
+  ticket_number: string;
+  raffle_id: string;
+  is_winner?: boolean;
+  status: string; // Este campo SÍ existe en la respuesta
+  details: TicketDetail[];
+}
+
+export interface Invoiceable {
+  uuid: string;
+  name: string;
+  last_name: string;
+  document_type: string;
+  document_number: string;
+  phone: string;
+}
+
 export interface Invoice {
   uuid: string;
   invoice_number: string;
@@ -8,38 +51,13 @@ export interface Invoice {
   status?: string;
   created_at?: string;
   updated_at?: string;
-  user_id?: string;
-  raffle_id?: string;
-  ticket_numbers?: string[];
-  payment_method?: string;
-  payment_reference?: string;
-  payment_status?: string;
-  raffle?: {
-    uuid?: string;
-    name?: string;
-    description?: string;
-    raffle_date?: string;
-    ticket_price?: string;
-    images?: { url: string }[];
-    categories?: { name: string }[];
-    prizes?: any[];
-    seller?: {
-      uuid: string;
-      name: string;
-      last_name: string;
-      photo: string | null;
-    };
-  };
-  tickets?: Array<{
-    uuid: string;
-    number: string;
-    is_winner?: boolean;
-    created_at: string;
-  }>;
+  itemable: Itemable;
+  invoiceable: Invoiceable;
+  payments?: Payment[]; // Este campo SÍ existe en la respuesta
 }
 
 export interface InvoicesResponse {
-  status: string;
+  success: boolean;
   data: Invoice[];
   message: string;
 }
@@ -47,7 +65,6 @@ export interface InvoicesResponse {
 export const InvoiceService = {
   /**
    * Obtener las facturas/tickets del usuario cliente logueado
-   * NOTA: El endpoint requiere que el usuario esté autenticado como CLIENTE
    */
   async getMyInvoices(): Promise<Invoice[]> {
     try {
@@ -56,8 +73,6 @@ export const InvoiceService = {
       if (!token) {
         throw new Error("No hay token de autenticación. Por favor, inicia sesión.");
       }
-      
-      console.log("Token encontrado:", token ? "Sí" : "No");
       
       const response = await apiClient.get<InvoicesResponse>(
         "/invoices/my-invoices/client",
@@ -71,7 +86,7 @@ export const InvoiceService = {
 
       console.log("Respuesta del servidor:", response.data);
       
-      if (response.data.status === "success") {
+      if (response.data.success) {
         return response.data.data;
       } else {
         console.error("Error en la respuesta del servidor:", response.data.message);
@@ -81,11 +96,6 @@ export const InvoiceService = {
       console.error("Error detallado al obtener las facturas:", error);
       
       if (error.response) {
-        // El servidor respondió con un código de error
-        console.error("Respuesta del servidor (error):", error.response.data);
-        console.error("Status:", error.response.status);
-        console.error("Headers:", error.response.headers);
-        
         if (error.response.status === 401) {
           throw new Error("Tu sesión ha expirado. Por favor, inicia sesión nuevamente.");
         } else if (error.response.status === 403) {
@@ -94,7 +104,6 @@ export const InvoiceService = {
           throw new Error("El recurso solicitado no fue encontrado.");
         }
       } else if (error.request) {
-        // La petición fue hecha pero no se recibió respuesta
         console.error("No se recibió respuesta del servidor:", error.request);
         throw new Error("No se pudo conectar con el servidor. Verifica tu conexión a internet.");
       }
@@ -102,7 +111,6 @@ export const InvoiceService = {
       throw error;
     }
   },
-
 
   /**
    * Obtener detalles de una factura específica
