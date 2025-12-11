@@ -852,7 +852,7 @@ watch(paymentMethods, (methods) => {
     selectedPaymentMethod.value = defaultMethod;
   }
 }, { immediate: true });
-// Valores para los campos dinámicos de structured_data
+// Valores para los campos dinámicos de structured_dataa
 // structuredFields devuelve un array de { key, label, value } para mostrar como texto (no editables)
 const structuredFieldValues = ref<Record<string, any>>({})
 
