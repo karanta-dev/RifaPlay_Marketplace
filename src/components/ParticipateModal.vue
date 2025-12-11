@@ -112,11 +112,15 @@
             <TicketGrid v-if="selectionMode === 'manual' && selectedProduct" :raffleId="selectedProduct.uuid" @update:selected="handleSelectionUpdate" />
               
             <!-- Moneda -->
-            <label class="font-semibold text-white text-lg">💱 Moneda</label>
-            <select v-model="selectedCurrencyId" :disabled="loadingCurrencies" class="select-custom">
-              <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">{{ c.name }} ({{ c.short_name }})</option>
-            </select>
-            <p v-if="!loadingCurrencies && currencies.length === 0" class="text-red-400 text-sm">No hay monedas disponibles.</p>
+<label class="font-semibold text-white text-lg">💱 Moneda</label>
+  <select v-model="selectedCurrencyId" :disabled="loadingCurrencies || availableCurrencies.length === 0" class="select-custom">
+    <option v-for="c in availableCurrencies" :key="c.uuid" :value="c.uuid">
+      {{ c.name }} ({{ c.short_name }})
+    </option>
+  </select>
+  <p v-if="availableCurrencies.length === 0" class="text-red-400 text-sm">
+    No hay monedas disponibles en los métodos de pago.
+  </p>
 
             <!-- Método de Pago -->
             <div class="space-y-4">
@@ -467,10 +471,9 @@ const paymentMethods = computed(() => {
     return [] as PaymentMethod[];
   }
   
-  // Cast a PaymentMethod[] ya que viene del backend
   const methods = selectedProduct.value.seller.payment_methods as any[];
   
-  console.log('💳 Métodos de pago del rifero:', methods);
+  console.log('💳 Métodos de pago del rifero (raw):', methods);
   
   return methods.map((method: any): PaymentMethod => {
     // Parsear structured_data si existe
@@ -497,7 +500,6 @@ const paymentMethods = computed(() => {
       name: method.method_name,
       slug: slug,
       is_default: method.is_default || false,
-      // Extraer campos comunes del structured_data
       bank_name: parsedStructuredData?.Banco || parsedStructuredData?.banco || '',
       bank_code: parsedStructuredData?.CodigoBanco || parsedStructuredData?.codigo || '',
       account_number: parsedStructuredData?.Cuenta || parsedStructuredData?.Telefono || parsedStructuredData?.telefono || '',
@@ -505,15 +507,36 @@ const paymentMethods = computed(() => {
       document_number: parsedStructuredData?.Cedula || parsedStructuredData?.cedula || '',
       description: method.observation || '',
       structured_data: method.structured_data,
-      // Propiedades opcionales según tu interfaz
       variable_name: method.method_name.toLowerCase().replace(/\s+/g, '_'),
       original_data: method,
       logoUrl: method.logo_url || method.icon || '',
       is_active: method.is_active ?? true,
-      // Las propiedades dinámicas ([key: string]: any) permiten añadir extras
+      // 🔥 NUEVO: Incluir la moneda del método de pago
+      currency: method.currency ? {
+        uuid: method.currency.uuid,
+        name: method.currency.name,
+        short_name: method.currency.short_name,
+        symbol: method.currency.symbol
+      } : null,
       parsed_structured_data: parsedStructuredData
     } as PaymentMethod;
   });
+});
+
+const availableCurrencies = computed(() => {
+  const currenciesFromMethods = paymentMethods.value
+    .map(method => method.currency)
+    .filter((currency): currency is { uuid: string; name: string; short_name: string; symbol?: string | null } => 
+      currency !== null && currency !== undefined
+    );
+  
+  // Eliminar duplicados por uuid
+  const uniqueCurrencies = currenciesFromMethods.filter((currency, index, self) =>
+    index === self.findIndex(c => c.uuid === currency.uuid)
+  );
+  
+  console.log('💰 Monedas disponibles de los métodos de pago:', uniqueCurrencies);
+  return uniqueCurrencies;
 });
 
 // 🔥 Depuración para verificar
@@ -758,7 +781,7 @@ const displayPrice = computed(() => {
     };
   }
 
-  const selectedCurrency = currencies.value.find(c => c.uuid === selectedCurrencyId.value);
+  const selectedCurrency = availableCurrencies.value.find(c => c.uuid === selectedCurrencyId.value);
   if (!selectedCurrency) {
     return { 
       text: `${totalPrice.value} USD`, 
@@ -771,7 +794,6 @@ const displayPrice = computed(() => {
   const totalUsd = parseFloat(totalPrice.value);
 
   if (currencyName.includes('bolívar') || selectedCurrency.short_name === 'VES') {
-    // Moneda VES - mostrar en Bs con tasa USD
     const totalBs = totalUsd * bcvRate.value;
     return {
       text: `${totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs`,
@@ -781,7 +803,6 @@ const displayPrice = computed(() => {
       showUsdPrice: true // Mostrar precio USD como referencia
     };
   } else if (currencyName.includes('peso colombiano') || selectedCurrency.short_name === 'COP') {
-    // Moneda COP - mostrar en COP con tasa USD
     const totalCop = totalUsd * copRate.value;
     return {
       text: `${totalCop.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} COP`,
@@ -1613,12 +1634,12 @@ const showInvoice = (saleData: any) => {
   }
 // En la función showInvoice, ANTES del cálculo de moneda, agrega:
 console.log('💱 Moneda seleccionada ID:', selectedCurrencyId.value);
-console.log('💱 Lista de monedas disponibles:', currencies.value);
+console.log('💱 Lista de monedas disponibles:', availableCurrencies.value);
 console.log('💱 Tasa BCV:', bcvRate.value);
 console.log('💱 Tasa COP:', copRate.value);
 console.log('💱 Precio total USD:', totalPrice.value);
 // 4. Cálculos de moneda - VERSIÓN CORREGIDA
-const selectedCurrency = currencies.value.find(c => c.uuid === selectedCurrencyId.value);
+const selectedCurrency = availableCurrencies.value.find(c => c.uuid === selectedCurrencyId.value);
 console.log('💱 Moneda encontrada:', selectedCurrency);
 
 let exchangeRate = '';
@@ -1974,6 +1995,25 @@ async function externalBuy(options: {
 
 // Exponer API pública mínima para ser invocada desde otras páginas
 defineExpose({ externalBuy })
+watch(availableCurrencies, (newCurrencies) => {
+  // AGREGA EL ?. ANTES DE .length
+  if (newCurrencies?.length > 0) { 
+    
+    // Si no hay una moneda seleccionada o la seleccionada no está en las disponibles
+    if (!selectedCurrencyId.value || !newCurrencies.find(c => c.uuid === selectedCurrencyId.value)) {
+      // Intentar usar la moneda del método de pago por defecto, si existe
+      const defaultMethod = paymentMethods.value.find(m => m.is_default);
+      if (defaultMethod?.currency) {
+        selectedCurrencyId.value = defaultMethod.currency.uuid;
+      } else {
+        // Aquí también es buena práctica asegurar que existe el índice 0
+        selectedCurrencyId.value = newCurrencies[0]?.uuid; 
+      }
+    }
+  } else {
+    selectedCurrencyId.value = undefined;
+  }
+}, { immediate: true });
 
 
 </script>

@@ -30,9 +30,15 @@ export interface PaymentMethod {
   logoUrl?: string;
   structured_data?: any; // Estructura dinámica que indica campos requeridos por el método
   is_active?: boolean;
+  // 🔥 NUEVA PROPIEDAD: Moneda asociada al método de pago
+  currency?: {
+    uuid: string;
+    name: string;
+    short_name: string;
+    symbol?: string | null;
+  } | null;
   [key: string]: any;
 }
-
 // Interfaz para bancos
 export interface Bank {
   uuid: string;

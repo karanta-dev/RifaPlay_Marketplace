@@ -290,13 +290,31 @@
           </div>
  <!-- Currency selector -->
               <div class="mb-4">
-                <label class="input-label" for="currency-select">Moneda</label>
-                <select id="currency-select" v-model="selectedCurrencyId" class="input-field">
-                  <option v-for="c in currencies" :key="c.uuid" :value="c.uuid">
-                    {{ c.name }} ({{ c.short_name }})
-                  </option>
-                </select>
-              </div>
+  <label class="input-label" for="currency-select">Moneda</label>
+  <select 
+    id="currency-select" 
+    v-model="selectedCurrencyId" 
+    class="input-field"
+    :disabled="availableCurrenciesFromMethods.length === 0"
+  >
+    <option 
+      v-for="c in filteredCurrencies" 
+      :key="c.uuid" 
+      :value="c.uuid"
+      :selected="c.uuid === selectedCurrencyId"
+    >
+      {{ c.name }} ({{ c.short_name }})
+    </option>
+    <option v-if="filteredCurrencies.length === 0" disabled>
+      Cargando monedas...
+    </option>
+  </select>
+  
+  <!-- Mensaje informativo sobre restricción de monedas -->
+  <div v-if="availableCurrenciesFromMethods.length > 0" class="text-xs text-gray-500 mt-1">
+    💡 Las monedas mostradas corresponden a los métodos de pago disponibles del rifero
+  </div>
+</div>
           <p class="text-sm text-gray-500 mb-6 text-center">Selecciona una opción</p>
 
           <div class="payment-methods-wrapper">
@@ -658,7 +676,8 @@ const displayPrice = computed(() => {
     return { text: 'Cargando...', showUsdRate: false, showUsdPrice: false }
   }
 
-  const selectedCurrency = (currencies?.value ?? []).find((c: any) => c.uuid === selectedCurrencyId.value)
+  // Encontrar la moneda seleccionada en las monedas filtradas
+  const selectedCurrency = filteredCurrencies.value.find((c: any) => c.uuid === selectedCurrencyId.value)
   if (!selectedCurrency) {
     return { text: `${totalPrice.value} USD`, showUsdRate: false, showUsdPrice: false }
   }
@@ -734,6 +753,14 @@ const paymentMethods = computed(() => {
       iconUrl = `https://api-rifaplay.karanta.dev/storage${iconUrl.startsWith('/') ? iconUrl : '/' + iconUrl}`;
     }
     
+    // 🔥 NUEVO: Extraer información de currency si existe
+    const currencyInfo = method.currency ? {
+      uuid: method.currency.uuid,
+      name: method.currency.name,
+      short_name: method.currency.short_name,
+      symbol: method.currency.symbol
+    } : null;
+    
     return {
       uuid: method.uuid,
       name: method.method_name,
@@ -748,12 +775,50 @@ const paymentMethods = computed(() => {
       description: method.observation || '',
       structured_data: method.structured_data,
       parsed_structured_data: parsedStructuredData,
-      icon: iconUrl, // 🔥 Ahora es una URL completa
+      icon: iconUrl,
       currency_id: method.currency_id,
+      currency: currencyInfo, // 🔥 NUEVO: Objeto currency completo
       created_at: method.created_at,
       updated_at: method.updated_at
     };
   });
+});
+
+// Computed para obtener las monedas únicas de los métodos de pago disponibles
+const availableCurrenciesFromMethods = computed(() => {
+  if (!paymentMethods.value.length) return [];
+  
+  const currenciesMap = new Map();
+  
+  paymentMethods.value.forEach((method: any) => {
+    if (method.currency && method.currency.uuid) {
+      // Usar el UUID como clave para evitar duplicados
+      currenciesMap.set(method.currency.uuid, method.currency);
+    }
+  });
+  
+  return Array.from(currenciesMap.values());
+});
+
+// Computed para las monedas filtradas (combinación de currencies del paymentStore y las de métodos de pago)
+const filteredCurrencies = computed(() => {
+  // Si tenemos monedas de métodos de pago, usamos esas
+  if (availableCurrenciesFromMethods.value.length > 0) {
+    return availableCurrenciesFromMethods.value;
+  }
+  
+  // Si no, usamos todas las monedas del paymentStore
+  return currencies?.value || [];
+});
+
+// Computed para detectar si debemos forzar cambio de moneda
+const shouldForceCurrencyChange = computed(() => {
+  if (!selectedPaymentMethod.value || !selectedCurrencyId.value) return false;
+  
+  const methodCurrencyId = selectedPaymentMethod.value.currency_id;
+  const currentCurrencyId = selectedCurrencyId.value;
+  
+  return methodCurrencyId && methodCurrencyId !== currentCurrencyId;
 });
 // Computed para detectar si es Pago Móvil (igual que en ParticipateModal)
 // const isPagoMovilSelected = computed(() => {
@@ -1131,8 +1196,15 @@ async function confirmFromProfile() {
     return
   }
 
-  // ✅ Usar el UUID del método de pago (igual que ParticipateModal)
+  // ✅ Usar el UUID del método de pago
   const metodoPago = selectedPaymentMethod.value?.uuid
+  
+  // ✅ Validar que el método de pago tenga la moneda seleccionada
+  if (selectedPaymentMethod.value?.currency_id !== selectedCurrencyId.value) {
+    showToast('El método de pago seleccionado no es compatible con la moneda elegida', 'error')
+    return
+  }
+
   // ✅ CORRECCIÓN: Determinar qué tickets enviar según el modo de selección
   let ticketsToSend: number[] = []
   
@@ -1479,16 +1551,44 @@ watch(raffle, (newRaffle) => {
     console.log('🖼️ displayedImages:', displayedImages.value);
   }
 }, { immediate: true });
+watch(selectedPaymentMethod, (newMethod) => {
+  if (newMethod && newMethod.currency_id) {
+    // Cambiar automáticamente la moneda seleccionada al cambiar el método de pago
+    selectedCurrencyId.value = newMethod.currency_id;
+    console.log(`🔄 Moneda cambiada automáticamente a: ${newMethod.currency_id} para el método: ${newMethod.name}`);
+  }
+}, { immediate: true });
 
+// Watch para filtrar métodos de pago cuando cambia la moneda seleccionada
+watch(selectedCurrencyId, (newCurrencyId) => {
+  if (newCurrencyId && paymentMethods.value.length > 0) {
+    // Encontrar métodos de pago que coincidan con la moneda seleccionada
+    const methodsForCurrency = paymentMethods.value.filter((method: any) => 
+      method.currency_id === newCurrencyId
+    );
+    
+    // Si el método de pago actual no es compatible con la nueva moneda, cambiar al primero disponible
+    if (methodsForCurrency.length > 0) {
+      const currentMethod = selectedPaymentMethod.value;
+      const shouldChangeMethod = !currentMethod || 
+        !methodsForCurrency.some((m: any) => m.uuid === currentMethod.uuid);
+      
+      if (shouldChangeMethod) {
+        // Seleccionar el método por defecto para esta moneda o el primero
+        const defaultMethod = methodsForCurrency.find((m: any) => m.is_default) || methodsForCurrency[0];
+        selectedPaymentMethod.value = defaultMethod;
+        console.log(`🔄 Método de pago cambiado a: ${defaultMethod?.name} para moneda: ${newCurrencyId}`);
+      }
+    }
+  }
+});
 // Lifecycle hooks
 onMounted(() => {
   loadRaffleData()
   colorStore.initialize()
-  colorStore.setRiferoPage(true) // Esta es una página de rifero
-  // cargar métodos de pago
-  // loadPaymentMethods()
-
-  // Cargar monedas y tasas desde el paymentStore (igual que ParticipateModal)
+  colorStore.setRiferoPage(true)
+  
+  // Cargar monedas y tasas desde el paymentStore
   try {
     paymentStore.loadPaymentDataOnce()
     paymentStore.fetchAllRates()
@@ -1496,15 +1596,31 @@ onMounted(() => {
     console.warn('No se pudieron cargar datos de pago desde paymentStore:', e)
   }
 
-  // Si las monedas se cargan después, seleccionar la por defecto
-  const stopWatch = watch(currencies, (val) => {
-    if (val && val.length && !selectedCurrencyId.value) {
-      selectedCurrencyId.value = (defaultCurrencyId?.value as string) || val[0].uuid
-      stopWatch()
+  // Inicializar moneda seleccionada basada en métodos de pago
+  const stopWatch = watch([paymentMethods, currencies], ([methods, allCurrencies]) => {
+    if (methods && methods.length > 0 && allCurrencies && allCurrencies.length > 0) {
+      // Prioridad 1: Usar la moneda del método de pago por defecto
+      const defaultMethod = methods.find((m: any) => m.is_default);
+      if (defaultMethod && defaultMethod.currency_id) {
+        selectedCurrencyId.value = defaultMethod.currency_id;
+      } 
+      // Prioridad 2: Usar la primera moneda disponible de los métodos
+      else if (methods[0] && methods[0].currency_id) {
+        selectedCurrencyId.value = methods[0].currency_id;
+      }
+      // Prioridad 3: Usar moneda por defecto del sistema
+      else if (defaultCurrencyId?.value) {
+        selectedCurrencyId.value = defaultCurrencyId.value as string;
+      }
+      // Prioridad 4: Usar la primera moneda del sistema
+      else if (allCurrencies[0]?.uuid) {
+        selectedCurrencyId.value = allCurrencies[0].uuid;
+      }
+      
+      stopWatch(); // Detener el watch después de inicializar
     }
-  })
+  }, { immediate: true });
 
-  // Iniciar animación después de que el componente esté montado
   setTimeout(() => {
     animateProgressBar()
   }, 300)
@@ -1814,7 +1930,7 @@ p {
 .tickets-title {
     font-size: 1.875rem; /* text-3xl */
     font-weight: 900; /* font-extrabold */
-    color: #ff3366; /* text-green-600 */
+    color: black; /* text-green-600 */
     letter-spacing: -0.025em; /* tracking-tight */
     text-transform: uppercase;
 }
@@ -2384,7 +2500,6 @@ p {
 .section-title-large {
     font-size: 2rem; /* text-4xl */
     font-weight: 900; /* Extra bold */
-    color: #ff3366; /* Verde */
     text-transform: uppercase;
     line-height: 1.1;
 }
