@@ -64,7 +64,7 @@
       </div>
     </nav>
 
-    <!-- Contador de precio flotante para móviles -->
+    <!-- Contador de precio flotante para móviless -->
     <div v-if="selectedTicketsCount > 0" class="floating-price-counter">
       <div class="floating-price-content">
         <div class="floating-price-info">
