@@ -126,19 +126,19 @@
             <div class="space-y-4">
               <label class="font-semibold text-white text-lg">💳 Método de Pago</label>
               <select v-model="form.metodoPago" class="input-custom" required>
-                <option value="" disabled :selected="!form.metodoPago">Seleccionar método de pago</option>
-                <option v-for="method in paymentMethods" :key="method.uuid" :value="method.uuid">
-                  {{ method.name }} {{ method.is_default ? '' : '' }}
-                </option>
-              </select>
-              
-              <!-- Mensaje si no hay métodos -->
-              <div v-if="paymentMethods.length === 0" class="mt-2 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
-                <p class="text-yellow-400 text-sm">
-                  ⚠️ Este rifero no tiene métodos de pago configurados. 
-                  Por favor, contacta al rifero directamente o selecciona otra rifa.
-                </p>
-              </div>
+  <option value="" disabled :selected="!form.metodoPago">Seleccionar método de pago</option>
+  <option v-for="method in filteredPaymentMethods" :key="method.uuid" :value="method.uuid">
+    {{ method.name }} {{ method.is_default ? '' : '' }}
+  </option>
+</select>
+
+<!-- También cambia el mensaje cuando no hay métodos: -->
+<div v-if="filteredPaymentMethods.length === 0" class="mt-2 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+  <p class="text-yellow-400 text-sm">
+    ⚠️ No hay métodos de pago disponibles para la moneda seleccionada.
+    Por favor, selecciona otra moneda o contacta al rifero.
+  </p>
+</div>
 
               <!-- Structured data general (NO para Pago Móvil) -->
               <div v-if="shouldShowGeneralStructuredData" class="mt-3 p-3 bg-black/20 rounded-lg text-sm text-white/90 border border-white/10">
@@ -539,6 +539,22 @@ const availableCurrencies = computed(() => {
   return uniqueCurrencies;
 });
 
+const filteredPaymentMethods = computed(() => {
+  if (!selectedCurrencyId.value) {
+    return paymentMethods.value;
+  }
+  
+  // Filtrar métodos de pago por la moneda seleccionada
+  return paymentMethods.value.filter(method => {
+    // Si el método no tiene moneda definida, mostrarlo (compatibilidad hacia atrás)
+    if (!method.currency) {
+      return true;
+    }
+    
+    // Comparar UUIDs de las monedas
+    return method.currency.uuid === selectedCurrencyId.value;
+  });
+});
 // 🔥 Depuración para verificar
 watch(selectedProduct, (newProduct) => {
   if (newProduct) {
@@ -2014,8 +2030,31 @@ watch(availableCurrencies, (newCurrencies) => {
     selectedCurrencyId.value = undefined;
   }
 }, { immediate: true });
-
-
+watch(selectedCurrencyId, (newCurrencyId, oldCurrencyId) => {
+  if (newCurrencyId !== oldCurrencyId) {
+    // Resetear el método de pago seleccionado
+    form.metodoPago = '';
+    
+    // También resetear cualquier información relacionada con structured_data
+    parsedStructured.value = null;
+  }
+});
+watch(availableCurrencies, (newCurrencies) => {
+  if (newCurrencies?.length > 0) { 
+    // Si no hay una moneda seleccionada o la seleccionada no está en las disponibles
+    if (!selectedCurrencyId.value || !newCurrencies.find(c => c.uuid === selectedCurrencyId.value)) {
+      // Intentar usar la moneda del método de pago por defecto, si existe
+      const defaultMethod = paymentMethods.value.find(m => m.is_default);
+      if (defaultMethod?.currency) {
+        selectedCurrencyId.value = defaultMethod.currency.uuid;
+      } else {
+        selectedCurrencyId.value = newCurrencies[0]?.uuid; 
+      }
+    }
+  } else {
+    selectedCurrencyId.value = undefined;
+  }
+}, { immediate: true });
 </script>
 
 <style scoped>
