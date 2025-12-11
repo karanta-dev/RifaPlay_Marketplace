@@ -812,14 +812,14 @@ const filteredCurrencies = computed(() => {
 });
 
 // Computed para detectar si debemos forzar cambio de moneda
-const shouldForceCurrencyChange = computed(() => {
-  if (!selectedPaymentMethod.value || !selectedCurrencyId.value) return false;
+// const shouldForceCurrencyChange = computed(() => {
+//   if (!selectedPaymentMethod.value || !selectedCurrencyId.value) return false;
   
-  const methodCurrencyId = selectedPaymentMethod.value.currency_id;
-  const currentCurrencyId = selectedCurrencyId.value;
+//   const methodCurrencyId = selectedPaymentMethod.value.currency_id;
+//   const currentCurrencyId = selectedCurrencyId.value;
   
-  return methodCurrencyId && methodCurrencyId !== currentCurrencyId;
-});
+//   return methodCurrencyId && methodCurrencyId !== currentCurrencyId;
+// });
 // Computed para detectar si es Pago Móvil (igual que en ParticipateModal)
 // const isPagoMovilSelected = computed(() => {
 //   if (!selectedPaymentMethod.value) return false;
