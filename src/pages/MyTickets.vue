@@ -315,7 +315,7 @@ const userTickets = computed<TicketItem[]>(() => {
       const ticketsSold = raffle?.ticketsVendidos || 0
       const progress = ticketsMax > 0 ? Math.round((ticketsSold / ticketsMax) * 100) : 0
 
-      // Información de la rifa
+      // Información de la rifaa
       const productInfo: UiProduct = {
         title: raffle?.title || `Rifa #${raffleId?.substring(0, 8) || 'Desconocida'}`,
         categories: raffle?.categories || [],
