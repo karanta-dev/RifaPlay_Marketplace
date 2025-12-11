@@ -138,7 +138,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, defineEmits, defineProps, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useTicketStore, type TicketStatus } from '../stores/useTicketStore'
 import { useGridStore } from '@/stores/useGridStore' // NUEVO: Importar store de grid
 import { RaffleService } from '@/services/RaffleService';
