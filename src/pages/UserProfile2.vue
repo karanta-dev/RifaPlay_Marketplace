@@ -1,6 +1,7 @@
 <template>
   <div class="lgtangueta-container">
-    <nav class="navbar">
+    <nav class="navbar" :style="{ backgroundColor: colorStore.navbarBg }">
+  <div class="top-accent-line" :style="{ backgroundColor: colorStore.accent }"></div>
       <div class="top-accent-line"></div>
       
       <div class="nav-content">
@@ -56,7 +57,10 @@
           </li>
         </ul>
 
-        <button class="btn-boletos">LISTA DE BOLETOS</button>
+       <button class="btn-boletos" :style="{ 
+        backgroundColor: colorStore.buttonBg,
+        color: colorStore.buttonText
+      }">LISTA DE BOLETOS</button>
       </div>
     </nav>
 
@@ -93,7 +97,10 @@
 
       <!-- Barra de progreso -->
       <div class="progress-container">
-        <div class="progress-bar-gradient" :style="{ width: progressWidth + '%' }"></div>
+        <div class="progress-bar-gradient" :style="{ 
+          width: progressWidth + '%',
+          background: `linear-gradient(90deg, ${colorStore.progressStart} 0%, ${colorStore.progressEnd} 100%)`
+        }"></div>
         <span class="progress-text">{{ Math.round(progressWidth) }}%</span>
       </div>
 
@@ -140,7 +147,10 @@
                   <span class="font-mono text-base sm:text-lg font-bold" :class="timerTextClass">{{ formattedTime }}</span>
                 </div>
               </div>
-              <button class="btn-suerte" @click="selectionMode = 'auto'">
+              <button class="btn-suerte" @click="selectionMode = 'auto'" :style="{ 
+                backgroundColor: colorStore.buttonBg,
+                color: colorStore.buttonText
+              }">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1 -mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9.42 14l1.52 3.82 2.39-1.39-2.09-2.09.84-1.05 1.52 1.51 1.05-.84-1.51-1.52 1.05-1.05-1.52-1.51-1.05.84-2.39-2.39L12 6.07c3.95.49 7 3.85 7 7.93 0 1.25-.33 2.44-.92 3.51l-4.59-4.59.84-1.05L12 11.93l-1.05 1.05-1.52 1.52-1.05-.84L9.42 14l-.84 1.05 4.59 4.59c.28-.51.5-1.05.64-1.63z"/>
               </svg>
@@ -405,7 +415,10 @@
           </div>
           
           <div class="text-center">
-            <button class="btn-confirmar" @click.prevent="confirmFromProfile">
+            <button class="btn-confirmar" @click.prevent="confirmFromProfile" :style="{ 
+              backgroundColor: colorStore.buttonBg,
+              color: colorStore.buttonText
+            }">
               CONFIRMAR
             </button>
           </div>
@@ -505,7 +518,7 @@
   <ParticipateModal ref="participateModalRef" :open="false" />
 
   <!-- Footer -->
-    <footer class="site-footer">
+    <footer class="site-footer" :style="{ backgroundColor: colorStore.footerBg }">
       <div class="footer-content">
         <div class="footer-text">
           <h3>Nuestro objetivo es <span class="highlight">premiarte!</span></h3>
@@ -570,6 +583,8 @@ import type { RaffleImage } from '@/services/RaffleService'
 // import apiClient from '@/services/api'
 import { useGridStore } from '@/stores/useGridStore'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useColorStore } from '@/stores/useColorStore'
+
 import TicketGrid from '@/components/TicketGrid.vue'
 import ParticipateModal from '@/components/ParticipateModal.vue'
 import { useBookingTimer } from '@/composables/useBookingTimer'
@@ -581,6 +596,7 @@ const { showToast } = useToast()
 const authStore = useAuthStore()
 
 // Estados
+const colorStore = useColorStore()
 const raffle = ref<Raffle | null>(null)
 const prizes = ref<Prize[]>([])
 const loading = ref(true)
@@ -1467,6 +1483,8 @@ watch(raffle, (newRaffle) => {
 // Lifecycle hooks
 onMounted(() => {
   loadRaffleData()
+  colorStore.initialize()
+  colorStore.setRiferoPage(true) // Esta es una página de rifero
   // cargar métodos de pago
   // loadPaymentMethods()
 
@@ -1499,8 +1517,8 @@ onMounted(() => {
 
 .lgtangueta-container {
   font-family: 'Montserrat', Arial, sans-serif;
-  background-color: #fff;
-  color: #000;
+  background-color: v-bind('colorStore.cardBg');
+  color: v-bind('colorStore.textSecondary');
   width: 100%;
   min-height: 100vh;
 }
@@ -1511,7 +1529,7 @@ onMounted(() => {
 
 /* O también puedes hacer: */
 .navbar {
-  background-color: #111;
+  background-color: var(--color-navbar-bg);
   padding-bottom: 10px;
   position: sticky;
   top: 0;
@@ -1522,7 +1540,7 @@ onMounted(() => {
 .top-accent-line {
   width: 100%;
   height: 4px;
-  background-color: #ff3366; /* Línea rosa superior */
+  background-color: var(--color-accent);
   box-shadow: 0 0 10px #ff3366;
 }
 
@@ -1571,7 +1589,7 @@ onMounted(() => {
 }
 
 .nav-links a {
-  color: #fff;
+  color: var(--color-text-primary);
   text-decoration: none;
   text-transform: uppercase;
   display: flex;
@@ -1581,11 +1599,11 @@ onMounted(() => {
 }
 
 .nav-links a:hover {
-  color: #ff3366;
+  color: var(--color-accent);
 }
 
 .btn-boletos {
-  background-color: #ff4757; /* Rosa rojizo */
+  background-color: var(--color-button-bg);
   color: #000; /* Texto negro */
   border: none;
   padding: 10px 25px;
@@ -1599,7 +1617,7 @@ onMounted(() => {
 }
 
 .btn-boletos:hover {
-  background-color: #ff3366;
+  background-color: var(--color-accent);
   transform: scale(1.05);
 }
 
@@ -1624,6 +1642,7 @@ onMounted(() => {
 .date-item {
   display: flex;
   align-items: center;
+  color: var(--color-text-secondary);
   gap: 8px;
 }
 
@@ -1644,13 +1663,14 @@ onMounted(() => {
 .progress-bar-gradient {
   height: 100%;
   /* Degradado de rosa claro a rosa intenso */
-  background: linear-gradient(90deg, #ff8fa3 0%, #ff4757 100%);
+    background-color: var(--color-accent);
+
   border-radius: 18px 0 0 18px;
   box-shadow: 0 2px 15px rgba(0,0,0,2.5);
 }
 
 .progress-text {
-  color: #000; /* Texto negro sobre la barra */
+  color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 900;
   position: absolute;
@@ -1668,7 +1688,7 @@ onMounted(() => {
   margin-bottom: 40px;
   line-height: 1;
   text-transform: uppercase;
-  color: #000;
+  color: var(--color-text-secondary);
 }
 
 /* Grid Layout */
@@ -1703,6 +1723,7 @@ onMounted(() => {
 }
 
 .price-title {
+  color: var(--color-primary);
   font-weight: 900;
   font-size: 18px;
   margin: 0;
@@ -1810,10 +1831,11 @@ p {
 .tickets-count {
     font-size: 1.5rem; /* text-2xl */
     margin-right: 0.5rem;
-    color: #dc2626; /* text-red-600 */
+    color: var(--color-accent);
 }
 
 .tickets-total {
+    color: var(--color-text-secondary);
     font-size: 1.25rem; /* text-xl */
 }
 
@@ -1823,10 +1845,10 @@ p {
     font-size: 0.875rem; /* text-sm */
     font-weight: 700; /* font-bold */
     border-radius: 9999px; /* rounded-full */
-    color: #fff;
+    background-color: var(--color-button-bg);
+    color: var(--color-button-text);
     letter-spacing: 0.025em; /* tracking-wide */
     transition: background-color 0.3s;
-    background-color: #ff3366; 
     box-shadow: 0 4px 10px rgba(255, 51, 102, 0.4);
 }
 
@@ -1860,11 +1882,11 @@ p {
 }
 
 .tickets-nav-btn {
-    color: #ec4899; /* text-pink-600 */
+    color: var(--color-accent);
     transition: color 0.3s;
 }
 .tickets-nav-btn:hover {
-    color: #be185d; /* hover:text-pink-800 */
+    color: var(--color-primary);
 }
 
 /* Malla de Boletos - Optimizada para móvil */
@@ -1938,6 +1960,7 @@ p {
     text-align: center;
     margin-top: 0.75rem;
     font-size: 0.875rem;
+      background: linear-gradient(to right, var(--color-card-bg), var(--color-secondary));
     font-weight: 700;
     color: #4b5563;
 }
@@ -1947,7 +1970,7 @@ p {
   position: fixed;
   top: 80px; /* Debajo del navbar */
   right: 20px;
-  background: linear-gradient(135deg, #ff3366, #ff6b9c);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-secondary));
   color: white;
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(255, 51, 102, 0.3);
@@ -2037,7 +2060,7 @@ p {
   left: 0;
   right: 0;
   background-color: #fff;
-  border-top: 2px solid #ff3366;
+  border-top: 2px solid var(--color-accent);
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   padding: 12px 16px;
@@ -2069,7 +2092,7 @@ p {
 }
 
 .btn-continuar {
-  background-color: #ff3366;
+  background-color: var(--color-accent);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -2115,10 +2138,11 @@ p {
     gap: 10px;
     margin-top: 30px;
     margin-bottom: 20px;
-    border-bottom: 2px solid #e5e7eb;
+    border-bottom: 2px solid var(--color-primary);
     padding-bottom: 5px;
 }
 .section-title {
+    color: var(--color-primary);
     font-size: 1.25rem; /* text-xl */
     font-weight: 900;
     text-transform: uppercase;
@@ -2211,7 +2235,7 @@ p {
 
 /* Estado seleccionado - sin borde, con color de fondo */
 .selected-payment {
-    background-color: #e6f7ef; /* Fondo verde muy claro */
+    background-color: var(--color-primary);
     box-shadow: 0 4px 16px rgba(102, 204, 153, 0.3);
     transform: translateY(-3px);
 }
@@ -2232,7 +2256,7 @@ p {
     height: 24px;
     width: 24px;
     color: white;
-    background-color: #10b981;
+    background-color: var(--color-primary);
     border-radius: 50%;
     border: 2px solid white;
     z-index: 10;
@@ -2256,7 +2280,7 @@ p {
 
 /* Detalle de Cuenta */
 .account-details-box {
-    background-color: #f9fafb; /* bg-gray-50 */
+    background-color: var(--color-card-bg);
     border: 1px solid #d1d5db; /* border-gray-300 */
     border-radius: 0.75rem; /* rounded-xl */
     padding: 1rem;
@@ -2286,7 +2310,7 @@ p {
     border-radius: 0.5rem;
     font-weight: 900; /* font-extrabold */
     font-size: 1.25rem; /* text-xl */
-    background-color: #f7f7f7;
+    background-color: var(--color-card-bg);
 }
 
 /* Área de Subida de Comprobante */
@@ -2310,7 +2334,7 @@ p {
     margin: auto;
     height: 3rem;
     width: 3rem;
-    color: #ec4899; /* text-pink-500 */
+    color: var(--color-accent);
 }
 
 .upload-text-button {
@@ -2319,7 +2343,7 @@ p {
     background-color: white;
     border-radius: 0.375rem;
     font-weight: 500; /* font-medium */
-    color: #ec4899; /* text-pink-600 */
+    color: var(--color-accent);
     outline: none;
 }
 
@@ -2336,10 +2360,10 @@ p {
     font-size: 1.125rem; /* text-lg */
     font-weight: 700; /* font-bold */
     border-radius: 0.75rem; /* rounded-xl */
-    color: white;
+    color: var(--color-button-text);
     text-transform: uppercase;
     transition: background-color 0.3s;
-    background-color: #ff3366; 
+    background-color: var(--color-button-bg);
     box-shadow: 0 4px 10px rgba(255, 51, 102, 0.4);
 }
 
@@ -2373,8 +2397,8 @@ p {
 
 /* Verificador de Boletos */
 .verifier-card {
-    background-color: #f0fdf4; /* Verde muy claro */
-    border: 2px solid #ff3366; /* Verde intermedio */
+  background-color: var(--color-card-bg);
+  border: 2px solid var(--color-primary);
     border-radius: 1rem;
     padding: 25px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
@@ -2416,6 +2440,7 @@ p {
 .prize-card {
     background-color: #fff;
     border: 1px solid #e5e7eb;
+    border-bottom: 3px solid var(--color-accent);
     border-radius: 12px;
     overflow: hidden;
     text-align: center;
@@ -2491,12 +2516,13 @@ p {
     transform: translateY(-50%);
     font-size: 1.5rem;
     line-height: 1;
-    color: #ff3366;
+    color: var(--color-accent);
+
     transition: transform 0.3s;
 }
 
 .faq-toggle:checked + .faq-question {
-    background-color: #fef2f2; /* Color de fondo ligero al abrir */
+    background-color: var(--color-card-bg);
 }
 
 .faq-toggle:checked + .faq-question::after {
@@ -2509,7 +2535,7 @@ p {
     overflow: hidden;
     transition: max-height 0.4s ease-in-out;
     padding: 0 20px;
-    background-color: #f7f7f7;
+    background-color: var(--color-card-bg);
 }
 
 .faq-toggle:checked ~ .faq-answer {
@@ -2555,6 +2581,7 @@ p {
       padding: 15px;
   }
   .tickets-title {
+      color: var(--color-primary);
       font-size: 1.5rem;
   }
   .form-grid {
@@ -2619,7 +2646,7 @@ p {
 
 /* Estilos para el footer */
 .site-footer {
-  background-color: #ff3366;
+  background-color: var(--color-footer-bg);
   color: #fff;
   padding: 40px 20px 20px;
   margin-top: 50px;
@@ -2635,6 +2662,7 @@ p {
 }
 
 .footer-text h3 {
+  color: var(--color-text-primary);
   font-size: 28px;
   font-weight: 800;
   margin-bottom: 30px;
@@ -2642,7 +2670,7 @@ p {
 }
 
 .highlight {
-  color: #ffffff;
+  color: var(--color-accent);
   text-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
 }
 
@@ -2663,7 +2691,7 @@ p {
   font-size: 18px;
   font-weight: 700;
   margin-bottom: 15px;
-  color: #ffffff;
+  color: var(--color-text-primary);
   text-transform: uppercase;
 }
 
@@ -2678,14 +2706,14 @@ p {
 }
 
 .footer-section a {
-  color: #fff;
+  color: var(--color-text-primary);
   text-decoration: none;
   transition: color 0.3s;
   font-size: 14px;
 }
 
 .footer-section a:hover {
-  color: #000000;
+  color: var(--color-text-secondary);
 }
 
 .footer-bottom {
@@ -2694,7 +2722,7 @@ p {
   padding-top: 20px;
   text-align: center;
   font-size: 12px;
-  color: #ffffff;
+  color: var(--color-text-primary);
 }
 
 /* Responsive */
@@ -2726,6 +2754,7 @@ p {
   }
   
   .ticket-box {
+    background-color: var(--color-accent);
     padding: 8px 4px;
     min-height: 42px;
     font-size: 0.75rem;
@@ -2742,5 +2771,19 @@ p {
     font-size: 0.8rem;
   }
 }
-
+/* Variables CSS para colores dinámicos */
+:root {
+  --color-primary: v-bind('colorStore.primary');
+  --color-secondary: v-bind('colorStore.secondary');
+  --color-accent: v-bind('colorStore.accent');
+  --color-navbar-bg: v-bind('colorStore.navbarBg');
+  --color-footer-bg: v-bind('colorStore.footerBg');
+  --color-text-primary: v-bind('colorStore.textPrimary');
+  --color-text-secondary: v-bind('colorStore.textSecondary');
+  --color-button-bg: v-bind('colorStore.buttonBg');
+  --color-button-text: v-bind('colorStore.buttonText');
+  --color-progress-start: v-bind('colorStore.progressStart');
+  --color-progress-end: v-bind('colorStore.progressEnd');
+  --color-card-bg: v-bind('colorStore.cardBg');
+}
 </style>
